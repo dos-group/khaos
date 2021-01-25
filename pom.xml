@@ -11,7 +11,9 @@
     <modules>
         <module>common</module>
         <module>failure_injector</module>
-        <module>generator</module>
+        <module>workload_manager</module>
+        <module>anomaly_detector</module>
+        <module>metrics_extractor</module>
     </modules>
 
     <build>
