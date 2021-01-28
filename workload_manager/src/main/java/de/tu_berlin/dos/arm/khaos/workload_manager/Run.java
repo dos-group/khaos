@@ -26,8 +26,10 @@ public class Run {
         // retrieve file for outputting events
         String brokerList = generatorProps.getProperty("kafka.brokerList");
         String topic = generatorProps.getProperty("kafka.topic");
+        // create output file if it doesnt exist
         String fileName = generatorProps.getProperty("dataset.outputFile");
-        File outputFile = FileReader.GET.read(fileName, File.class);
+        File outputFile = new File(fileName);
+        if (!outputFile.createNewFile()) throw new IllegalStateException("Unable to crate output file");
 
         Consumer consumer = new KafkaToFileConsumer(brokerList, topic, 100000, outputFile);
         consumer.execute();
