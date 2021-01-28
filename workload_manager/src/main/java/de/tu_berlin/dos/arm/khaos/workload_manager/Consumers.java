@@ -47,10 +47,8 @@ public interface Consumers {
         @Override
         public void execute() throws Exception {
 
-            //@SuppressWarnings("resource")
             try (BufferedWriter bw = new BufferedWriter(new FileWriter(this.output, true))) {
 
-                //long diff = 0;
                 int buffer = 0;
                 @SuppressWarnings("resource")
                 KafkaConsumer<String, String> consumer = new KafkaConsumer<>(this.props);
@@ -60,9 +58,7 @@ public interface Consumers {
                     ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
                     for (ConsumerRecord<String, String> record : records) {
 
-                        //diff = record.timestamp() - Long.parseLong(record.value().split(" ")[1]);
-                        //bw.append(record.value() + " " + record.timestamp() + " " + diff + "\n");
-                        bw.append(record.value());
+                        bw.append(record.value() + "\n");
                         buffer++;
                         if (buffer == this.linesToFlush) {
 
