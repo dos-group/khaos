@@ -1,13 +1,8 @@
 package de.tu_berlin.dos.arm.khaos.workload_manager;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import de.tu_berlin.dos.arm.khaos.common.data.Event;
 import de.tu_berlin.dos.arm.khaos.common.utils.FileReader;
 import de.tu_berlin.dos.arm.khaos.workload_manager.Consumers.Consumer;
 import de.tu_berlin.dos.arm.khaos.workload_manager.Consumers.KafkaToFileConsumer;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.common.serialization.Serializer;
 import org.apache.log4j.Logger;
 
 import java.io.File;
@@ -33,5 +28,20 @@ public class Run {
 
         Consumer consumer = new KafkaToFileConsumer(brokerList, topic, 100000, outputFile);
         consumer.execute();
+
+
+
+
+        // get properties file
+        //Properties generatorProps = FileReader.GET.read("generator.properties", Properties.class);
+
+        //String inputFileName = generatorProps.getProperty("dataset.inputFile");
+        //File inputFile = FileReader.GET.read(inputFileName, File.class);
+        //String tsLabel = generatorProps.getProperty("dataset.tsLabel");
+
+        //File outputFile = new File("iot_vehicles_events.csv");
+
+        //sort(inputFile, outputFile, "ts");
+
     }
 }
