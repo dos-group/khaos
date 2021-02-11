@@ -1,13 +1,17 @@
 package de.tu_berlin.dos.arm.khaos.workload_manager;
 
 import de.tu_berlin.dos.arm.khaos.common.utils.FileReader;
-import de.tu_berlin.dos.arm.khaos.workload_manager.Consumers.Consumer;
-import de.tu_berlin.dos.arm.khaos.workload_manager.Consumers.KafkaToFileConsumer;
+import de.tu_berlin.dos.arm.khaos.workload_manager.CounterManager.CounterListener;
 import org.apache.log4j.Logger;
 
 import java.io.File;
-import java.util.Map;
+import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Run {
 
@@ -18,30 +22,46 @@ public class Run {
         // get properties file
         Properties generatorProps = FileReader.GET.read("generator.properties", Properties.class);
 
-        // retrieve file for outputting events
-        String brokerList = generatorProps.getProperty("kafka.brokerList");
-        String topic = generatorProps.getProperty("kafka.topic");
-        // create output file if it doesnt exist
-        String fileName = generatorProps.getProperty("dataset.outputFile");
-        File outputFile = new File(fileName);
-        if (!outputFile.createNewFile()) throw new IllegalStateException("Unable to crate output file");
-
-        Consumer consumer = new KafkaToFileConsumer(brokerList, topic, 100000, outputFile);
-        consumer.execute();
-
-
-
-
-        // get properties file
-        //Properties generatorProps = FileReader.GET.read("generator.properties", Properties.class);
-
+        // retrieve dataset properties and create input file
         //String inputFileName = generatorProps.getProperty("dataset.inputFile");
         //File inputFile = FileReader.GET.read(inputFileName, File.class);
-        //String tsLabel = generatorProps.getProperty("dataset.tsLabel");
+        //String sortedFileName = generatorProps.getProperty("dataset.sortedFile");
+        //File sortedFile = new File(sortedFileName);
+        //sort(inputFile, sortedFile, "ts");
 
-        //File outputFile = new File("iot_vehicles_events.csv");
+        // retrieve kafka properties
+        String topic = generatorProps.getProperty("kafka.topic");
+        String brokerList = generatorProps.getProperty("kafka.brokerList");
 
-        //sort(inputFile, outputFile, "ts");
+        File file = new File("/data/khaos/datasets/IoT_vehicles_events.csv");
+        KafkaToFileManager manager = new KafkaToFileManager(brokerList, topic, 10000, file);
+
+        // perform analysis, retrieve max y value and create actors
+        //WorkloadAnalyser workload = WorkloadAnalyser.create(inputFile);
+
+        // create counter manager and register points for failure injection
+        //CounterManager counterManager = new CounterManager();
+        //counterManager.register(new CounterListener(10, () -> System.out.println("Callback for " + 10)));
+        //counterManager.register(new CounterListener(60, () -> System.out.println("Callback for " + 60)));
+
+        // start generator
+        //CountDownLatch latch = new CountDownLatch(2);
+        //BlockingQueue<List<String>> queue = new ArrayBlockingQueue<>(60);
+        //AtomicBoolean isDone = new AtomicBoolean(false);
+
+        // Run futures
+        /*CompletableFuture
+            .runAsync(new FileToQueueManager(inputFile, queue))
+            .thenRun(() -> {
+                isDone.set(true);
+                latch.countDown();
+            });
+        CompletableFuture
+            .runAsync(new QueueToKafkaManager(queue, counterManager, workload.getMaxY(), topic, brokerList, isDone))
+            .thenRun(latch::countDown);
+
+        // wait till workload has been replayed
+        latch.await();*/
 
     }
 }
