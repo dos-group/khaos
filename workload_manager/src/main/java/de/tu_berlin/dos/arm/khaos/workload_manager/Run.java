@@ -26,10 +26,8 @@ public class Run {
 
         // retrieve dataset properties and create input file
         String inputFileName = generatorProps.getProperty("dataset.inputFile");
-        File inputFile = new File(inputFileName);
         String sortedFileName = generatorProps.getProperty("dataset.sortedFile");
-        File sortedFile = new File(sortedFileName);
-        sort(inputFile, sortedFile, "ts");
+        sort(inputFileName, "/data/khaos/datasets/iot", sortedFileName, "ts");
 
         // retrieve kafka properties
         //String topic = generatorProps.getProperty("kafka.topic");

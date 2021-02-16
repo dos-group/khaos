@@ -12,7 +12,7 @@ import java.util.Properties;
 
 public class DatasetSorter {
 
-    public static void sort(File in, File out, String tsLabel) {
+    public static void sort(String inFile, String tempDir, String outFile, String tsLabel) {
 
         Comparator<String> byTimestamp = (ts1, ts2) -> {
 
@@ -29,8 +29,11 @@ public class DatasetSorter {
         Sorter
             .serializerLinesUtf8()
             .comparator(byTimestamp)
-            .input(in)
-            .output(out)
+            .input(new File(inFile))
+            .output(new File(outFile))
+            .tempDirectory(new File(tempDir))
+            .maxFilesPerMerge(100)
+            .maxItemsPerFile(1000000)
             .loggerStdOut()
             .sort();
     }
