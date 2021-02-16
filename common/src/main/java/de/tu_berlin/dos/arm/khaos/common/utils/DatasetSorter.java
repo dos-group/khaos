@@ -32,7 +32,7 @@ public class DatasetSorter {
             .input(new File(inFile))
             .output(new File(outFile))
             .tempDirectory(new File(tempDir))
-            .maxFilesPerMerge(100)
+            .maxFilesPerMerge(10)
             .maxItemsPerFile(1000000)
             .loggerStdOut()
             .sort();
