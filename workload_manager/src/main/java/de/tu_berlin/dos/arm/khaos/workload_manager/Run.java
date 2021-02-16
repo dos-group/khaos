@@ -25,17 +25,17 @@ public class Run {
         Properties generatorProps = FileReader.GET.read("generator.properties", Properties.class);
 
         // retrieve dataset properties and create input file
-        String inputFileName = generatorProps.getProperty("dataset.inputFile");
-        String sortedFileName = generatorProps.getProperty("dataset.sortedFile");
-        sort(inputFileName, "/data/khaos/datasets/iot", sortedFileName, "ts");
+        //String inputFileName = generatorProps.getProperty("dataset.inputFile");
+        //String sortedFileName = generatorProps.getProperty("dataset.sortedFile");
+        //sort(inputFileName, "/data/khaos/datasets/iot", sortedFileName, "ts");
 
         // retrieve kafka properties
-        //String topic = generatorProps.getProperty("kafka.topic");
-        //String brokerList = generatorProps.getProperty("kafka.brokerList");
+        String topic = generatorProps.getProperty("kafka.topic");
+        String brokerList = generatorProps.getProperty("kafka.brokerList");
 
-        //File file = new File("/data/khaos/datasets/IoT_vehicles_events.csv");
-        //KafkaToFileManager manager = new KafkaToFileManager(brokerList, topic, 10000, file);
-        //manager.run();
+        File file = new File("/data/khaos/datasets/iot_vehicles_events.csv");
+        KafkaToFileManager manager = new KafkaToFileManager(brokerList, topic, 10000, file);
+        manager.run();
 
         // perform analysis, retrieve max y value and create actors
         //WorkloadAnalyser workload = WorkloadAnalyser.create(inputFile);
