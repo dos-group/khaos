@@ -21,11 +21,11 @@ public class Run {
 
     public static void main(String[] args) {
 
-        // get properties file
-        Properties generatorProps = FileReader.GET.read("generator.properties", Properties.class);
-
         // retrieve dataset properties and create input file
         try {
+            // get properties file
+            Properties generatorProps = FileReader.GET.read("generator.properties", Properties.class);
+
             String inputFileName = generatorProps.getProperty("dataset.inputFile");
             File inputFile = FileReader.GET.read(inputFileName, File.class);
             String sortedFileName = generatorProps.getProperty("dataset.sortedFile");
