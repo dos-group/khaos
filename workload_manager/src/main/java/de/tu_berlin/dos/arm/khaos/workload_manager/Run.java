@@ -25,15 +25,15 @@ public class Run {
         Properties generatorProps = FileReader.GET.read("generator.properties", Properties.class);
 
         // retrieve dataset properties and create input file
-        //String inputFileName = generatorProps.getProperty("dataset.inputFile");
+        String originalFileName = generatorProps.getProperty("dataset.originalFile");
         //String sortedFileName = generatorProps.getProperty("dataset.sortedFile");
-        //sort(inputFileName, "/data/khaos/datasets/iot", sortedFileName, "ts");
+        //sort(originalFileName, "/data/khaos/datasets/iot", sortedFileName, "ts");
 
         // retrieve kafka properties
         String topic = generatorProps.getProperty("kafka.topic");
         String brokerList = generatorProps.getProperty("kafka.brokerList");
 
-        File file = new File("/data/khaos/datasets/iot_vehicles_events.csv");
+        File file = new File(originalFileName);
         KafkaToFileManager manager = new KafkaToFileManager(brokerList, topic, 10000, file);
         manager.run();
 
