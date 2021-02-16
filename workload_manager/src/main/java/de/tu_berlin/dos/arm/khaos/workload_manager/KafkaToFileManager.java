@@ -59,6 +59,15 @@ public class KafkaToFileManager implements Runnable {
 
     public void run() {
 
+        try {
+
+            this.output.createNewFile();
+        }
+        catch (IOException e) {
+
+            LOG.error(e);
+        }
+
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(this.output, true))) {
 
             int buffer = 0;
