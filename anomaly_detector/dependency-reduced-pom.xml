@@ -56,18 +56,14 @@
       </plugin>
     </plugins>
   </build>
-  <repositories>
-    <repository>
-      <releases>
-        <checksumPolicy>ignore</checksumPolicy>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <id>lib</id>
-      <name>lib</name>
-      <url>file://${project.basedir}/lib</url>
-    </repository>
-  </repositories>
+  <dependencies>
+    <dependency>
+      <groupId>IFTM</groupId>
+      <artifactId>IFTM-anomalydetection-models</artifactId>
+      <version>0.0.1</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/IFTM-anomalydetection-models-0.0.1.jar</systemPath>
+    </dependency>
+  </dependencies>
 </project>
 

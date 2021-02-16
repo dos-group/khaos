@@ -17,7 +17,9 @@
             <groupId>IFTM</groupId>
             <artifactId>IFTM-anomalydetection-models</artifactId>
             <version>0.0.1</version>
-            <scope>compile</scope>
+            <!--scope>compile</scope-->
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/IFTM-anomalydetection-models-0.0.1.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -27,7 +29,7 @@
         </dependency>
     </dependencies>
 
-    <repositories>
+    <!--repositories>
         <repository>
             <id>lib</id>
             <name>lib</name>
@@ -40,7 +42,7 @@
             </snapshots>
             <url>file://${project.basedir}/lib</url>
         </repository>
-    </repositories>
+    </repositories-->
 
     <build>
         <resources>
