@@ -19,23 +19,17 @@ public class Run {
 
     private static final Logger LOG = Logger.getLogger(Run.class);
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+
+        // get properties file
+        Properties generatorProps = FileReader.GET.read("generator.properties", Properties.class);
 
         // retrieve dataset properties and create input file
-        try {
-            // get properties file
-            Properties generatorProps = FileReader.GET.read("generator.properties", Properties.class);
-
-            String inputFileName = generatorProps.getProperty("dataset.inputFile");
-            File inputFile = FileReader.GET.read(inputFileName, File.class);
-            String sortedFileName = generatorProps.getProperty("dataset.sortedFile");
-            File sortedFile = new File(sortedFileName);
-            sort(inputFile, sortedFile, "ts");
-        }
-        catch (Exception ex) {
-
-            ex.printStackTrace();
-        }
+        String inputFileName = generatorProps.getProperty("dataset.inputFile");
+        File inputFile = new File(inputFileName);
+        String sortedFileName = generatorProps.getProperty("dataset.sortedFile");
+        File sortedFile = new File(sortedFileName);
+        sort(inputFile, sortedFile, "ts");
 
         // retrieve kafka properties
         //String topic = generatorProps.getProperty("kafka.topic");
