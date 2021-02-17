@@ -10,6 +10,7 @@ import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.text.ParseException;
@@ -29,7 +30,9 @@ public class WorkloadAnalyser {
      * CLASS BEHAVIOURS
      ******************************************************************************/
 
-    public static WorkloadAnalyser create(File inputFile) throws Exception {
+    public static WorkloadAnalyser create(String inputFilePath, int minTimeBetweenFailures, int numOfFailures) {
+
+        File inputFile = new File(inputFilePath);
 
         // create arrays for workload
         List<Double> x = new ArrayList<>();
@@ -68,11 +71,11 @@ public class WorkloadAnalyser {
                     yCounter = 1;
                 }
             }
-            return new WorkloadAnalyser(x, y);
+            return new WorkloadAnalyser(minTimeBetweenFailures, numOfFailures, x, y);
         }
-        catch (ParseException ex) {
+        catch (ParseException | FileNotFoundException ex) {
 
-            throw new RuntimeException(ex.getMessage());
+            throw new IllegalStateException(ex.getMessage());
         }
     }
 
@@ -80,6 +83,8 @@ public class WorkloadAnalyser {
      * INSTANCE STATE
      ******************************************************************************/
 
+    private final int minTimeBetweenFailures;
+    private final int numOfFailures;
     private final List<Double> x;
     private final List<Double> y;
 
@@ -87,8 +92,10 @@ public class WorkloadAnalyser {
      * CONSTRUCTOR(S)
      ******************************************************************************/
 
-    private WorkloadAnalyser(List<Double> x, List<Double> y) {
+    private WorkloadAnalyser(int minTimeBetweenFailures, int numOfFailures, List<Double> x, List<Double> y) {
 
+        this.minTimeBetweenFailures = minTimeBetweenFailures;
+        this.numOfFailures = numOfFailures;
         this.x = x;
         this.y = y;
     }
@@ -96,6 +103,11 @@ public class WorkloadAnalyser {
     /******************************************************************************
      * INSTANCE BEHAVIOURS
      ******************************************************************************/
+
+    public void getFailureScenario() {
+
+
+    }
 
     public PolynomialSplineFunction interpolate() {
 
