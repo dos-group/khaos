@@ -29,7 +29,7 @@ public enum Context { get;
     public final String metricsThroughput;
     public final String metricsLatency;
     public final String metricsConsumerLag;
-    public final String metricscpuLoad;
+    public final String metricsCpuLoad;
     public final String prometheusUrl;
     public final int prometheusLimit;
 
@@ -43,7 +43,7 @@ public enum Context { get;
 
         try {
             // get properties file
-            Properties props = FileReader.GET.read("workload.properties", Properties.class);
+            Properties props = FileReader.GET.read("iot.properties", Properties.class);
             // load properties into context
             this.brokerList = props.getProperty("kafka.brokerList");
             this.consumerTopic = props.getProperty("kafka.topic");
@@ -65,7 +65,7 @@ public enum Context { get;
             this.metricsThroughput = props.getProperty("metrics.throughput");
             this.metricsLatency = props.getProperty("metrics.latency");
             this.metricsConsumerLag = props.getProperty("metrics.consumerLag");
-            this.metricscpuLoad = props.getProperty("metrics.cpuLoad");
+            this.metricsCpuLoad = props.getProperty("metrics.cpuLoad");
             this.prometheusUrl = props.getProperty("prometheus.url");
             this.prometheusLimit = Integer.parseInt(props.getProperty("prometheus.limit"));
             // create global context objects
@@ -74,7 +74,7 @@ public enum Context { get;
             this.prometheusApiClient = new PrometheusApiClient(this.prometheusUrl);
         }
         catch (Exception e) {
-
+            e.printStackTrace();
             throw new IllegalStateException();
         }
     }

@@ -55,7 +55,6 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
             return STOP;
         }
     },
-
     ANALYZE {
         public ExecutionGraph runStage(Context context) {
 
@@ -107,7 +106,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                     latch.countDown();
                 });
             CompletableFuture
-                .runAsync(new QueueToKafka(queue, context.replayCounter, context.producerTopic, context.brokerList, isDone))
+                .runAsync(new QueueToKafka(queue, context.replayCounter, /*context.producerTopic*/context.consumerTopic, context.brokerList, isDone))
                 .thenRun(latch::countDown);
             // wait till full workload has been replayed
             try {
@@ -118,7 +117,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                 e.printStackTrace();
             }
 
-            return DELETE;
+            return STOP;
         }
     },
     DELETE {
