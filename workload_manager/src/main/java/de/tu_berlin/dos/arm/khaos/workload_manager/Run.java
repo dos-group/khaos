@@ -1,6 +1,5 @@
 package de.tu_berlin.dos.arm.khaos.workload_manager;
 
-import de.tu_berlin.dos.arm.khaos.common.prometheus.models.VectorResponse;
 import org.apache.log4j.Logger;
 
 public class Run {

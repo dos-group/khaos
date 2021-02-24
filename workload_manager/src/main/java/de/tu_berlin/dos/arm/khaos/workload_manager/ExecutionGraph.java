@@ -25,10 +25,9 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
             return RECORD;
         }
     },
-
     RECORD {
         public ExecutionGraph runStage(Context context) {
-            LOG.info("here");
+
             // record files from kafka consumer topic to file for a user defined time
             KafkaToFile manager =
                 new KafkaToFile(
@@ -42,7 +41,6 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
             return SORT;
         }
     },
-
     SORT {
         public ExecutionGraph runStage(Context context) {
 
@@ -54,7 +52,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                 context.tsLabel);
 
             LOG.info("SORT -> EXTRACT");
-            return ANALYZE;
+            return STOP;
         }
     },
 
@@ -69,6 +67,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
             // TODO get the failure scenario from workload
             workload.getFailureScenario();
             // register points for failure injection with counter manager
+            // TODO register the failure, and record the avg latency
             context.replayCounter.register(new Listener(10, () -> System.out.println("Callback for " + 10)));
             context.replayCounter.register(new Listener(60, () -> System.out.println("Callback for " + 60)));
 
@@ -81,6 +80,11 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
         public ExecutionGraph runStage(Context context) {
 
             // TODO deploy multiple pipelines
+            for (int i = 0; i < context.metricsNumOfConfigs; i++) {
+
+
+            }
+            //context.fli
             LOG.info("DEPLOY -> REPLAY");
             return REPLAY;
         }
@@ -113,15 +117,37 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
                 e.printStackTrace();
             }
-            LOG.info("REPLAY -> END");
-            return END;
+
+            return DELETE;
         }
     },
-
-    END {
+    DELETE {
         public ExecutionGraph runStage(Context context) {
 
-            LOG.info("END");
+            LOG.info("DELETE -> END");
+            return MODEL;
+        }
+    },
+    MODEL {
+
+        public ExecutionGraph runStage(Context context) {
+
+            LOG.info("DELETE -> END");
+            return OPTIMIZE;
+        }
+    },
+    OPTIMIZE {
+
+        public ExecutionGraph runStage(Context context) {
+
+            LOG.info("DELETE -> END");
+            return STOP;
+        }
+    },
+    STOP {
+        public ExecutionGraph runStage(Context context) {
+
+            LOG.info("STOP");
             return this;
         }
     };

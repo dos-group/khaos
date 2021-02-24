@@ -1,6 +1,7 @@
 package de.tu_berlin.dos.arm.khaos.workload_manager;
 
-import de.tu_berlin.dos.arm.khaos.common.prometheus.PrometheusApiClient;
+import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.FlinkApiClient;
+import de.tu_berlin.dos.arm.khaos.common.api_clients.prometheus.PrometheusApiClient;
 import de.tu_berlin.dos.arm.khaos.common.utils.FileReader;
 import org.apache.commons.lang3.RandomStringUtils;
 
@@ -19,8 +20,12 @@ public enum Context { get;
     public final int minTimeBetweenFailures;
     public final int numOfFailures;
     public final String k8sNamespace;
+    public final String flinkJobManagerUrl;
+    public final String flinkJarid;
     public final String flinkJobName;
+    public final int flinkParallelism;
     public final String flinkSinkOperatorId;
+    public final int metricsNumOfConfigs;
     public final String metricsThroughput;
     public final String metricsLatency;
     public final String metricsConsumerLag;
@@ -29,7 +34,10 @@ public enum Context { get;
     public final int prometheusLimit;
 
     public final ReplayCounter replayCounter;
-    public final PrometheusApiClient prometheusClient;
+    public final FlinkApiClient flinkApiClient;
+    public final PrometheusApiClient prometheusApiClient;
+
+    //public final Map<String, >
 
     Context() {
 
@@ -48,8 +56,12 @@ public enum Context { get;
             this.minTimeBetweenFailures = Integer.parseInt(props.getProperty("analysis.minTimeBetweenFailures"));
             this.numOfFailures = Integer.parseInt(props.getProperty("analysis.numOfFailures"));
             this.k8sNamespace = props.getProperty("k8s.namespace");
+            this.flinkJobManagerUrl = props.getProperty("flink.jobManagerUrl");
+            this.flinkJarid = props.getProperty("flink.jarid");
             this.flinkJobName = props.getProperty("flink.jobName");
+            this.flinkParallelism = Integer.parseInt(props.getProperty("flink.parallelism"));
             this.flinkSinkOperatorId = props.getProperty("flink.sinkOperatorId");
+            this.metricsNumOfConfigs = Integer.parseInt(props.getProperty("metrics.numOfConfigs"));
             this.metricsThroughput = props.getProperty("metrics.throughput");
             this.metricsLatency = props.getProperty("metrics.latency");
             this.metricsConsumerLag = props.getProperty("metrics.consumerLag");
@@ -58,7 +70,8 @@ public enum Context { get;
             this.prometheusLimit = Integer.parseInt(props.getProperty("prometheus.limit"));
             // create global context objects
             this.replayCounter = new ReplayCounter();
-            this.prometheusClient = new PrometheusApiClient(this.prometheusUrl);
+            this.flinkApiClient = new FlinkApiClient(this.flinkJobManagerUrl);
+            this.prometheusApiClient = new PrometheusApiClient(this.prometheusUrl);
         }
         catch (Exception e) {
 
