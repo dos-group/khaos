@@ -1,8 +1,6 @@
 package de.tu_berlin.dos.arm.khaos.common.api_clients.flink;
 
-import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.GetTaskmanagers;
-import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.StartJob;
-import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.Taskmanager;
+import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.Job;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -32,21 +30,21 @@ public class Run {
 
         List<String> jobids = new ArrayList<>();
         CountDownLatch latch = new CountDownLatch(1);
-        Call<StartJob> call = service.startJob(id, programArg, parallelism);
+        Call<Job> call = service.startJob(id, programArg, parallelism);
         call.enqueue(new Callback<>() {
 
             @Override
-            public void onResponse(Call<StartJob> call, Response<StartJob> response) {
+            public void onResponse(Call<Job> call, Response<Job> response) {
 
                 System.out.println(response.body());
 
                 assert response.body() != null;
-                jobids.add(response.body().jobid);
+                jobids.add(response.body().jobId);
                 latch.countDown();
             }
 
             @Override
-            public void onFailure(Call<StartJob> call, Throwable throwable) {
+            public void onFailure(Call<Job> call, Throwable throwable) {
 
                 throw new IllegalStateException(throwable);
             }

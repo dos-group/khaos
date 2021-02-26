@@ -69,13 +69,13 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                 analyser.getFailureScenario(10, 10, 5);
             scenario.forEach(System.out::println);
             // register points for failure injection with counter manager
-            /*scenario.forEach(point -> {
+            scenario.forEach(point -> {
                 context.replayCounter.register(new Listener(point._1(), () -> {
                     // TODO measure avg latency
                     // TODO inject error
                     LOG.info(point._1() + " " + point._2() + " " + point._3());
                 }));
-            });*/
+            });
 
             LOG.info("ANALYZE -> DEPLOY");
             return STOP;

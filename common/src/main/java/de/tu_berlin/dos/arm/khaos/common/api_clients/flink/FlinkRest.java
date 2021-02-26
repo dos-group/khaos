@@ -1,14 +1,14 @@
 package de.tu_berlin.dos.arm.khaos.common.api_clients.flink;
 
-import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.GetTaskmanagers;
-import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.StartJob;
+import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.TaskManagers;
+import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.Job;
 import retrofit2.Call;
 import retrofit2.http.*;
 
 public interface FlinkRest {
 
     @POST("v1/jars/{id}/run")
-    Call<StartJob> startJob(
+    Call<Job> startJob(
         @Path("id") String id,
         @Query("programArg") String programArg,
         @Query("parallelism") int parallelism
@@ -20,7 +20,7 @@ public interface FlinkRest {
     );
 
     @GET("v1/jobs/{jobId}/vertices/{vertexId}/taskmanagers")
-    Call<GetTaskmanagers> getTaskmanagers(
+    Call<TaskManagers> getTaskmanagers(
         @Path("jobId") String jobId,
         @Path("vertexId") String vertexId
     );
