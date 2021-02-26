@@ -1,6 +1,7 @@
 package de.tu_berlin.dos.arm.khaos.common.api_clients.flink;
 
 import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.StartJob;
+import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.GetTaskmanagers;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -30,5 +31,10 @@ public class FlinkApiClient {
     public boolean stopJob(String id) throws IOException {
 
         return this.service.stopJob(id).execute().isSuccessful();
+    }
+
+    public GetTaskmanagers getTaskmanagers(String jobId, String vertexId) throws IOException {
+
+        return this.service.getTaskmanagers(jobId, vertexId).execute().body();
     }
 }

@@ -1,5 +1,6 @@
 package de.tu_berlin.dos.arm.khaos.common.api_clients.flink;
 
+import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.GetTaskmanagers;
 import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.StartJob;
 import retrofit2.Call;
 import retrofit2.http.*;
@@ -16,5 +17,11 @@ public interface FlinkRest {
     @PATCH("v1/jobs/{id}")
     Call<Void> stopJob(
         @Path("id") String id
+    );
+
+    @GET("v1/jobs/{jobId}/vertices/{vertexId}/taskmanagers")
+    Call<GetTaskmanagers> getTaskmanagers(
+        @Path("jobId") String jobId,
+        @Path("vertexId") String vertexId
     );
 }
