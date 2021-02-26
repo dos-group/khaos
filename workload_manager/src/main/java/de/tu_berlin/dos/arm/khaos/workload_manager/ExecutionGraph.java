@@ -7,7 +7,9 @@ import de.tu_berlin.dos.arm.khaos.workload_manager.io.FileToQueue;
 import de.tu_berlin.dos.arm.khaos.workload_manager.io.KafkaToFile;
 import de.tu_berlin.dos.arm.khaos.workload_manager.io.QueueToKafka;
 import org.apache.log4j.Logger;
+import scala.Tuple3;
 
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -22,10 +24,11 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
         public ExecutionGraph runStage(Context context) {
 
             LOG.info("START -> RECORD");
-            return RECORD;
+            return ANALYZE;
         }
     },
     RECORD {
+
         public ExecutionGraph runStage(Context context) {
 
             // record files from kafka consumer topic to file for a user defined time
@@ -42,6 +45,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
         }
     },
     SORT {
+
         public ExecutionGraph runStage(Context context) {
 
             // sort large events dataset and write to new file
@@ -52,30 +56,34 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                 context.tsLabel);
 
             LOG.info("SORT -> EXTRACT");
-            return STOP;
+            return ANALYZE;
         }
     },
     ANALYZE {
+
         public ExecutionGraph runStage(Context context) {
 
-            WorkloadAnalyser workload =
-                WorkloadAnalyser.create(
-                    context.sortedFilePath,
-                    context.minTimeBetweenFailures,
-                    context.numOfFailures);
-            // TODO get the failure scenario from workload
-            workload.getFailureScenario();
+            // get the failure scenario by analysing the workload
+            WorkloadAnalyser analyser = WorkloadAnalyser.create(context.sortedFilePath);
+            List<Tuple3<Integer, Timestamp, Integer>> scenario =
+                analyser.getFailureScenario(10, 10, 5);
+            scenario.forEach(System.out::println);
             // register points for failure injection with counter manager
-            // TODO register the failure, and record the avg latency
-            context.replayCounter.register(new Listener(10, () -> System.out.println("Callback for " + 10)));
-            context.replayCounter.register(new Listener(60, () -> System.out.println("Callback for " + 60)));
+            /*scenario.forEach(point -> {
+                context.replayCounter.register(new Listener(point._1(), () -> {
+                    // TODO measure avg latency
+                    // TODO inject error
+                    LOG.info(point._1() + " " + point._2() + " " + point._3());
+                }));
+            });*/
 
             LOG.info("ANALYZE -> DEPLOY");
-            return DEPLOY;
+            return STOP;
         }
     },
 
     DEPLOY {
+
         public ExecutionGraph runStage(Context context) {
 
             // TODO deploy multiple pipelines
@@ -90,6 +98,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
     },
 
     REPLAY {
+
         public ExecutionGraph runStage(Context context) {
 
             // start generator
@@ -121,6 +130,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
         }
     },
     DELETE {
+
         public ExecutionGraph runStage(Context context) {
 
             LOG.info("DELETE -> END");
@@ -144,6 +154,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
         }
     },
     STOP {
+
         public ExecutionGraph runStage(Context context) {
 
             LOG.info("STOP");

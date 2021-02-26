@@ -2,11 +2,10 @@ package de.tu_berlin.dos.arm.khaos.workload_manager;
 
 import com.google.gson.JsonParser;
 import de.tu_berlin.dos.arm.khaos.common.utils.DateUtil;
-import de.tu_berlin.dos.arm.khaos.common.utils.FileReader;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.math3.analysis.interpolation.SplineInterpolator;
-import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.log4j.Logger;
+import scala.Tuple2;
+import scala.Tuple3;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,8 +14,11 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class WorkloadAnalyser {
 
@@ -30,18 +32,17 @@ public class WorkloadAnalyser {
      * CLASS BEHAVIOURS
      ******************************************************************************/
 
-    public static WorkloadAnalyser create(String inputFilePath, int minTimeBetweenFailures, int numOfFailures) {
+    public static WorkloadAnalyser create(String inputFilePath) {
 
         File inputFile = new File(inputFilePath);
 
         // create arrays for workload
-        List<Double> x = new ArrayList<>();
-        List<Double> y = new ArrayList<>();
+        List<Tuple3<Integer, Timestamp, Integer>> workload = new ArrayList<>();
 
         try (Scanner sc = new Scanner(new FileInputStream(inputFile), StandardCharsets.UTF_8)) {
             // initialize loop values
-            double xCounter = 0;
-            double yCounter = 0;
+            Integer secondCount = null;
+            Integer eventsCount = null;
             Timestamp head = null;
             // loop reading through file line by line
             while (sc.hasNextLine()) {
@@ -52,26 +53,25 @@ public class WorkloadAnalyser {
                 // test if it is the first iteration
                 if (head == null) {
 
-                    xCounter = 1;
-                    yCounter = 1;
+                    secondCount = 1;
+                    eventsCount = 1;
                     head = current;
                 }
                 // test if timestamps match
                 else if (head.compareTo(current) == 0) {
 
-                    yCounter++;
+                    eventsCount++;
                 }
                 // test if timestamps do not match
                 else if (head.compareTo(current) != 0) {
 
+                    workload.add(new Tuple3<>(secondCount, head, eventsCount));
+                    secondCount++;
                     head = current;
-                    x.add(xCounter);
-                    y.add(yCounter);
-                    xCounter++;
-                    yCounter = 1;
+                    eventsCount = 1;
                 }
             }
-            return new WorkloadAnalyser(minTimeBetweenFailures, numOfFailures, x, y);
+            return new WorkloadAnalyser(workload);
         }
         catch (ParseException | FileNotFoundException ex) {
 
@@ -83,52 +83,96 @@ public class WorkloadAnalyser {
      * INSTANCE STATE
      ******************************************************************************/
 
-    private final int minTimeBetweenFailures;
-    private final int numOfFailures;
-    private final List<Double> x;
-    private final List<Double> y;
+    private final List<Tuple3<Integer, Timestamp, Integer>> workload;
 
     /******************************************************************************
      * CONSTRUCTOR(S)
      ******************************************************************************/
 
-    private WorkloadAnalyser(int minTimeBetweenFailures, int numOfFailures, List<Double> x, List<Double> y) {
+    private WorkloadAnalyser(List<Tuple3<Integer, Timestamp, Integer>> workload) {
 
-        this.minTimeBetweenFailures = minTimeBetweenFailures;
-        this.numOfFailures = numOfFailures;
-        this.x = x;
-        this.y = y;
+        this.workload = workload;
     }
 
     /******************************************************************************
      * INSTANCE BEHAVIOURS
      ******************************************************************************/
 
-    public void getFailureScenario() {
+    public List<Tuple3<Integer, Timestamp, Integer>> getFailureScenario(
+            int minFailureInterval, int averagingWindowSize, int numFailures) {
 
+        System.out.println(this.workload.size());
 
-    }
+        // find list of the max and minimum points
+        List<Tuple3<Integer, Timestamp, Integer>> min = new ArrayList<>();
+        List<Tuple3<Integer, Timestamp, Integer>> max = new ArrayList<>();
+        for (int i = minFailureInterval; i < this.workload.size() - minFailureInterval; i++) {
+            int sum = 0;
+            for (int j = i - averagingWindowSize + 1; j <= i; j++) {
+                sum += this.workload.get(j)._3();
+            }
+            int average = sum / averagingWindowSize;
+            if (min.isEmpty()) min.add(this.workload.get(i));
+            else if (min.get(0)._3() == average) min.add(this.workload.get(i));
+            else if (average < min.get(0)._3()) {
+                min.clear();
+                min.add(this.workload.get(i));
+            }
+            if (max.isEmpty()) max.add(this.workload.get(i));
+            else if (max.get(0)._3() == average) max.add(this.workload.get(i));
+            else if (max.get(0)._3() < average) {
+                max.clear();
+                max.add(this.workload.get(i));
+            }
+        }
+        // test if max and min were found
+        if (min.size() == 0 || max.size() == 0) throw new IllegalStateException("Unable to find Max and/or Min intersects");
+        // find values for average throughput where failures should be injected
+        int maxVal = max.get(0)._3();
+        int minVal = min.get(0)._3();
+        int step = (int) (((maxVal - minVal) * 1.0 / (numFailures - 1)) + 0.5);
+        // create map of for all points of intersection
+        Map<Integer, List<Tuple3<Integer, Timestamp, Integer>>> intersects = new TreeMap<>();
+        intersects.put(minVal, min);
+        Stream.iterate(minVal, i -> i + step).limit(numFailures - 1).forEach(i -> intersects.putIfAbsent(i, new ArrayList<>()));
+        intersects.put(maxVal, max);
+        // find all points of intersection in workload
+        for (int i = minFailureInterval; i < this.workload.size() - minFailureInterval; i++) {
 
-    public PolynomialSplineFunction interpolate() {
+            int sum = 0;
+            for (int j = i - averagingWindowSize + 1; j <= i; j++) {
 
-        double[] xArr = ArrayUtils.toPrimitive(this.x.toArray(new Double[0]));
-        double[] yArr = ArrayUtils.toPrimitive(this.y.toArray(new Double[0]));
-
-        return new SplineInterpolator().interpolate(xArr, yArr);
-    }
-
-    public int getMaxY() {
-
-        return Collections.max(this.y).intValue();
-    }
-
-    public List<Double> getX() {
-
-        return x;
-    }
-
-    public List<Double> getY() {
-
-        return y;
+                sum += this.workload.get(j)._3();
+            }
+            int average = sum / averagingWindowSize;
+            //LOG.info(sum + " " + average);
+            if (intersects.containsKey(average)) {
+                intersects.get(average).add(this.workload.get(i));
+            }
+        }
+        // test if enough points were found at each intersect
+        intersects.forEach((k,v) -> {
+            if (v.size() == 0) throw new IllegalStateException("Unable to find intersect for " + k);
+        });
+        // randomly select combination of intersects where at least one full set exists
+        List<Tuple3<Integer, Timestamp, Integer>> scenario = new ArrayList<>();
+        Random rand = new Random();
+        StopWatch timer = new StopWatch();
+        timer.start();
+        while (true) {
+            intersects.forEach((k,v) -> scenario.add(v.get(rand.nextInt(v.size()))));
+            boolean valid = true;
+            for (int i = 0; i < scenario.size(); i++) {
+                for (int j = i+1; j < scenario.size(); j++) {
+                    if (Math.abs(scenario.get(i)._3() - scenario.get(j)._3()) < minFailureInterval) {
+                        valid = false;
+                        break;
+                    }
+                }
+            }
+            if (valid) return scenario;
+            if (timer.getTime(TimeUnit.SECONDS) > 120)
+                throw new IllegalStateException("Unable to find combination of intersects");
+        }
     }
 }

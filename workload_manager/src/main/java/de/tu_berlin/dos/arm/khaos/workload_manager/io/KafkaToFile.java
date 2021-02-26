@@ -76,7 +76,6 @@ public class KafkaToFile implements Runnable {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(output, true))) {
 
             int buffer = 0;
-            //@SuppressWarnings("resource")
             KafkaConsumer<String, String> consumer = new KafkaConsumer<>(this.props);
             consumer.subscribe(Collections.singletonList(this.topic));
 
