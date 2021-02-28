@@ -2,9 +2,9 @@ package de.tu_berlin.dos.arm.khaos.common.utils;
 
 public interface SequenceFSM<C, E extends Enum<E> & SequenceFSM<C, E>> {
 
-    E runStage(C context);
+    E runStage(C context) throws Exception;
 
-    default void run(Class<E> definition, C context) {
+    default void run(Class<E> definition, C context) throws Exception {
 
         E[] stages = definition.getEnumConstants();
         E finalState = stages[stages.length - 1];

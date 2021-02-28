@@ -14,27 +14,27 @@ public class FlinkApiClient {
 
     public FlinkApiClient(String baseUrl) {
 
-        this.baseUrl = baseUrl;
+        this.baseUrl = "http://" + baseUrl + "/";
         Retrofit retrofit =
             new Retrofit.Builder()
-                .baseUrl(baseUrl)
+                .baseUrl(this.baseUrl)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         this.service = retrofit.create(FlinkRest.class);
     }
 
-    public Job startJob(String id, String programArg, int parallelism) throws IOException {
+    public Job startJob(String jarId, String programArg, int parallelism) throws IOException {
 
-        return this.service.startJob(id, programArg, parallelism).execute().body();
+        return this.service.startJob(jarId, programArg, parallelism).execute().body();
     }
 
-    public boolean stopJob(String id) throws IOException {
+    public boolean stopJob(String jarId) throws IOException {
 
-        return this.service.stopJob(id).execute().isSuccessful();
+        return this.service.stopJob(jarId).execute().isSuccessful();
     }
 
     public TaskManagers getTaskManagers(String jobId, String vertexId) throws IOException {
 
-        return this.service.getTaskmanagers(jobId, vertexId).execute().body();
+        return this.service.getTaskManagers(jobId, vertexId).execute().body();
     }
 }

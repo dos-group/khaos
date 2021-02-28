@@ -2,6 +2,7 @@ package de.tu_berlin.dos.arm.khaos.workload_manager;
 
 import de.tu_berlin.dos.arm.khaos.common.utils.DatasetSorter;
 import de.tu_berlin.dos.arm.khaos.common.utils.SequenceFSM;
+import de.tu_berlin.dos.arm.khaos.workload_manager.Context.Experiment;
 import de.tu_berlin.dos.arm.khaos.workload_manager.ReplayCounter.Listener;
 import de.tu_berlin.dos.arm.khaos.workload_manager.io.FileToQueue;
 import de.tu_berlin.dos.arm.khaos.workload_manager.io.KafkaToFile;
@@ -10,12 +11,15 @@ import org.apache.log4j.Logger;
 import scala.Tuple3;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.StringJoiner;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
 public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
@@ -24,7 +28,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
         public ExecutionGraph runStage(Context context) {
 
             LOG.info("START -> RECORD");
-            return ANALYZE;
+            return DEPLOY;
         }
     },
     RECORD {
@@ -69,34 +73,46 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                 analyser.getFailureScenario(10, 10, 5);
             scenario.forEach(System.out::println);
             // register points for failure injection with counter manager
-            scenario.forEach(point -> {
+            /*scenario.forEach(point -> {
                 context.replayCounter.register(new Listener(point._1(), () -> {
                     // TODO measure avg latency
                     // TODO inject error
                     LOG.info(point._1() + " " + point._2() + " " + point._3());
                 }));
-            });
+            });*/
 
-            LOG.info("ANALYZE -> DEPLOY");
-            return STOP;
+            LOG.info("ANALYZE -> TRAIN");
+            return TRAIN;
         }
     },
+    TRAIN {
 
+        public ExecutionGraph runStage(Context context) throws Exception {
+
+            // TODO train anomaly detection model
+
+            LOG.info("TRAIN -> DEPLOY");
+            return DEPLOY;
+        }
+    },
     DEPLOY {
 
-        public ExecutionGraph runStage(Context context) {
+        public ExecutionGraph runStage(Context context) throws Exception {
 
-            // TODO deploy multiple pipelines
-            for (int i = 0; i < context.metricsNumOfConfigs; i++) {
+            // deploy multiple experiments
+            for (Experiment experiment : context.experiments) {
 
-
+                String jobId =
+                    context.flinkApiClient
+                        .startJob(context.jarId, experiment.getProgramArgs(), context.parallelism)
+                        .jobId;
+                experiment.setJobId(jobId);
             }
-            //context.fli
+
             LOG.info("DEPLOY -> REPLAY");
-            return REPLAY;
+            return DELETE;
         }
     },
-
     REPLAY {
 
         public ExecutionGraph runStage(Context context) {
@@ -131,7 +147,14 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
     },
     DELETE {
 
-        public ExecutionGraph runStage(Context context) {
+        public ExecutionGraph runStage(Context context) throws Exception {
+
+            Thread.sleep(1200000);
+
+            for (Experiment experiment : context.experiments) {
+
+                context.flinkApiClient.stopJob(experiment.getJobId());
+            }
 
             LOG.info("DELETE -> END");
             return MODEL;
@@ -164,7 +187,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
     private static final Logger LOG = Logger.getLogger(ExecutionGraph.class);
 
-    public static void start() {
+    public static void start() throws Exception {
 
         LOG.info("START");
         ExecutionGraph.START.run(ExecutionGraph.class, Context.get);

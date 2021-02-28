@@ -16,10 +16,14 @@ public class TaskManagers {
         public String status;
         @SerializedName("taskmanager-id")
         @Expose
-        public String taskmanagerId;
+        public String taskManagerId;
 
     }
 
+    @SerializedName("id")
+    @Expose
     public String jobId;
+    @SerializedName("taskmanagers")
+    @Expose
     public List<TaskManager> taskManagers = null;
 }

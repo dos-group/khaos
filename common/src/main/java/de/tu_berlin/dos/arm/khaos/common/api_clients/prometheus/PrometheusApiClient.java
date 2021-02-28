@@ -17,10 +17,10 @@ public class PrometheusApiClient {
 
     public PrometheusApiClient(String baseUrl) {
 
-        this.baseUrl = baseUrl;
+        this.baseUrl = "http://" + baseUrl + "/";
         this.retrofit =
             new Retrofit.Builder()
-                .baseUrl(baseUrl)
+                .baseUrl(this.baseUrl)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         this.service = retrofit.create(PrometheusRest.class);

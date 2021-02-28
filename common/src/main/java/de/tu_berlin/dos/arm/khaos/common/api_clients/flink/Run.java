@@ -1,6 +1,8 @@
 package de.tu_berlin.dos.arm.khaos.common.api_clients.flink;
 
 import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.Job;
+import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.TaskManagers;
+import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.TaskManagers.TaskManager;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -16,7 +18,7 @@ public class Run {
 
     public static void main(String[] args) throws Exception {
         /* start job example */
-        String baseUrl = "http://192.168.64.134:31924/";
+        String baseUrl = "http://130.149.249.40:32038//";
         Retrofit retrofit =
             new Retrofit.Builder()
                 .baseUrl(baseUrl)
@@ -24,11 +26,12 @@ public class Run {
                 .build();
         FlinkRest service = retrofit.create(FlinkRest.class);
 
-        String id = "a777ab71-e6cd-4b3f-9b24-40a492c7b45b_processor-1.0-SNAPSHOT.jar";
-        String programArg = "advertising,130.149.249.40:30190,ad-events,ad-events,1,30000";
+        String id = "efcc2dae-a173-40b7-a18d-07609d31967f_processor-1.0-SNAPSHOT.jar";
+        String programArg = "vehicles-test,130.149.249.40:32690,iot-vehicles-events-test,iot-vehicles-notifications-test,1,30000";
         int parallelism = 1;
 
-        List<String> jobids = new ArrayList<>();
+        String jobId = "e87033bf22c8a0c7341d48a1ce6a74d9";
+        List<String> jobIds = new ArrayList<>();
         CountDownLatch latch = new CountDownLatch(1);
         Call<Job> call = service.startJob(id, programArg, parallelism);
         call.enqueue(new Callback<>() {
@@ -39,7 +42,7 @@ public class Run {
                 System.out.println(response.body());
 
                 assert response.body() != null;
-                jobids.add(response.body().jobId);
+                jobIds.add(response.body().jobId);
                 latch.countDown();
             }
 
@@ -50,15 +53,14 @@ public class Run {
             }
         });
         latch.await();
-        System.out.println(Arrays.toString(jobids.toArray()));
+        System.out.println(Arrays.toString(jobIds.toArray()));
 
-        Thread.sleep(10000);
+        //Thread.sleep(10000);
         CountDownLatch latch1 = new CountDownLatch(1);
         /* end start job example */
 
         /* start get taskmanagers example */
-        /*
-        String baseUrl = "http://192.168.64.134:31924/";
+        /*String baseUrl = "http://130.149.249.40:32038/";
         Retrofit retrofit =
                 new Retrofit.Builder()
                         .baseUrl(baseUrl)
@@ -66,37 +68,38 @@ public class Run {
                         .build();
         FlinkRest service = retrofit.create(FlinkRest.class);
 
-        String jobId = "e53bdcd1fe6ce76923d686dacc299dcc";
-        String vertexId = "ea632d67b7d595e5b851708ae9ad79d6";
+        String jobId = "5151103503f8f7c39ec52d1c0679b764";
+        String vertexId = "0a448493b4782967b150582570326227";
 
-        List<List<Taskmanager>> taskmanagersList = new ArrayList<>();
+        List<List<TaskManager>> taskManagersList = new ArrayList<>();
         CountDownLatch latch = new CountDownLatch(1);
-        Call<GetTaskmanagers> call = service.getTaskmanagers(jobId, vertexId);
+        Call<TaskManagers> call = service.getTaskManagers(jobId, vertexId);
         call.enqueue(new Callback<>() {
 
             @Override
-            public void onResponse(Call<GetTaskmanagers> call, Response<GetTaskmanagers> response) {
+            public void onResponse(Call<TaskManagers> call, Response<TaskManagers> response) {
                 assert response.body() != null;
-                taskmanagersList.add(response.body().taskmanagers);
+                taskManagersList.add(response.body().taskManagers);
                 latch.countDown();
             }
 
             @Override
-            public void onFailure(Call<GetTaskmanagers> call, Throwable throwable) {
+            public void onFailure(Call<TaskManagers> call, Throwable throwable) {
                 throw new IllegalStateException(throwable);
             }
         });
         latch.await();
 
-        for (List<Taskmanager> taskmanagers: taskmanagersList) {
-            for (Taskmanager taskmanager: taskmanagers) {
-                System.out.println(taskmanager.taskmanagerId);
-            }
-        }
+        for (List<TaskManager> taskmanagers: taskManagersList) {
 
-        Thread.sleep(10000);
-        CountDownLatch latch1 = new CountDownLatch(1);
-        */
+            for (TaskManager taskmanager: taskmanagers) {
+                System.out.println(taskmanager.taskManagerId);
+            }
+        }*/
+
+        //Thread.sleep(10000);
+        //CountDownLatch latch1 = new CountDownLatch(1);
+
         /* end get taskmanagers example */
 
 

@@ -7,20 +7,20 @@ import retrofit2.http.*;
 
 public interface FlinkRest {
 
-    @POST("v1/jars/{id}/run")
+    @POST("v1/jars/{jarId}/run")
     Call<Job> startJob(
-        @Path("id") String id,
+        @Path("jarId") String jarId,
         @Query("programArg") String programArg,
         @Query("parallelism") int parallelism
     );
 
-    @PATCH("v1/jobs/{id}")
+    @PATCH("v1/jobs/{jarId}")
     Call<Void> stopJob(
-        @Path("id") String id
+        @Path("jarId") String jarId
     );
 
     @GET("v1/jobs/{jobId}/vertices/{vertexId}/taskmanagers")
-    Call<TaskManagers> getTaskmanagers(
+    Call<TaskManagers> getTaskManagers(
         @Path("jobId") String jobId,
         @Path("vertexId") String vertexId
     );
