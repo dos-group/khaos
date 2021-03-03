@@ -11,6 +11,7 @@ import de.tu_berlin.dos.arm.khaos.workload_manager.io.QueueToKafka;
 import org.apache.log4j.Logger;
 import scala.Tuple3;
 
+import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
@@ -73,22 +74,25 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
 
             // register points for failure injection with counter manager
-            /*
             scenario.forEach(point -> {
                 context.replayCounter.register(new Listener(point._1(), () -> {
                     // TODO measure avg latency
 
-                    // TODO inject failure
                     // inject failure in all experiments
                     for (Experiment experiment : context.experiments) {
 
-                        // TODO: get taskmanagers with flink api and experiment.getOperatorIds()
-
-                        // inject failure
-                        String podName = "flink-native-taskmanager-1-1";
-                        FailureInjector failureInjector = new FailureInjector();
                         try {
+
+                            String jobId = experiment.getJobId();
+                            String operatorId = experiment.getOperatorIds().get(0);  // TODO: randomize
+                            String podName = context.flinkApiClient.getTaskManagers(jobId, operatorId).taskManagers.get(0).taskManagerId; // TODO: randomize
+
+                            FailureInjector failureInjector = new FailureInjector();
                             failureInjector.crashFailure(podName, context.k8sNamespace);
+                            failureInjector.client.close();
+
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         } catch (ExecutionException e) {
@@ -96,14 +100,12 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                         } catch (TimeoutException e) {
                             e.printStackTrace();
                         }
-                        failureInjector.client.close();
 
                     }
 
-
                     LOG.info(point._1() + " " + point._2() + " " + point._3());
                 }));
-            }); */
+            });
 
             LOG.info("ANALYZE -> TRAIN");
             return TRAIN;
