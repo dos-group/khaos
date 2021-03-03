@@ -1,5 +1,6 @@
 package de.tu_berlin.dos.arm.khaos.common.api_clients.flink;
 
+import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.Checkpoints;
 import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.Vertices;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -59,6 +60,7 @@ public class Run {
         /* end start job example */
 
         /* start get vertices example */
+        /*
         String baseUrl = "http://192.168.64.136:32260/";
         Retrofit retrofit =
                 new Retrofit.Builder()
@@ -94,12 +96,51 @@ public class Run {
             }
         }
 
+        */
         //Thread.sleep(10000);
         //CountDownLatch latch1 = new CountDownLatch(1);
+        /* end get vertices example */
 
-        /* end get taskmanagers example */
+        /* start get checkpoint example */
+        String baseUrl = "http://192.168.64.136:32260/";
+        Retrofit retrofit =
+                new Retrofit.Builder()
+                        .baseUrl(baseUrl)
+                        .addConverterFactory(GsonConverterFactory.create())
+                        .build();
+        FlinkRest service = retrofit.create(FlinkRest.class);
+
+        String jobId = "2fbaf2a154541e0482081c7f21360a6b";
+
+        final Checkpoints.Completed[] latestCheckpoint = new Checkpoints.Completed[1];
+        CountDownLatch latch = new CountDownLatch(1);
+        Call<Checkpoints> call = service.getCheckpoints(jobId);
+        call.enqueue(new Callback<>() {
+
+            @Override
+            public void onResponse(Call<Checkpoints> call, Response<Checkpoints> response) {
+                assert response.body() != null;
+                latestCheckpoint[0] = response.body().latest.completed;
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(Call<Checkpoints> call, Throwable throwable) {
+                throw new IllegalStateException(throwable);
+            }
+        });
+        latch.await();
+
+        // last checkpoint complete status
+        System.out.println(latestCheckpoint[0].status);
+
+        // last checkpoint timestamp
+        System.out.println(latestCheckpoint[0].latestAckTimestamp);
 
 
+        //Thread.sleep(10000);
+        //CountDownLatch latch1 = new CountDownLatch(1);
+        /* end get checkpoint example */
 
 
 

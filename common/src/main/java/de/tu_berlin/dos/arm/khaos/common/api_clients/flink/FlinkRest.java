@@ -1,5 +1,6 @@
 package de.tu_berlin.dos.arm.khaos.common.api_clients.flink;
 
+import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.Checkpoints;
 import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.TaskManagers;
 import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.Job;
 import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.Vertices;
@@ -32,4 +33,10 @@ public interface FlinkRest {
     Call<Vertices> getVertices(
             @Path("jobId") String jobId
     );
+
+    @GET("v1/jobs/{jobId}/checkpoints/")
+    Call<Checkpoints> getCheckpoints(
+            @Path("jobId") String jobId
+    );
+
 }
