@@ -1,8 +1,6 @@
 package de.tu_berlin.dos.arm.khaos.common.api_clients.flink;
 
-import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.Job;
-import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.TaskManagers;
-import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.TaskManagers.TaskManager;
+import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.Vertices;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -10,7 +8,6 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
@@ -18,6 +15,7 @@ public class Run {
 
     public static void main(String[] args) throws Exception {
         /* start job example */
+        /*
         String baseUrl = "http://130.149.249.40:32038//";
         Retrofit retrofit =
             new Retrofit.Builder()
@@ -57,7 +55,54 @@ public class Run {
 
         //Thread.sleep(10000);
         CountDownLatch latch1 = new CountDownLatch(1);
+        */
         /* end start job example */
+
+        /* start get vertices example */
+        String baseUrl = "http://192.168.64.136:32260/";
+        Retrofit retrofit =
+                new Retrofit.Builder()
+                        .baseUrl(baseUrl)
+                        .addConverterFactory(GsonConverterFactory.create())
+                        .build();
+        FlinkRest service = retrofit.create(FlinkRest.class);
+
+        String jobId = "2fbaf2a154541e0482081c7f21360a6b";
+
+        List<List<Vertices.Node>> operatorIds = new ArrayList<>();
+        CountDownLatch latch = new CountDownLatch(1);
+        Call<Vertices> call = service.getVertices(jobId);
+        call.enqueue(new Callback<>() {
+
+            @Override
+            public void onResponse(Call<Vertices> call, Response<Vertices> response) {
+                assert response.body() != null;
+                operatorIds.add(response.body().plan.nodes);
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(Call<Vertices> call, Throwable throwable) {
+                throw new IllegalStateException(throwable);
+            }
+        });
+        latch.await();
+
+        for (List<Vertices.Node> nodes: operatorIds) {
+            for (Vertices.Node node : nodes) {
+                System.out.println(node.id);
+            }
+        }
+
+        //Thread.sleep(10000);
+        //CountDownLatch latch1 = new CountDownLatch(1);
+
+        /* end get taskmanagers example */
+
+
+
+
+
 
         /* start get taskmanagers example */
         /*String baseUrl = "http://130.149.249.40:32038/";
