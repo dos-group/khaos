@@ -72,11 +72,17 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
             List<Tuple3<Integer, Timestamp, Integer>> scenario =
                 analyser.getFailureScenario(10, 10, 5);
             scenario.forEach(System.out::println);
+
+
+            //FailureInjector.crashFailure("component=taskmanager", "default", 1);
+
             // register points for failure injection with counter manager
             /*scenario.forEach(point -> {
                 context.replayCounter.register(new Listener(point._1(), () -> {
                     // TODO measure avg latency
                     // TODO inject error
+
+
                     LOG.info(point._1() + " " + point._2() + " " + point._3());
                 }));
             });*/

@@ -1,4 +1,4 @@
-package de.tu_berlin.dos.arm.khaos.failure_injector;
+package de.tu_berlin.dos.arm.khaos.workload_manager;
 
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.Config;

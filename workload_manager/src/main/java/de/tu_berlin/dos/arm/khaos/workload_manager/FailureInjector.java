@@ -1,4 +1,4 @@
-package de.tu_berlin.dos.arm.khaos.failure_injector;
+package de.tu_berlin.dos.arm.khaos.workload_manager;
 
 import de.tu_berlin.dos.arm.khaos.common.utils.FileReader;
 import io.fabric8.kubernetes.api.model.PodList;
@@ -13,9 +13,9 @@ import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-public class Run {
+public class FailureInjector {
 
-    private static final Logger logger = LoggerFactory.getLogger(Run.class);
+    private static final Logger logger = LoggerFactory.getLogger(FailureInjector.class);
 
     public static void crashFailure(String targetLabel, String namespace, int targetCount) throws InterruptedException, ExecutionException, TimeoutException {
 
@@ -50,10 +50,10 @@ public class Run {
 
     public static void main(String[] args) throws Exception {
 
-        Properties failureProps = FileReader.GET.read("failure_injector.properties", Properties.class);
-        final String namespace = failureProps.getProperty("kubernetes.namespace");
-        final String targetLabel = failureProps.getProperty("target.label");
-        final int targetCount = Integer.parseInt(failureProps.getProperty("target.count"));
+        final String namespace = "default";
+        final String targetLabel = "component=taskmanager";
+        final int targetCount = 1;
+
 
         // inject crash failure
         crashFailure(targetLabel, namespace, targetCount);
