@@ -1,5 +1,6 @@
 package de.tu_berlin.dos.arm.khaos.workload_manager;
 
+import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.Vertices;
 import de.tu_berlin.dos.arm.khaos.common.utils.DatasetSorter;
 import de.tu_berlin.dos.arm.khaos.common.utils.SequenceFSM;
 import de.tu_berlin.dos.arm.khaos.workload_manager.Context.Experiment;
@@ -25,7 +26,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
         public ExecutionGraph runStage(Context context) {
 
             LOG.info("START -> RECORD");
-            return DEPLOY;
+            return RECORD;
         }
     },
     RECORD {
@@ -72,6 +73,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
 
             // register points for failure injection with counter manager
+            /*
             scenario.forEach(point -> {
                 context.replayCounter.register(new Listener(point._1(), () -> {
                     // TODO measure avg latency
@@ -79,6 +81,8 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                     // TODO inject failure
                     // inject failure in all experiments
                     for (Experiment experiment : context.experiments) {
+
+                        // TODO: get taskmanagers with flink api and experiment.getOperatorIds()
 
                         // inject failure
                         String podName = "flink-native-taskmanager-1-1";
@@ -99,7 +103,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
                     LOG.info(point._1() + " " + point._2() + " " + point._3());
                 }));
-            });
+            }); */
 
             LOG.info("ANALYZE -> TRAIN");
             return TRAIN;
@@ -128,9 +132,20 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                         .jobId;
                 experiment.setJobId(jobId);
 
+                // store list of operator ids
+                List<Vertices.Node> vertices =
+                    context.flinkApiClient
+                        .getVertices(jobId).plan.nodes;
+                ArrayList<String> operatorIds = new ArrayList<String>();
+                for (Vertices.Node vertex: vertices) {
+                    operatorIds.add(vertex.id);
+                }
+                experiment.setOperatorIds(operatorIds);
+
             }
 
             LOG.info("DEPLOY -> REPLAY");
+
             return DELETE;
         }
     },

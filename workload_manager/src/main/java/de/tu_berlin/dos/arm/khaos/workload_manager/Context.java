@@ -27,6 +27,7 @@ public enum Context { get;
         public final int config;
 
         private String jobId;
+        private ArrayList<String> operatorIds;
 
         private Experiment(
                 String jobName, String brokerList, String consumerTopic,
@@ -48,6 +49,14 @@ public enum Context { get;
         public void setJobId(String jobId) {
 
             this.jobId = jobId;
+        }
+
+        public void setOperatorIds(ArrayList<String> operatorIds) {
+            this.operatorIds = operatorIds;
+        }
+
+        public ArrayList<String> getOperatorIds() {
+            return operatorIds;
         }
 
         public String getProgramArgs() {
@@ -73,6 +82,7 @@ public enum Context { get;
                 ", jobId='" + jobId + '\'' +
                 '}';
         }
+
     }
 
     /******************************************************************************
