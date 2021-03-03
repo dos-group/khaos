@@ -18,7 +18,7 @@ import java.util.concurrent.TimeoutException;
 public class FailureInjector {
 
     private final OkHttpClient okHttpClient;
-    private final KubernetesClient client;
+    public final KubernetesClient client;
 
     public FailureInjector() {
         Config config = new ConfigBuilder().build();

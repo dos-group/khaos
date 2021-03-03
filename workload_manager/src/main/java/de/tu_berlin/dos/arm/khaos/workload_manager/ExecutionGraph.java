@@ -14,10 +14,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
@@ -74,18 +71,35 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
             scenario.forEach(System.out::println);
 
 
-            //FailureInjector.crashFailure("component=taskmanager", "default", 1);
-
             // register points for failure injection with counter manager
-            /*scenario.forEach(point -> {
+            scenario.forEach(point -> {
                 context.replayCounter.register(new Listener(point._1(), () -> {
                     // TODO measure avg latency
-                    // TODO inject error
+
+                    // TODO inject failure
+                    // inject failure in all experiments
+                    for (Experiment experiment : context.experiments) {
+
+                        // inject failure
+                        String podName = "flink-native-taskmanager-1-1";
+                        FailureInjector failureInjector = new FailureInjector();
+                        try {
+                            failureInjector.crashFailure(podName, context.k8sNamespace);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        } catch (ExecutionException e) {
+                            e.printStackTrace();
+                        } catch (TimeoutException e) {
+                            e.printStackTrace();
+                        }
+                        failureInjector.client.close();
+
+                    }
 
 
                     LOG.info(point._1() + " " + point._2() + " " + point._3());
                 }));
-            });*/
+            });
 
             LOG.info("ANALYZE -> TRAIN");
             return TRAIN;
@@ -113,6 +127,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                         .startJob(context.jarId, experiment.getProgramArgs(), context.parallelism)
                         .jobId;
                 experiment.setJobId(jobId);
+
             }
 
             LOG.info("DEPLOY -> REPLAY");
