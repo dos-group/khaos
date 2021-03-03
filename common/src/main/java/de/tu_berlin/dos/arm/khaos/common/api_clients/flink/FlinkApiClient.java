@@ -1,7 +1,9 @@
 package de.tu_berlin.dos.arm.khaos.common.api_clients.flink;
 
+import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.Checkpoints;
 import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.Job;
 import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.TaskManagers;
+import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.Vertices;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -36,5 +38,15 @@ public class FlinkApiClient {
     public TaskManagers getTaskManagers(String jobId, String vertexId) throws IOException {
 
         return this.service.getTaskManagers(jobId, vertexId).execute().body();
+    }
+
+    public Vertices getVertices(String jobId) throws IOException {
+
+        return this.service.getVertices(jobId).execute().body();
+    }
+
+    public Checkpoints getCheckpoints(String jobId) throws IOException {
+
+        return this.service.getCheckpoints(jobId).execute().body();
     }
 }
