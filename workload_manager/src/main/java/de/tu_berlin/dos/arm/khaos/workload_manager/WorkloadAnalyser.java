@@ -7,9 +7,7 @@ import org.apache.log4j.Logger;
 import scala.Tuple2;
 import scala.Tuple3;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.text.ParseException;
@@ -97,6 +95,19 @@ public class WorkloadAnalyser {
     /******************************************************************************
      * INSTANCE BEHAVIOURS
      ******************************************************************************/
+
+    public void printWorkload(File output) throws IOException {
+
+        FileWriter fw = new FileWriter(output);
+
+        fw.write("second|throughput");
+        for (int i = 1; i <= this.workload.size(); i++) {
+
+            fw.write(this.workload.get(i)._1() + "|" + this.workload.get(i)._3());
+        }
+
+        fw.close();
+    }
 
     public List<Tuple3<Integer, Timestamp, Integer>> getFailureScenario(
             int minFailureInterval, int averagingWindowSize, int numFailures) {

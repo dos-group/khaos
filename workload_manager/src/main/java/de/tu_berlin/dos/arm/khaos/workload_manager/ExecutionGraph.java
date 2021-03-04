@@ -11,6 +11,7 @@ import de.tu_berlin.dos.arm.khaos.workload_manager.io.QueueToKafka;
 import org.apache.log4j.Logger;
 import scala.Tuple3;
 
+import java.io.File;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -64,14 +65,14 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
     },
     ANALYZE {
 
-        public ExecutionGraph runStage(Context context) {
+        public ExecutionGraph runStage(Context context) throws Exception {
 
             // get the failure scenario by analysing the workload
             WorkloadAnalyser analyser = WorkloadAnalyser.create(context.sortedFilePath);
             List<Tuple3<Integer, Timestamp, Integer>> scenario =
                 analyser.getFailureScenario(10, 10, 5);
             scenario.forEach(System.out::println);
-
+            analyser.printWorkload(new File("workload.csv"));
 
             // register points for failure injection with counter manager
             scenario.forEach(point -> {
@@ -90,15 +91,10 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                             FailureInjector failureInjector = new FailureInjector();
                             failureInjector.crashFailure(podName, context.k8sNamespace);
                             failureInjector.client.close();
+                        }
+                        catch (IOException | InterruptedException | ExecutionException | TimeoutException e) {
 
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        } catch (ExecutionException e) {
-                            e.printStackTrace();
-                        } catch (TimeoutException e) {
-                            e.printStackTrace();
+                            LOG.error(e);
                         }
 
                     }

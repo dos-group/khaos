@@ -52,10 +52,12 @@ public enum Context { get;
         }
 
         public void setOperatorIds(ArrayList<String> operatorIds) {
+
             this.operatorIds = operatorIds;
         }
 
         public ArrayList<String> getOperatorIds() {
+
             return operatorIds;
         }
 
@@ -80,9 +82,9 @@ public enum Context { get;
                 ", partitions=" + partitions +
                 ", config=" + config +
                 ", jobId='" + jobId + '\'' +
+                ", operatorIds=" + operatorIds +
                 '}';
         }
-
     }
 
     /******************************************************************************
@@ -129,6 +131,7 @@ public enum Context { get;
 
     public final ReplayCounter replayCounter;
     public final FlinkApiClient flinkApiClient;
+    public final FailureInjector failureInjector;
     public final PrometheusApiClient prometheusApiClient;
 
     /******************************************************************************
@@ -176,6 +179,7 @@ public enum Context { get;
             // create global context objects
             this.replayCounter = new ReplayCounter();
             this.flinkApiClient = new FlinkApiClient(this.jobManagerUrl);
+            this.failureInjector = new FailureInjector();
             this.prometheusApiClient = new PrometheusApiClient(this.prometheusUrl);
 
             // instantiate experiments list
