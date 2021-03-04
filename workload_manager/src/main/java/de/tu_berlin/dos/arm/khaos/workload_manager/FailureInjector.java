@@ -1,10 +1,7 @@
-package de.tu_berlin.dos.arm.khaos.failure_injector;
+package de.tu_berlin.dos.arm.khaos.workload_manager;
 
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.ConfigBuilder;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.*;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
 import io.fabric8.kubernetes.client.utils.HttpClientUtils;
@@ -18,22 +15,15 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class ExecuteCommandOnPod implements AutoCloseable {
+public class FailureInjector {
 
     private final OkHttpClient okHttpClient;
-    private final KubernetesClient client;
+    public final KubernetesClient client;
 
-    public ExecuteCommandOnPod() {
+    public FailureInjector() {
         Config config = new ConfigBuilder().build();
         this.okHttpClient = HttpClientUtils.createHttpClient(config);
         this.client = new DefaultKubernetesClient(okHttpClient, config);
-    }
-
-    @Override
-    public void close() {
-        okHttpClient.dispatcher().executorService().shutdown();
-        okHttpClient.connectionPool().evictAll();
-        client.close();
     }
 
     public String execCommandOnPod(String podName, String namespace, String... cmd) throws InterruptedException, ExecutionException, TimeoutException {
@@ -45,7 +35,6 @@ public class ExecuteCommandOnPod implements AutoCloseable {
         try (ExecWatch execWatch = execCmd(pod, data, cmd)) {
             return data.get(10, TimeUnit.SECONDS);
         }
-
     }
 
     private ExecWatch execCmd(Pod pod, CompletableFuture<String> data, String... command) {
@@ -55,35 +44,58 @@ public class ExecuteCommandOnPod implements AutoCloseable {
                 .withName(pod.getMetadata().getName())
                 .writingOutput(baos)
                 .writingError(baos)
-                .usingListener(new SimpleListener(data, baos))
+                .usingListener(new Listener(data, baos))
                 .exec(command);
     }
 
-    static class SimpleListener implements ExecListener {
+    static class Listener implements ExecListener {
 
         private CompletableFuture<String> data;
         private ByteArrayOutputStream baos;
 
-        public SimpleListener(CompletableFuture<String> data, ByteArrayOutputStream baos) {
+        public Listener(CompletableFuture<String> data, ByteArrayOutputStream baos) {
             this.data = data;
             this.baos = baos;
         }
 
         @Override
         public void onOpen(Response response) {
-            System.out.println("Reading data... " + response.message());
+            //System.out.println("Reading data... " + response.message());
         }
 
         @Override
         public void onFailure(Throwable t, Response response) {
-            System.err.println(t.getMessage() + " " + response.message());
+            //System.err.println(t.getMessage() + " " + response.message());
             data.completeExceptionally(t);
         }
 
         @Override
         public void onClose(int code, String reason) {
-            System.out.println("Exit with: " + code + " and with reason: " + reason);
+            // System.out.println("Exit with: " + code + " and with reason: " + reason);
             data.complete(baos.toString());
         }
+    }
+
+    public void crashFailure(String podName, String namespace) throws InterruptedException, ExecutionException, TimeoutException {
+
+        // kill container
+        execCommandOnPod(podName, namespace, "sh", "-c", "kill 1");
+
+        // delete pod
+        // client.pods().inNamespace(namespace).withName(podName).delete();
+
+    }
+
+    public static void main(String[] args) throws Exception {
+
+        final String namespace = "default";
+        final String podName = "flink-native-taskmanager-1-11";
+
+        // inject crash failure
+        FailureInjector failureInjector = new FailureInjector();
+        failureInjector.crashFailure(podName, namespace);
+
+        failureInjector.client.close();
+
     }
 }
