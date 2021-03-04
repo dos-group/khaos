@@ -149,7 +149,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
         public ExecutionGraph runStage(Context context) throws Exception {
 
-            Thread.sleep(1200000);
+            Thread.sleep(120000);
 
             for (Experiment experiment : context.experiments) {
 
