@@ -28,7 +28,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
         public ExecutionGraph runStage(Context context) {
 
             LOG.info("START -> RECORD");
-            return RECORD;
+            return ANALYZE;
         }
     },
     RECORD {
@@ -70,8 +70,9 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
             // get the failure scenario by analysing the workload
             WorkloadAnalyser analyser = WorkloadAnalyser.create(context.sortedFilePath);
             List<Tuple3<Integer, Timestamp, Integer>> scenario =
-                analyser.getFailureScenario(10, 10, 5);
+                analyser.getFailureScenario(context.minFailureInterval, context.averagingWindowSize, context.numFailures);
             scenario.forEach(System.out::println);
+            System.out.println(scenario.size());
             analyser.printWorkload(new File("workload.csv"));
 
             // register points for failure injection with counter manager
@@ -104,7 +105,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
             });
 
             LOG.info("ANALYZE -> TRAIN");
-            return TRAIN;
+            return STOP;
         }
     },
     TRAIN {
@@ -134,17 +135,15 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                 List<Vertices.Node> vertices =
                     context.flinkApiClient
                         .getVertices(jobId).plan.nodes;
-                ArrayList<String> operatorIds = new ArrayList<String>();
+                ArrayList<String> operatorIds = new ArrayList<>();
                 for (Vertices.Node vertex: vertices) {
                     operatorIds.add(vertex.id);
                 }
                 experiment.setOperatorIds(operatorIds);
-
             }
 
             LOG.info("DEPLOY -> REPLAY");
-
-            return DELETE;
+            return REPLAY;
         }
     },
     REPLAY {
@@ -176,7 +175,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                 e.printStackTrace();
             }
 
-            return STOP;
+            return DELETE;
         }
     },
     DELETE {

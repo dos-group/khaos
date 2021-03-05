@@ -156,11 +156,20 @@ public class WorkloadAnalyser {
                 sum += this.workload.get(j)._3();
             }
             int average = sum / averagingWindowSize;
-            //LOG.info(sum + " " + average);
-            if (intersects.containsKey(average)) {
-                intersects.get(average).add(this.workload.get(i));
+            // find range of values which is 1% of average
+            int onePercent = (int) ((this.workload.size() / 100) + 0.5);
+            List<Integer> targetRange =
+                IntStream
+                    .rangeClosed((average - onePercent) / 2 , (average + onePercent) / 2)
+                    .boxed()
+                    .collect(Collectors.toList());
+            // find all intersects that are in 1% range of target
+            for (int valueInRange : targetRange) {
+                if (intersects.containsKey(valueInRange))
+                    intersects.get(valueInRange).add(this.workload.get(i));
             }
         }
+        System.out.println(intersects.size());
         // test if enough points were found at each intersect
         intersects.forEach((k,v) -> {
             if (v.size() == 0) throw new IllegalStateException("Unable to find intersect for " + k);
