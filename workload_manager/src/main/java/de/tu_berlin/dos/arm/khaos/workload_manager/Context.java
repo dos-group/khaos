@@ -5,6 +5,7 @@ import de.tu_berlin.dos.arm.khaos.common.api_clients.prometheus.PrometheusApiCli
 import de.tu_berlin.dos.arm.khaos.common.utils.FileReader;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.log4j.Logger;
+import scala.Tuple3;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,25 +20,22 @@ public enum Context { get;
 
     public static class Experiment {
 
+        public static String brokerList;
+        public static String consumerTopic;
+        public static String producerTopic;
+        public static int partitions;
+
         public final String jobName;
-        public final String brokerList;
-        public final String consumerTopic;
-        public final String producerTopic;
-        public final int partitions;
         public final int config;
+        // second, throughput, lastCheckpoint,
+        //public final List<Tuple3<Integer, Long, Integer, >> metrics = new ArrayList<>();
 
         private String jobId;
         private ArrayList<String> operatorIds;
 
-        private Experiment(
-                String jobName, String brokerList, String consumerTopic,
-                String producerTopic, int partitions, int config) {
+        private Experiment(String jobName, int config) {
 
             this.jobName = jobName;
-            this.brokerList = brokerList;
-            this.consumerTopic = consumerTopic;
-            this.producerTopic = producerTopic;
-            this.partitions = partitions;
             this.config = config;
         }
 
@@ -65,10 +63,10 @@ public enum Context { get;
 
             return String.join(",",
                 this.jobName,
-                this.brokerList,
-                this.consumerTopic,
-                this.producerTopic,
-                this.partitions + "",
+                Experiment.brokerList,
+                Experiment.consumerTopic,
+                Experiment.producerTopic,
+                Experiment.partitions + "",
                 this.config + "");
         }
 
@@ -76,10 +74,10 @@ public enum Context { get;
         public String toString() {
             return "Experiment{" +
                 "jobName='" + jobName + '\'' +
-                ", brokerList='" + brokerList + '\'' +
-                ", consumerTopic='" + consumerTopic + '\'' +
-                ", producerTopic='" + producerTopic + '\'' +
-                ", partitions=" + partitions +
+                ", brokerList='" + Experiment.brokerList + '\'' +
+                ", consumerTopic='" + Experiment.consumerTopic + '\'' +
+                ", producerTopic='" + Experiment.producerTopic + '\'' +
+                ", partitions=" + Experiment.partitions +
                 ", config=" + config +
                 ", jobId='" + jobId + '\'' +
                 ", operatorIds=" + operatorIds +
@@ -182,17 +180,18 @@ public enum Context { get;
             this.failureInjector = new FailureInjector();
             this.prometheusApiClient = new PrometheusApiClient(this.prometheusUrl);
 
+            // set global experiment variables
+            Experiment.brokerList = this.brokerList;
+            Experiment.consumerTopic = this.consumerTopic + "-" + RandomStringUtils.random(10, true, true);
+            Experiment.producerTopic = this.producerTopic + "-" + RandomStringUtils.random(10, true, true);
+            Experiment.partitions = this.partitions;
+
             // instantiate experiments list
             this.experiments = new ArrayList<>();
             int step = (int) (((this.maxConfigVal - this.minConfigVal) * 1.0 / (this.numOfConfigs - 1)) + 0.5);
-            String groupConsumerTopic = this.consumerTopic + "-" + RandomStringUtils.random(10, true, true);
-            String groupProducerTopic = this.producerTopic + "-" + RandomStringUtils.random(10, true, true);
             Stream.iterate(this.minConfigVal, i -> i + step).limit(this.numOfConfigs).forEach(config -> {
                 String uniqueJobName = this.jobName + "-" + RandomStringUtils.random(10, true, true);
-                this.experiments.add(
-                    new Experiment(
-                        uniqueJobName, this.brokerList, groupConsumerTopic,
-                        groupProducerTopic, this.partitions, config));
+                this.experiments.add(new Experiment(uniqueJobName, config));
             });
         }
         catch (Exception e) {

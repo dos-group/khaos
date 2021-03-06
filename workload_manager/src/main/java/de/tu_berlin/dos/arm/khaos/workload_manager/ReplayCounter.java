@@ -1,10 +1,14 @@
 package de.tu_berlin.dos.arm.khaos.workload_manager;
 
 import org.apache.log4j.Logger;
+import scala.Tuple2;
+import scala.Tuple3;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 public class ReplayCounter {
 
@@ -14,23 +18,25 @@ public class ReplayCounter {
 
     public static class Listener {
 
-        private final int value;
-        private final Runnable callback;
+        private final int second;
+        private final int throughput;
+        private final Consumer<Integer> callback;
 
-        public Listener(int value, Runnable callback) {
+        public Listener(Tuple2<Integer, Integer> point, Consumer<Integer> callback) {
 
-            this.value = value;
+            this.second = point._1();
+            this.throughput = point._2();
             this.callback = callback;
         }
 
-        public void update(int value) {
+        public void update() {
 
-            this.callback.run();
+            this.callback.accept(this.throughput);
         }
 
-        public int getValue() {
+        public int getSecond() {
 
-            return this.value;
+            return this.second;
         }
     }
 
@@ -80,7 +86,7 @@ public class ReplayCounter {
         int newVal = this.counter.incrementAndGet();
         for (Listener listener : this.listeners) {
 
-            if (newVal == listener.getValue()) listener.update(newVal);
+            if (newVal == listener.getSecond()) listener.update();
         }
 
     }

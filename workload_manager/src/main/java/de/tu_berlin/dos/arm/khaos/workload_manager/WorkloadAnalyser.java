@@ -2,6 +2,7 @@ package de.tu_berlin.dos.arm.khaos.workload_manager;
 
 import com.google.gson.JsonParser;
 import de.tu_berlin.dos.arm.khaos.common.utils.DateUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.log4j.Logger;
 import scala.Tuple2;
@@ -30,12 +31,41 @@ public class WorkloadAnalyser {
      * CLASS BEHAVIOURS
      ******************************************************************************/
 
-    public static WorkloadAnalyser create(String inputFilePath) {
+    public static WorkloadAnalyser createFromWorkloadFile(String inputFilePath) {
 
         File inputFile = new File(inputFilePath);
 
         // create arrays for workload
-        List<Tuple3<Integer, Timestamp, Integer>> workload = new ArrayList<>();
+        List<Tuple2<Integer, Integer>> workload = new ArrayList<>();
+
+        boolean isFirst = true;
+        try (Scanner sc = new Scanner(new FileInputStream(inputFile), StandardCharsets.UTF_8)) {
+
+            while (sc.hasNextLine()) {
+
+                String line = sc.nextLine();
+                if (isFirst) {
+                    isFirst = false;
+                    continue;
+                }
+                String[] split = StringUtils.split(line,"|");
+                workload.add(new Tuple2<>(Integer.parseInt(split[0]), Integer.parseInt(split[1])));
+            }
+
+            return new WorkloadAnalyser(workload);
+        }
+        catch (FileNotFoundException e) {
+
+            throw new IllegalStateException(e.getMessage());
+        }
+    }
+
+    public static WorkloadAnalyser createFromEventsFile(String inputFilePath) {
+
+        File inputFile = new File(inputFilePath);
+
+        // create arrays for workload
+        List<Tuple2<Integer, Integer>> workload = new ArrayList<>();
 
         try (Scanner sc = new Scanner(new FileInputStream(inputFile), StandardCharsets.UTF_8)) {
             // initialize loop values
@@ -63,7 +93,7 @@ public class WorkloadAnalyser {
                 // test if timestamps do not match
                 else if (head.compareTo(current) != 0) {
 
-                    workload.add(new Tuple3<>(secondCount, head, eventsCount));
+                    workload.add(new Tuple2<>(secondCount, eventsCount));
                     secondCount++;
                     head = current;
                     eventsCount = 1;
@@ -81,13 +111,13 @@ public class WorkloadAnalyser {
      * INSTANCE STATE
      ******************************************************************************/
 
-    private final List<Tuple3<Integer, Timestamp, Integer>> workload;
+    private final List<Tuple2<Integer, Integer>> workload;
 
     /******************************************************************************
      * CONSTRUCTOR(S)
      ******************************************************************************/
 
-    private WorkloadAnalyser(List<Tuple3<Integer, Timestamp, Integer>> workload) {
+    private WorkloadAnalyser(List<Tuple2<Integer, Integer>> workload) {
 
         this.workload = workload;
     }
@@ -103,35 +133,36 @@ public class WorkloadAnalyser {
         fw.write("second|throughput");
         for (int i = 1; i <= this.workload.size(); i++) {
 
-            fw.write(this.workload.get(i)._1() + "|" + this.workload.get(i)._3());
+            fw.write(this.workload.get(i)._1() + "|" + this.workload.get(i)._2() + "\n");
         }
 
         fw.close();
     }
 
-    public List<Tuple3<Integer, Timestamp, Integer>> getFailureScenario(
+    public List<Tuple2<Integer, Integer>> getFailureScenario(
             int minFailureInterval, int averagingWindowSize, int numFailures) {
 
-        System.out.println(this.workload.size());
+        LOG.info(this.workload.size());
 
         // find list of the max and minimum points
-        List<Tuple3<Integer, Timestamp, Integer>> min = new ArrayList<>();
-        List<Tuple3<Integer, Timestamp, Integer>> max = new ArrayList<>();
+        List<Tuple2<Integer, Integer>> min = new ArrayList<>();
+        List<Tuple2<Integer, Integer>> max = new ArrayList<>();
+        System.out.println(workload.size());
         for (int i = minFailureInterval; i < this.workload.size() - minFailureInterval; i++) {
             int sum = 0;
             for (int j = i - averagingWindowSize + 1; j <= i; j++) {
-                sum += this.workload.get(j)._3();
+                sum += this.workload.get(j)._2();
             }
             int average = sum / averagingWindowSize;
             if (min.isEmpty()) min.add(this.workload.get(i));
-            else if (min.get(0)._3() == average) min.add(this.workload.get(i));
-            else if (average < min.get(0)._3()) {
+            else if (min.get(0)._2() == average) min.add(this.workload.get(i));
+            else if (average < min.get(0)._2()) {
                 min.clear();
                 min.add(this.workload.get(i));
             }
             if (max.isEmpty()) max.add(this.workload.get(i));
-            else if (max.get(0)._3() == average) max.add(this.workload.get(i));
-            else if (max.get(0)._3() < average) {
+            else if (max.get(0)._2() == average) max.add(this.workload.get(i));
+            else if (max.get(0)._2() < average) {
                 max.clear();
                 max.add(this.workload.get(i));
             }
@@ -139,11 +170,11 @@ public class WorkloadAnalyser {
         // test if max and min were found
         if (min.size() == 0 || max.size() == 0) throw new IllegalStateException("Unable to find Max and/or Min intersects");
         // find values for average throughput where failures should be injected
-        int maxVal = max.get(0)._3();
-        int minVal = min.get(0)._3();
+        int maxVal = max.get(0)._2();
+        int minVal = min.get(0)._2();
         int step = (int) (((maxVal - minVal) * 1.0 / (numFailures - 1)) + 0.5);
         // create map of for all points of intersection
-        Map<Integer, List<Tuple3<Integer, Timestamp, Integer>>> intersects = new TreeMap<>();
+        Map<Integer, List<Tuple2<Integer, Integer>>> intersects = new TreeMap<>();
         intersects.put(minVal, min);
         Stream.iterate(minVal, i -> i + step).limit(numFailures - 1).forEach(i -> intersects.putIfAbsent(i, new ArrayList<>()));
         intersects.put(maxVal, max);
@@ -153,14 +184,14 @@ public class WorkloadAnalyser {
             int sum = 0;
             for (int j = i - averagingWindowSize + 1; j <= i; j++) {
 
-                sum += this.workload.get(j)._3();
+                sum += this.workload.get(j)._2();
             }
             int average = sum / averagingWindowSize;
             // find range of values which is 1% of average
             int onePercent = (int) ((this.workload.size() / 100) + 0.5);
             List<Integer> targetRange =
                 IntStream
-                    .rangeClosed((average - onePercent) / 2 , (average + onePercent) / 2)
+                    .rangeClosed(average - onePercent , average + onePercent)
                     .boxed()
                     .collect(Collectors.toList());
             // find all intersects that are in 1% range of target
@@ -169,13 +200,13 @@ public class WorkloadAnalyser {
                     intersects.get(valueInRange).add(this.workload.get(i));
             }
         }
-        System.out.println(intersects.size());
+        LOG.info(intersects.size());
         // test if enough points were found at each intersect
         intersects.forEach((k,v) -> {
             if (v.size() == 0) throw new IllegalStateException("Unable to find intersect for " + k);
         });
         // randomly select combination of intersects where at least one full set exists
-        List<Tuple3<Integer, Timestamp, Integer>> scenario = new ArrayList<>();
+        List<Tuple2<Integer, Integer>> scenario = new ArrayList<>();
         Random rand = new Random();
         StopWatch timer = new StopWatch();
         timer.start();
@@ -184,7 +215,7 @@ public class WorkloadAnalyser {
             boolean valid = true;
             for (int i = 0; i < scenario.size(); i++) {
                 for (int j = i+1; j < scenario.size(); j++) {
-                    if (Math.abs(scenario.get(i)._3() - scenario.get(j)._3()) < minFailureInterval) {
+                    if (Math.abs(scenario.get(i)._2() - scenario.get(j)._2()) < minFailureInterval) {
                         valid = false;
                         break;
                     }

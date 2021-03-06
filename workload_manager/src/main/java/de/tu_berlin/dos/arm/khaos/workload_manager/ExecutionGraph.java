@@ -1,6 +1,8 @@
 package de.tu_berlin.dos.arm.khaos.workload_manager;
 
 import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.Vertices;
+import de.tu_berlin.dos.arm.khaos.common.api_clients.prometheus.responses.Matrix;
+import de.tu_berlin.dos.arm.khaos.common.api_clients.prometheus.responses.Vector;
 import de.tu_berlin.dos.arm.khaos.common.utils.DatasetSorter;
 import de.tu_berlin.dos.arm.khaos.common.utils.SequenceFSM;
 import de.tu_berlin.dos.arm.khaos.workload_manager.Context.Experiment;
@@ -9,11 +11,14 @@ import de.tu_berlin.dos.arm.khaos.workload_manager.io.FileToQueue;
 import de.tu_berlin.dos.arm.khaos.workload_manager.io.KafkaToFile;
 import de.tu_berlin.dos.arm.khaos.workload_manager.io.QueueToKafka;
 import org.apache.log4j.Logger;
+import scala.Tuple2;
 import scala.Tuple3;
 
 import java.io.File;
 import java.io.IOException;
 import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
@@ -68,30 +73,65 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
         public ExecutionGraph runStage(Context context) throws Exception {
 
             // get the failure scenario by analysing the workload
-            WorkloadAnalyser analyser = WorkloadAnalyser.create(context.sortedFilePath);
-            List<Tuple3<Integer, Timestamp, Integer>> scenario =
-                analyser.getFailureScenario(context.minFailureInterval, context.averagingWindowSize, context.numFailures);
+            //WorkloadAnalyser analyser = WorkloadAnalyser.createFromEventsFile(context.sortedFilePath);
+            //analyser.printWorkload(new File("workload.csv"));
+
+            WorkloadAnalyser analyser = WorkloadAnalyser.createFromWorkloadFile("workload.csv");
+            List<Tuple2<Integer, Integer>> scenario =
+                analyser.getFailureScenario(
+                    context.minFailureInterval,
+                    context.averagingWindowSize,
+                    context.numFailures);
             scenario.forEach(System.out::println);
             System.out.println(scenario.size());
-            analyser.printWorkload(new File("workload.csv"));
 
             // register points for failure injection with counter manager
             scenario.forEach(point -> {
-                context.replayCounter.register(new Listener(point._1(), () -> {
-                    // TODO measure avg latency
+                context.replayCounter.register(new Listener(point, (throughput) -> {
 
                     // inject failure in all experiments
                     for (Experiment experiment : context.experiments) {
 
                         try {
 
+                            // TODO measure avg latency
+                            String operatorId = "46f8730428df9ecd6d7318a02bdc405e";
+                            String query =
+                                String.format("sum(%s{job_name=\"%s\",quantile=\"0.95\",operator_id=\"%s\"})/count(%s{job_name=\"%s\",quantile=\"0.95\",operator_id=\"%s\"})",
+                                    experiment.jobName, context.latency, operatorId, experiment.jobName, context.latency, operatorId);
+                            Matrix matrix =
+                                context.prometheusApiClient.queryRange(
+                                    query, Instant.now().getEpochSecond() - context.averagingWindowSize + "",
+                                    Instant.now().getEpochSecond() + "", "1", "120");
+                            double sum = 0;
+                            int count = 0;
+                            for (int i = 0; i < matrix.data.result.get(0).values.size(); i++) {
+
+                                sum += matrix.data.result.get(0).values.get(i).get(1);
+                                count++;
+                            }
+                            double avgLatency = sum / count;
+
+                            // read last checkpoint
+                            long lastCheckpoint =
+                                context.flinkApiClient
+                                    .getCheckpoints(experiment.getJobId())
+                                    .latest.completed.latestAckTimestamp;
+
+                            // inject failure
                             String jobId = experiment.getJobId();
-                            String operatorId = experiment.getOperatorIds().get(0);  // TODO: randomize
-                            String podName = context.flinkApiClient.getTaskManagers(jobId, operatorId).taskManagers.get(0).taskManagerId; // TODO: randomize
+                            //String operatorId = experiment.getOperatorIds().get(0);  // TODO: randomize
+                            String podName =
+                                context.flinkApiClient
+                                    .getTaskManagers(jobId, operatorId)
+                                    .taskManagers.get(0).taskManagerId; // TODO: randomize
 
                             FailureInjector failureInjector = new FailureInjector();
                             failureInjector.crashFailure(podName, context.k8sNamespace);
                             failureInjector.client.close();
+
+                            // save metrics
+                            //experiment.metrics.add(new Tuple3<>(throughput, lastCheckpoint, latency));
                         }
                         catch (IOException | InterruptedException | ExecutionException | TimeoutException e) {
 
@@ -100,7 +140,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
                     }
 
-                    LOG.info(point._1() + " " + point._2() + " " + point._3());
+                    LOG.info(point._1() + " " + point._2());
                 }));
             });
 
