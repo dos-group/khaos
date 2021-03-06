@@ -20,6 +20,8 @@ public class Run2  {
 
     public static void main(String[] args) throws Exception {
 
+        System.out.println(Instant.now().getEpochSecond());
+
         String baseUrl = "http://130.149.249.40:30067/";
         Retrofit retrofit =
             new Retrofit.Builder()

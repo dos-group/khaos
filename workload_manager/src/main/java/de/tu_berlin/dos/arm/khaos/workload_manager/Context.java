@@ -8,6 +8,7 @@ import org.apache.log4j.Logger;
 import scala.Tuple3;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Stream;
@@ -27,8 +28,9 @@ public enum Context { get;
 
         public final String jobName;
         public final int config;
+
         // second, throughput, lastCheckpoint,
-        //public final List<Tuple3<Integer, Long, Integer, >> metrics = new ArrayList<>();
+        public final List<Tuple3<Integer, Long, Double>> metrics = new ArrayList<>();
 
         private String jobId;
         private ArrayList<String> operatorIds;
@@ -65,6 +67,7 @@ public enum Context { get;
         }
 
         public String getSinkId() {
+
             return sinkId;
         }
 
@@ -90,6 +93,8 @@ public enum Context { get;
                 ", config=" + config +
                 ", jobId='" + jobId + '\'' +
                 ", operatorIds=" + operatorIds +
+                ", sinkId=" + sinkId +
+                ", metrics=" + Arrays.toString(this.metrics.toArray()) +
                 '}';
         }
 
@@ -131,7 +136,6 @@ public enum Context { get;
     public final int minConfigVal;
     public final int maxConfigVal;
     public final String prometheusUrl;
-    public final int prometheusLimit;
     public final String throughput;
     public final String latency;
     public final String consumerLag;
@@ -142,6 +146,8 @@ public enum Context { get;
     public final FlinkApiClient flinkApiClient;
     public final FailureInjector failureInjector;
     public final PrometheusApiClient prometheusApiClient;
+
+    public WorkloadAnalyser analyzer;
 
     /******************************************************************************
      * CONSTRUCTOR(S)
@@ -178,7 +184,6 @@ public enum Context { get;
             this.minConfigVal = Integer.parseInt(props.getProperty("experiments.minConfigVal"));
             this.maxConfigVal = Integer.parseInt(props.getProperty("experiments.maxConfigVal"));
             this.prometheusUrl = props.getProperty("prometheus.url");
-            this.prometheusLimit = Integer.parseInt(props.getProperty("prometheus.limit"));
             this.throughput = props.getProperty("metrics.throughput");
             this.latency = props.getProperty("metrics.latency");
             this.consumerLag = props.getProperty("metrics.consumerLag");

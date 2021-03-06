@@ -139,6 +139,21 @@ public class WorkloadAnalyser {
         fw.close();
     }
 
+    public List<Tuple2<Integer, Integer>> getFailureScenario() {
+
+        return Arrays.asList(
+            new Tuple2<>(2000,486),
+            new Tuple2<>(78525,6440),
+            new Tuple2<>(43067,12676),
+            new Tuple2<>(56336,18647),
+            new Tuple2<>(24104,24148),
+            new Tuple2<>(74633,28241),
+            new Tuple2<>(29301,32276),
+            new Tuple2<>(61343,39559),
+            new Tuple2<>(63798,45640),
+            new Tuple2<>(64923,52404));
+    }
+
     public List<Tuple2<Integer, Integer>> getFailureScenario(
             int minFailureInterval, int averagingWindowSize, int numFailures) {
 
