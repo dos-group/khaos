@@ -32,6 +32,7 @@ public enum Context { get;
 
         private String jobId;
         private ArrayList<String> operatorIds;
+        private String sinkId;
 
         private Experiment(String jobName, int config) {
 
@@ -59,6 +60,14 @@ public enum Context { get;
             return operatorIds;
         }
 
+        public void setSinkId(String sinkId) {
+            this.sinkId = sinkId;
+        }
+
+        public String getSinkId() {
+            return sinkId;
+        }
+
         public String getProgramArgs() {
 
             return String.join(",",
@@ -83,6 +92,8 @@ public enum Context { get;
                 ", operatorIds=" + operatorIds +
                 '}';
         }
+
+
     }
 
     /******************************************************************************
@@ -115,7 +126,7 @@ public enum Context { get;
     public final String jarId;
     public final String jobName;
     public final int parallelism;
-    public final String sinkOperatorId;
+    public final String sinkOperatorName;
     public final int numOfConfigs;
     public final int minConfigVal;
     public final int maxConfigVal;
@@ -162,7 +173,7 @@ public enum Context { get;
             this.jarId = props.getProperty("flink.jarid");
             this.jobName = props.getProperty("flink.jobName");
             this.parallelism = Integer.parseInt(props.getProperty("flink.parallelism"));
-            this.sinkOperatorId = props.getProperty("flink.sinkOperatorId");
+            this.sinkOperatorName = props.getProperty("flink.sinkOperatorName");
             this.numOfConfigs = Integer.parseInt(props.getProperty("experiments.numOfConfigs"));
             this.minConfigVal = Integer.parseInt(props.getProperty("experiments.minConfigVal"));
             this.maxConfigVal = Integer.parseInt(props.getProperty("experiments.maxConfigVal"));

@@ -95,7 +95,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                         try {
 
                             // TODO measure avg latency
-                            String operatorId = "46f8730428df9ecd6d7318a02bdc405e";
+                            String operatorId = experiment.getSinkId();
                             String query =
                                 String.format("sum(%s{job_name=\"%s\",quantile=\"0.95\",operator_id=\"%s\"})/count(%s{job_name=\"%s\",quantile=\"0.95\",operator_id=\"%s\"})",
                                     experiment.jobName, context.latency, operatorId, experiment.jobName, context.latency, operatorId);
@@ -178,6 +178,10 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                 ArrayList<String> operatorIds = new ArrayList<>();
                 for (Vertices.Node vertex: vertices) {
                     operatorIds.add(vertex.id);
+                    if (vertex.description.startsWith(context.sinkOperatorName)) {
+                        experiment.setSinkId(vertex.id);
+                    }
+
                 }
                 experiment.setOperatorIds(operatorIds);
             }
