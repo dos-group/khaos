@@ -6,6 +6,7 @@ import de.tu_berlin.dos.arm.khaos.common.utils.FileReader;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.log4j.Logger;
 import scala.Tuple3;
+import scala.Tuple4;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,11 +30,11 @@ public enum Context { get;
         public final String jobName;
         public final int config;
 
-        // second, throughput, lastCheckpoint,
-        public final List<Tuple3<Integer, Long, Double>> metrics = new ArrayList<>();
+        // timestamp, second, throughput, lastCheckpoint,
+        public final List<Tuple4<Long, Integer, Long, Double>> metrics = new ArrayList<>();
 
         private String jobId;
-        private ArrayList<String> operatorIds;
+        private List<String> operatorIds;
         private String sinkId;
 
         private Experiment(String jobName, int config) {
@@ -52,12 +53,12 @@ public enum Context { get;
             this.jobId = jobId;
         }
 
-        public void setOperatorIds(ArrayList<String> operatorIds) {
+        public void setOperatorIds(List<String> operatorIds) {
 
             this.operatorIds = operatorIds;
         }
 
-        public ArrayList<String> getOperatorIds() {
+        public List<String> getOperatorIds() {
 
             return operatorIds;
         }
@@ -92,7 +93,7 @@ public enum Context { get;
                 ", partitions=" + Experiment.partitions +
                 ", config=" + config +
                 ", jobId='" + jobId + '\'' +
-                ", operatorIds=" + operatorIds +
+                ", operatorIds=" + Arrays.toString(this.operatorIds.toArray()) +
                 ", sinkId=" + sinkId +
                 ", metrics=" + Arrays.toString(this.metrics.toArray()) +
                 '}';

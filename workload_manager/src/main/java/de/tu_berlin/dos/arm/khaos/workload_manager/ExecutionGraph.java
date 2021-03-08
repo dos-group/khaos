@@ -13,6 +13,7 @@ import de.tu_berlin.dos.arm.khaos.workload_manager.io.QueueToKafka;
 import org.apache.log4j.Logger;
 import scala.Tuple2;
 import scala.Tuple3;
+import scala.Tuple4;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -129,9 +130,13 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                 }
                 experiment.setOperatorIds(operatorIds);
 
+                // TODO temp measure to write to file
                 File output = new File(experiment.jobName + ".log");
                 if (!output.exists()) output.createNewFile();
             }
+
+            // TODO remove
+            context.experiments.forEach(System.out::println);
 
             LOG.info("DEPLOY -> REGISTER");
             return REGISTER;
@@ -187,9 +192,10 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                             failureInjector.client.close();
 
                             // save metrics
-                            experiment.metrics.add(new Tuple3<>(throughput, checkpointDistance, avgLatency));
+                            experiment.metrics.add(new Tuple4<>(Instant.now().getEpochSecond(), throughput, checkpointDistance, avgLatency));
                             LOG.info(experiment);
 
+                            // TODO remove
                             FileWriter fw = new FileWriter(experiment.jobName + ".log", true);
                             fw.write(experiment.toString());
                             fw.close();
