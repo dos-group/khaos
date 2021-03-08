@@ -79,6 +79,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
             //WorkloadAnalyser analyser = WorkloadAnalyser.createFromEventsFile(context.sortedFilePath);
             //analyser.printWorkload(new File("workload.csv"));
 
+            // TODO this gets a static set of values, to remove
             context.analyzer = WorkloadAnalyser.createFromWorkloadFile("workload.csv");
             List<Tuple2<Integer, Integer>> scenario =
                 context.analyzer.getFailureScenario();
@@ -133,6 +134,9 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                 // TODO temp measure to write to file
                 File output = new File(experiment.jobName + ".log");
                 if (!output.exists()) output.createNewFile();
+                FileWriter fw = new FileWriter(experiment.jobName + ".log", true);
+                fw.write(experiment.toString());
+                fw.close();
             }
 
             // TODO remove
@@ -158,8 +162,11 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
                             // measure avg latency based in averaging window
                             String query =
-                                String.format("sum(%s{job_name=\"%s\",quantile=\"0.95\",operator_id=\"%s\"})/count(%s{job_name=\"%s\",quantile=\"0.95\",operator_id=\"%s\"})",
-                                    experiment.jobName, context.latency, experiment.getSinkId(), experiment.jobName, context.latency, experiment.getSinkId());
+                                String.format(
+                                    "sum(%s{job_id=\"%s\",quantile=\"0.95\",operator_id=\"%s\"})" +
+                                    "/count(%s{job_id=\"%s\",quantile=\"0.95\",operator_id=\"%s\"})",
+                                    experiment.getJobId(), context.latency, experiment.getSinkId(),
+                                    experiment.getJobId(), context.latency, experiment.getSinkId());
                             Matrix matrix =
                                 context.prometheusApiClient.queryRange(
                                     query, Instant.now().getEpochSecond() - context.averagingWindowSize + "",
@@ -173,7 +180,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                             }
                             double avgLatency = sum / count;
 
-                            // read last checkpoint
+                            // read last checkpoint and calculate distance
                             long lastCheckpoint =
                                 context.flinkApiClient
                                     .getCheckpoints(experiment.getJobId())
@@ -230,7 +237,13 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                     latch.countDown();
                 });
             CompletableFuture
-                .runAsync(new QueueToKafka(queue, context.replayCounter, Experiment.consumerTopic, context.brokerList, isDone))
+                .runAsync(
+                    new QueueToKafka(
+                        queue,
+                        context.replayCounter,
+                        Experiment.consumerTopic,
+                        context.brokerList,
+                        isDone))
                 .thenRun(latch::countDown);
             // wait till full workload has been replayed
             try {

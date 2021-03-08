@@ -73,10 +73,11 @@ public class QueueToKafka implements Runnable {
                 CompletableFuture.runAsync(() -> {
                     try {
                         //long startTime = System.currentTimeMillis();
-                        queue.take().forEach(e -> kafkaProducer.send(new ProducerRecord<>(topic, e)));
+                        List<String> events = queue.take();
+                        events.forEach(e -> kafkaProducer.send(new ProducerRecord<>(topic, e)));
                         //long endTime = System.currentTimeMillis();
                         //long timeNeeded =  endTime - startTime;
-                        //LOG.info(timeNeeded);
+                        LOG.info(replayCounter.getCounter() + " " + events.size());
                     }
                     catch (InterruptedException ex) {
                         LOG.error(ex);
