@@ -34,6 +34,7 @@ public class DatasetSorter {
             .tempDirectory(new File(tempDir))
             .maxFilesPerMerge(10)
             .maxItemsPerFile(1000000)
+            .bufferSize(65536)
             .loggerStdOut()
             .sort();
     }

@@ -30,14 +30,14 @@ public enum Context { get;
         public final String jobName;
         public final int config;
 
-        // timestamp, second, throughput, lastCheckpoint,
+        // Instant.now(), throughput, checkpointDistance, avgLatency
         public final List<Tuple4<Long, Integer, Long, Double>> metrics = new ArrayList<>();
 
-        private String jobId;
+        public String jobId;
         private List<String> operatorIds;
         private String sinkId;
 
-        private Experiment(String jobName, int config) {
+        public Experiment(String jobName, int config) {
 
             this.jobName = jobName;
             this.config = config;
@@ -85,17 +85,17 @@ public enum Context { get;
 
         @Override
         public String toString() {
-            return "Experiment{" +
-                "jobName='" + jobName + '\'' +
-                ", brokerList='" + Experiment.brokerList + '\'' +
-                ", consumerTopic='" + Experiment.consumerTopic + '\'' +
-                ", producerTopic='" + Experiment.producerTopic + '\'' +
-                ", partitions=" + Experiment.partitions +
-                ", config=" + config +
-                ", jobId='" + jobId + '\'' +
-                ", operatorIds=" + Arrays.toString(this.operatorIds.toArray()) +
-                ", sinkId=" + sinkId +
-                ", metrics=" + Arrays.toString(this.metrics.toArray()) +
+            return "Experiment{" + '\n' +
+                "jobName='" + jobName + '\'' + '\n' +
+                ", brokerList='" + Experiment.brokerList + '\'' + '\n' +
+                ", consumerTopic='" + Experiment.consumerTopic + '\'' + '\n' +
+                ", producerTopic='" + Experiment.producerTopic + '\'' + '\n' +
+                ", partitions=" + Experiment.partitions + '\n' +
+                ", config=" + config + '\n' +
+                ", jobId='" + jobId + '\'' + '\n' +
+                ", operatorIds=" + Arrays.toString(this.operatorIds.toArray()) + '\n' +
+                ", sinkId=" + sinkId + '\n' +
+                ", metrics=" + Arrays.toString(this.metrics.toArray()) + '\n' +
                 '}';
         }
 
@@ -140,7 +140,6 @@ public enum Context { get;
     public final String throughput;
     public final String latency;
     public final String consumerLag;
-    public final String cpuLoad;
     public final String topicMsgPerSec;
 
     public final ReplayCounter replayCounter;
@@ -149,6 +148,7 @@ public enum Context { get;
     public final PrometheusApiClient prometheusApiClient;
 
     public WorkloadAnalyser analyzer;
+
 
     /******************************************************************************
      * CONSTRUCTOR(S)
@@ -188,7 +188,6 @@ public enum Context { get;
             this.throughput = props.getProperty("metrics.throughput");
             this.latency = props.getProperty("metrics.latency");
             this.consumerLag = props.getProperty("metrics.consumerLag");
-            this.cpuLoad = props.getProperty("metrics.cpuLoad");
             this.topicMsgPerSec = props.getProperty("metrics.topicMsgPerSec");
 
             // create global context objects

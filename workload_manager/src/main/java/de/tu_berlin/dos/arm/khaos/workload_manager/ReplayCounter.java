@@ -7,6 +7,8 @@ import scala.Tuple3;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -18,6 +20,9 @@ public class ReplayCounter {
      ******************************************************************************/
 
     public static class Listener {
+
+        private static final Logger LOG = Logger.getLogger(Listener.class);
+        private static final ExecutorService service = Executors.newSingleThreadExecutor();
 
         private final int second;
         private final int throughput;
@@ -32,7 +37,16 @@ public class ReplayCounter {
 
         public void update() {
 
-            this.callback.accept(this.throughput);
+            service.execute(() -> {
+                try {
+
+                    this.callback.accept(this.throughput);
+                }
+                catch (Throwable t) {
+
+                    LOG.error(t);
+                }
+            });
         }
 
         public int getSecond() {

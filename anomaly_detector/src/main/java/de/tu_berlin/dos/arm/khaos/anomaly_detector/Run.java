@@ -27,7 +27,8 @@ public class Run {
 
         Exception ex = null;
         try {
-            for (int i = 0; i < 1000;i++) {
+            for (int i = 0; i < 1000; i++) {
+
                 detector.predict(new double[]{100 * random.nextDouble(), 100 * random.nextDouble(), 100 * random.nextDouble()});
                 detector.train(new double[]{100 * random.nextDouble(), 100 * random.nextDouble(), 100 * random.nextDouble()});
             }

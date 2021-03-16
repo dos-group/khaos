@@ -36,7 +36,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
         public ExecutionGraph runStage(Context context) {
 
             LOG.info("START -> RECORD");
-            return ANALYZE;
+            return RECORD;
         }
     },
     RECORD {
@@ -68,7 +68,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                 context.tsLabel);
 
             LOG.info("SORT -> EXTRACT");
-            return ANALYZE;
+            return STOP;
         }
     },
     ANALYZE {
@@ -159,14 +159,13 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                     for (Experiment experiment : context.experiments) {
 
                         try {
-
                             // measure avg latency based in averaging window
                             String query =
                                 String.format(
                                     "sum(%s{job_id=\"%s\",quantile=\"0.95\",operator_id=\"%s\"})" +
                                     "/count(%s{job_id=\"%s\",quantile=\"0.95\",operator_id=\"%s\"})",
-                                    experiment.getJobId(), context.latency, experiment.getSinkId(),
-                                    experiment.getJobId(), context.latency, experiment.getSinkId());
+                                    context.latency, experiment.getJobId(), experiment.getSinkId(),
+                                    context.latency, experiment.getJobId(), experiment.getSinkId());
                             Matrix matrix =
                                 context.prometheusApiClient.queryRange(
                                     query, Instant.now().getEpochSecond() - context.averagingWindowSize + "",
@@ -185,7 +184,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                                 context.flinkApiClient
                                     .getCheckpoints(experiment.getJobId())
                                     .latest.completed.latestAckTimestamp;
-                            long checkpointDistance = Instant.now().getEpochSecond() - lastCheckpoint;
+                            long checkpointDistance = Instant.now().toEpochMilli() - lastCheckpoint;
 
                             // inject failure
                             String jobId = experiment.getJobId();
@@ -207,9 +206,9 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                             fw.write(experiment.toString());
                             fw.close();
                         }
-                        catch (IOException | InterruptedException | ExecutionException | TimeoutException e) {
+                        catch (Exception e) {
 
-                            LOG.error(e);
+                            LOG.error(e.fillInStackTrace());
                         }
                     }
                 }));
@@ -269,7 +268,15 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
             }
 
             LOG.info("DELETE -> END");
-            return STOP;
+            return MEASURE;
+        }
+    },
+    MEASURE {
+
+        public ExecutionGraph runStage(Context context) {
+
+            LOG.info("DELETE -> END");
+            return MODEL;
         }
     },
     MODEL {
