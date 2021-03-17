@@ -1,5 +1,6 @@
 package de.tu_berlin.dos.arm.khaos.workload_manager;
 
+import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.Checkpoints;
 import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.Vertices;
 import de.tu_berlin.dos.arm.khaos.common.api_clients.prometheus.responses.Matrix;
 import de.tu_berlin.dos.arm.khaos.common.api_clients.prometheus.responses.Vector;
@@ -14,6 +15,7 @@ import org.apache.log4j.Logger;
 import scala.Tuple2;
 import scala.Tuple3;
 import scala.Tuple4;
+import scala.Tuple6;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -180,25 +182,33 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                             double avgLatency = sum / count;
 
                             // read last checkpoint and calculate distance
-                            long lastCheckpoint =
-                                context.flinkApiClient
-                                    .getCheckpoints(experiment.getJobId())
-                                    .latest.completed.latestAckTimestamp;
+                            Checkpoints checkpoints =
+                                    context.flinkApiClient
+                                            .getCheckpoints(experiment.getJobId());
+                            long lastCheckpoint = checkpoints.latest.completed.latestAckTimestamp;
                             long checkpointDistance = Instant.now().toEpochMilli() - lastCheckpoint;
 
                             // inject failure
                             String jobId = experiment.getJobId();
-                            String operatorId = experiment.getOperatorIds().get(0);  // TODO: randomize
+                            String operatorId = experiment.getOperatorIds().get(0);
                             String podName =
                                 context.flinkApiClient
                                     .getTaskManagers(jobId, operatorId)
-                                    .taskManagers.get(0).taskManagerId; // TODO: randomize
+                                    .taskManagers.get(0).taskManagerId;
                             FailureInjector failureInjector = new FailureInjector();
                             failureInjector.crashFailure(podName, context.k8sNamespace);
                             failureInjector.client.close();
 
                             // save metrics
                             experiment.metrics.add(new Tuple4<>(Instant.now().getEpochSecond(), throughput, checkpointDistance, avgLatency));
+                            experiment.checkpointSummary.add(new Tuple6<>(
+                                    checkpoints.summary.endToEndDuration.min,
+                                    checkpoints.summary.endToEndDuration.avg,
+                                    checkpoints.summary.endToEndDuration.max,
+                                    checkpoints.summary.stateSize.min,
+                                    checkpoints.summary.stateSize.avg,
+                                    checkpoints.summary.stateSize.max
+                            ));
                             LOG.info(experiment);
 
                             // TODO remove

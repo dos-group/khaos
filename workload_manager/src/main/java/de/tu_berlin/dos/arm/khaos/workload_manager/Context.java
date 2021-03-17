@@ -7,6 +7,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.log4j.Logger;
 import scala.Tuple3;
 import scala.Tuple4;
+import scala.Tuple6;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,6 +33,9 @@ public enum Context { get;
 
         // Instant.now(), throughput, checkpointDistance, avgLatency
         public final List<Tuple4<Long, Integer, Long, Double>> metrics = new ArrayList<>();
+
+        // min duration, avg duration, max duration, min size, avg size, max size
+        public final List<Tuple6<Long, Long, Long, Long, Long, Long>> checkpointSummary = new ArrayList<>();
 
         public String jobId;
         private List<String> operatorIds;
@@ -96,6 +100,7 @@ public enum Context { get;
                 ", operatorIds=" + Arrays.toString(this.operatorIds.toArray()) + '\n' +
                 ", sinkId=" + sinkId + '\n' +
                 ", metrics=" + Arrays.toString(this.metrics.toArray()) + '\n' +
+                ", checkpointSummary=" + Arrays.toString(this.checkpointSummary.toArray()) + '\n' +
                 '}';
         }
 
