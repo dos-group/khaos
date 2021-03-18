@@ -10,7 +10,7 @@ public class Matrix {
         public static class MatrixResult {
 
             public Map<String, String> metric;
-            public List<List<Float>> values;
+            public List<List<String>> values;
 
             @Override
             public String toString() {

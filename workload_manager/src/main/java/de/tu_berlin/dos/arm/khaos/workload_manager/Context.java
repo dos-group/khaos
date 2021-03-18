@@ -41,6 +41,8 @@ public enum Context { get;
         private List<String> operatorIds;
         private String sinkId;
 
+        public long startTs;
+
         public Experiment(String jobName, int config) {
 
             this.jobName = jobName;
@@ -74,6 +76,14 @@ public enum Context { get;
         public String getSinkId() {
 
             return sinkId;
+        }
+
+        public long getStartTs() {
+            return startTs;
+        }
+
+        public void setStartTs(long startTs) {
+            this.startTs = startTs;
         }
 
         public String getProgramArgs() {

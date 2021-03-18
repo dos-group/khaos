@@ -68,7 +68,7 @@ public class Run2  {
         int count = 0;
         for (int i = 0; i < matrix.data.result.get(0).values.size(); i++) {
 
-            sum += matrix.data.result.get(0).values.get(i).get(1);
+            sum += Double.valueOf(matrix.data.result.get(0).values.get(i).get(1));
             count++;
         }
         System.out.println(sum / count);
