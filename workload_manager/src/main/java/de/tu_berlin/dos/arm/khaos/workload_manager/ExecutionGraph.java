@@ -38,7 +38,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
         public ExecutionGraph runStage(Context context) {
 
             LOG.info("START -> RECORD");
-            return RECORD;
+            return MEASURE;
         }
     },
     RECORD {
@@ -133,6 +133,9 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                 }
                 experiment.setOperatorIds(operatorIds);
 
+                // save start time
+                experiment.setStartTs(Instant.now().getEpochSecond());
+
                 // TODO temp measure to write to file
                 File output = new File(experiment.jobName + ".log");
                 if (!output.exists()) output.createNewFile();
@@ -176,7 +179,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                             int count = 0;
                             for (int i = 0; i < matrix.data.result.get(0).values.size(); i++) {
 
-                                sum += matrix.data.result.get(0).values.get(i).get(1);
+                                sum += Double.valueOf(matrix.data.result.get(0).values.get(i).get(1));
                                 count++;
                             }
                             double avgLatency = sum / count;
@@ -283,9 +286,86 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
     },
     MEASURE {
 
-        public ExecutionGraph runStage(Context context) {
+        public ExecutionGraph runStage(Context context) throws IOException {
 
-            LOG.info("DELETE -> END");
+            for (Experiment experiment : context.experiments) {
+
+                int promLimit = 11000; // seconds of results to fetch
+                String step = "15"; // sample interval
+
+                // create results files
+                String thrFile = String.format(
+                        "./%s_%s_%s_thr_step%s_results.csv",
+                        context.jobName, context.parallelism, experiment.jobName, step);
+                String lagFile = String.format(
+                        "./%s_%s_%s_lag_step%s_results.csv",
+                        context.jobName, context.parallelism, experiment.jobName, step);
+
+                FileWriter fwThr = new FileWriter(thrFile, true);
+                fwThr.write("timestamp|value\n");
+
+                FileWriter fwLag = new FileWriter(lagFile, true);
+                fwLag.write("timestamp|value\n");
+
+                // queries
+                String queryThr =
+                        String.format("sum(%s{job_id=\"%s\"})",
+                                context.throughput, experiment.getJobId());
+
+                String queryLag =
+                        String.format("sum(%s{job_id=\"%s\"})/count(%s{job_id=\"%s\"})",
+                                context.consumerLag, experiment.getJobId(),
+                                context.consumerLag, experiment.getJobId());
+
+                // fetch results and cut off 10 mins from start and end
+                long start = experiment.getStartTs() + 600;
+                long current = start;
+                long stop = Instant.now().getEpochSecond() - 600;
+
+                while (current < stop) {
+
+                    // throughput results
+                    Matrix matrixThr =
+                            context.prometheusApiClient.queryRange(
+                                    queryThr, current + "",
+                                    current + promLimit + "", step, "120");
+
+                    for (int i = 0; i < matrixThr.data.result.get(0).values.size(); i++) {
+                        try {
+                            String ts = String.valueOf(matrixThr.data.result.get(0).values.get(i).get(0)); // TODO: query returns float instead of long
+                            String value = String.valueOf(matrixThr.data.result.get(0).values.get(i).get(1));
+                            fwThr.write(ts + "|" + value + "\n");
+                        } catch (Exception e) {
+                            LOG.error(e.fillInStackTrace());
+                        }
+                    }
+
+                    // consumer lag results
+                    Matrix matrixLag =
+                            context.prometheusApiClient.queryRange(
+                                    queryLag, current + "",
+                                    current + promLimit + "", step, "120");
+
+                    for (int i = 0; i < matrixLag.data.result.get(0).values.size(); i++) {
+                        try {
+                            String ts = String.valueOf(matrixLag.data.result.get(0).values.get(i).get(0));
+                            String value = String.valueOf(matrixLag.data.result.get(0).values.get(i).get(1));
+                            fwLag.write(ts + "|" + value + "\n");
+                        } catch (Exception e) {
+                            LOG.error(e.fillInStackTrace());
+                        }
+                    }
+
+                    current = current + promLimit;
+
+                }
+
+                fwThr.close();
+                fwLag.close();
+
+            }
+
+            LOG.info("MEASURE -> MODEL");
             return MODEL;
         }
     },
@@ -293,7 +373,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
         public ExecutionGraph runStage(Context context) {
 
-            LOG.info("DELETE -> END");
+            LOG.info("MODEL -> OPTIMIZE");
             return OPTIMIZE;
         }
     },
@@ -301,7 +381,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
         public ExecutionGraph runStage(Context context) {
 
-            LOG.info("DELETE -> END");
+            LOG.info("OPTIMIZE -> STOP");
             return STOP;
         }
     },
