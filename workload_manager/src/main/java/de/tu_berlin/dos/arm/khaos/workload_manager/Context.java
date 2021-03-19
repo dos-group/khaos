@@ -3,11 +3,9 @@ package de.tu_berlin.dos.arm.khaos.workload_manager;
 import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.FlinkApiClient;
 import de.tu_berlin.dos.arm.khaos.common.api_clients.prometheus.PrometheusApiClient;
 import de.tu_berlin.dos.arm.khaos.common.utils.FileReader;
-import de.tu_berlin.dos.arm.khaos.workload_manager.modeling.AnomalyDetector;
 import de.tu_berlin.dos.arm.khaos.workload_manager.modeling.RegressionModel;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.log4j.Logger;
-import scala.Tuple4;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,25 +26,25 @@ public enum Context { get;
             public final long timestamp;
             public final double avgThr;
             public final double avgLat;
-            public final double chkDist;
+            public final double chkLast;
 
-            private int duration;
+            private double recDur;
 
-            public FailureMetrics(long timestamp, double avgThr, double avgLat, double chkDist) {
+            public FailureMetrics(long timestamp, double avgThr, double avgLat, double chkLast) {
                 this.timestamp = timestamp;
                 this.avgThr = avgThr;
                 this.avgLat = avgLat;
-                this.chkDist = chkDist;
+                this.chkLast = chkLast;
             }
 
-            public int getDuration() {
+            public double getRecDur() {
 
-                return duration;
+                return recDur;
             }
 
-            public void setDuration(int duration) {
+            public void setRecDur(double recDur) {
 
-                this.duration = duration;
+                this.recDur = recDur;
             }
 
             @Override
@@ -55,8 +53,8 @@ public enum Context { get;
                         "timestamp=" + timestamp +
                         ", avgThr=" + avgThr +
                         ", avgLat=" + avgLat +
-                        ", chkDist=" + chkDist +
-                        ", duration=" + duration +
+                        ", chkLast=" + chkLast +
+                        ", recDur=" + recDur +
                         '}';
             }
         }
@@ -103,13 +101,13 @@ public enum Context { get;
         public static long stopTimestamp;
 
         public final String jobName;
-        public final int config;
+        public final double config;
         public final List<FailureMetrics> failureMetricsList;
 
         private String jobId;
         private List<String> operatorIds;
         private String sinkId;
-        private CheckpointSummary summary;
+        private CheckpointSummary chkSummary;
 
         public Experiment(String jobName, int config) {
 
@@ -148,14 +146,14 @@ public enum Context { get;
             return sinkId;
         }
 
-        public CheckpointSummary getSummary() {
+        public CheckpointSummary getChkSummary() {
 
-            return summary;
+            return chkSummary;
         }
 
-        public void setSummary(CheckpointSummary summary) {
+        public void setChkSummary(CheckpointSummary chkSummary) {
 
-            this.summary = summary;
+            this.chkSummary = chkSummary;
         }
 
         public String getProgramArgs() {
@@ -179,7 +177,7 @@ public enum Context { get;
                     ", jobId='" + jobId + '\'' +
                     ", operatorIds=" + operatorIds +
                     ", sinkId='" + sinkId + '\'' +
-                    ", summary=" + summary +
+                    ", chkSummary=" + chkSummary +
                     ", failureMetricsList=" + Arrays.toString(this.failureMetricsList.toArray()) +
                     '}';
         }

@@ -6,7 +6,6 @@ import de.tu_berlin.dos.arm.khaos.common.data.Observation;
 import de.tu_berlin.dos.arm.khaos.common.data.TimeSeries;
 import de.tu_berlin.dos.arm.khaos.common.utils.DatasetSorter;
 import de.tu_berlin.dos.arm.khaos.common.utils.FileParser;
-import de.tu_berlin.dos.arm.khaos.common.utils.FileReader;
 import de.tu_berlin.dos.arm.khaos.common.utils.SequenceFSM;
 import de.tu_berlin.dos.arm.khaos.workload_manager.Context.Experiment;
 import de.tu_berlin.dos.arm.khaos.workload_manager.Context.Experiment.CheckpointSummary;
@@ -18,11 +17,7 @@ import de.tu_berlin.dos.arm.khaos.workload_manager.io.QueueToKafka;
 import de.tu_berlin.dos.arm.khaos.workload_manager.modeling.AnomalyDetector;
 import org.apache.log4j.Logger;
 import scala.Tuple2;
-import scala.Tuple4;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -177,11 +172,11 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                             long endTime = System.nanoTime();
                             long duration = (endTime - startTime);
                             // determine when the last checkpoint occurred taking request time into account
-                            long chkDist = Instant.now().toEpochMilli() - lastCheckpoint - duration / 2;
+                            long chkLast = Instant.now().toEpochMilli() - lastCheckpoint - duration / 2;
 
                             // save gathered metrics
                             experiment.failureMetricsList.add(
-                                new FailureMetrics(Instant.now().getEpochSecond(), avgThr, avgLat, chkDist));
+                                new FailureMetrics(Instant.now().getEpochSecond(), avgThr, avgLat, chkLast));
                             LOG.info(experiment);
                         }
                         catch (Exception e) {
@@ -249,7 +244,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
                 // save checkpoint metrics
                 Checkpoints checkpoints = context.flinkApiClient.getCheckpoints(experiment.getJobId());
-                experiment.setSummary(
+                experiment.setChkSummary(
                     new CheckpointSummary(
                         checkpoints.summary.endToEndDuration.min,
                         checkpoints.summary.endToEndDuration.avg,
@@ -322,10 +317,11 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                 for (FailureMetrics failureMetrics : experiment.failureMetricsList) {
 
                     service.submit(() -> {
+
                         AnomalyDetector detector = new AnomalyDetector(Arrays.asList(thrTs, lagTs));
                         detector.fit(failureMetrics.timestamp, 1000);
-                        int duration = detector.measure(failureMetrics.timestamp, 600);
-                        failureMetrics.setDuration(duration);
+                        double duration = detector.measure(failureMetrics.timestamp, 600);
+                        failureMetrics.setRecDur(duration);
                         latch.countDown();
                     });
                 }
@@ -334,7 +330,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
             latch.await();
             LOG.info(context.experiments);
 
-            return STOP;
+            return MODEL;
         }
     },
     MODEL {
@@ -342,6 +338,34 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
         public ExecutionGraph runStage(Context context) {
 
             // get values from experiments and fit models
+            List<Double> recDurs = new ArrayList<>();
+            List<Double> avgLats = new ArrayList<>();
+            List<Double> configs = new ArrayList<>();
+            List<Double> avgThrs = new ArrayList<>();
+
+            for (Experiment experiment : context.experiments) {
+
+                // populate model dataset
+                for (FailureMetrics failureMetrics : experiment.failureMetricsList) {
+
+                    // test checkpoint interval and then normalize the recovery time
+                    if (experiment.config > 5000) {
+
+                        double chkDist = failureMetrics.getRecDur() - failureMetrics.chkLast;
+                        if (chkDist > 0) chkDist = experiment.config;
+                        recDurs.add(experiment.config / chkDist);
+                    }
+                    // dont worry about normalizing for these short checkpoint intervals
+                    else recDurs.add(experiment.config);
+                    avgLats.add(failureMetrics.avgLat);
+                    configs.add(experiment.config);
+                    avgThrs.add(failureMetrics.avgThr);
+
+                }
+            }
+            // fit models for performance and availability
+            context.performance.fit(avgLats, Arrays.asList(configs, avgThrs));
+            context.availability.fit(recDurs, Arrays.asList(configs, avgThrs));
 
             return OPTIMIZE;
         }
@@ -349,6 +373,8 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
     OPTIMIZE {
 
         public ExecutionGraph runStage(Context context) {
+
+
 
             return STOP;
         }
