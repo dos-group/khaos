@@ -20,6 +20,13 @@
             <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
+            <groupId>IFTM</groupId>
+            <artifactId>IFTM-anomalydetection-models</artifactId>
+            <version>0.0.1</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/libs/IFTM-anomalydetection-models-0.0.1.jar</systemPath>
+        </dependency>
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.9</version>

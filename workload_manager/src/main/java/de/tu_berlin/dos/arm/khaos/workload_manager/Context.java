@@ -3,9 +3,10 @@ package de.tu_berlin.dos.arm.khaos.workload_manager;
 import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.FlinkApiClient;
 import de.tu_berlin.dos.arm.khaos.common.api_clients.prometheus.PrometheusApiClient;
 import de.tu_berlin.dos.arm.khaos.common.utils.FileReader;
+import de.tu_berlin.dos.arm.khaos.workload_manager.modeling.AnomalyDetector;
+import de.tu_berlin.dos.arm.khaos.workload_manager.modeling.RegressionModel;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.log4j.Logger;
-import scala.Tuple3;
 import scala.Tuple4;
 
 import java.util.ArrayList;
@@ -98,8 +99,12 @@ public enum Context { get;
                 ", metrics=" + Arrays.toString(this.metrics.toArray()) + '\n' +
                 '}';
         }
+        // x_1 configs:     1000 1000 1000 1000 1000 14222 14222 14222 14222 14222
+        // x_2 throughputs: 486 24148 32276 12676 18647 486 24148 32276 12676 18647
 
+        // y latencies:   398 345 349 397 371 427 346 408 372 371 363
 
+        // y recovery:  time*dist/ci
     }
 
     /******************************************************************************
@@ -149,6 +154,10 @@ public enum Context { get;
 
     public WorkloadAnalyser analyzer;
 
+    public AnomalyDetector detector;
+
+    public RegressionModel performance;
+    public RegressionModel availability;
 
     /******************************************************************************
      * CONSTRUCTOR(S)
@@ -195,6 +204,13 @@ public enum Context { get;
             this.flinkApiClient = new FlinkApiClient(this.jobManagerUrl);
             this.failureInjector = new FailureInjector();
             this.prometheusApiClient = new PrometheusApiClient(this.prometheusUrl);
+
+            // create anomaly detector
+            this.detector = new AnomalyDetector();
+
+            // create multiple regression models
+            this.performance = new RegressionModel();
+            this.availability = new RegressionModel();
 
             // set global experiment variables
             Experiment.brokerList = this.brokerList;

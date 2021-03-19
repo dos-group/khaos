@@ -36,7 +36,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
         public ExecutionGraph runStage(Context context) {
 
             LOG.info("START -> RECORD");
-            return RECORD;
+            return SORT;
         }
     },
     RECORD {
@@ -130,18 +130,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
                 }
                 experiment.setOperatorIds(operatorIds);
-
-                // TODO temp measure to write to file
-                File output = new File(experiment.jobName + ".log");
-                if (!output.exists()) output.createNewFile();
-                FileWriter fw = new FileWriter(experiment.jobName + ".log", true);
-                fw.write(experiment.toString());
-                fw.close();
             }
-
-            // TODO remove
-            context.experiments.forEach(System.out::println);
-
             LOG.info("DEPLOY -> REGISTER");
             return REGISTER;
         }
@@ -180,11 +169,15 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                             double avgLatency = sum / count;
 
                             // read last checkpoint and calculate distance
+                            long startTime = System.nanoTime();
                             long lastCheckpoint =
                                 context.flinkApiClient
                                     .getCheckpoints(experiment.getJobId())
                                     .latest.completed.latestAckTimestamp;
-                            long checkpointDistance = Instant.now().toEpochMilli() - lastCheckpoint;
+                            long endTime = System.nanoTime();
+                            long duration = (endTime - startTime);
+                            // determine when the last checkpoint occurred taking request time into account
+                            long checkpointDistance = Instant.now().toEpochMilli() - lastCheckpoint - duration / 2;
 
                             // inject failure
                             String jobId = experiment.getJobId();
@@ -200,11 +193,6 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                             // save metrics
                             experiment.metrics.add(new Tuple4<>(Instant.now().getEpochSecond(), throughput, checkpointDistance, avgLatency));
                             LOG.info(experiment);
-
-                            // TODO remove
-                            FileWriter fw = new FileWriter(experiment.jobName + ".log", true);
-                            fw.write(experiment.toString());
-                            fw.close();
                         }
                         catch (Exception e) {
 
@@ -260,8 +248,6 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
         public ExecutionGraph runStage(Context context) throws Exception {
 
-            //Thread.sleep(120000);
-
             for (Experiment experiment : context.experiments) {
 
                 context.flinkApiClient.stopJob(experiment.getJobId());
@@ -275,6 +261,11 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
         public ExecutionGraph runStage(Context context) {
 
+            // read prometheus
+
+            // use anomaly detector to measure recovery times
+            // context.detector.fit();
+
             LOG.info("DELETE -> END");
             return MODEL;
         }
@@ -282,6 +273,8 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
     MODEL {
 
         public ExecutionGraph runStage(Context context) {
+
+            // get values from experiments and fit models
 
             LOG.info("DELETE -> END");
             return OPTIMIZE;
