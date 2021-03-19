@@ -1,33 +1,34 @@
 package de.tu_berlin.dos.arm.khaos.workload_manager;
 
+import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.Checkpoints;
 import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.Vertices;
-import de.tu_berlin.dos.arm.khaos.common.api_clients.prometheus.responses.Matrix;
-import de.tu_berlin.dos.arm.khaos.common.api_clients.prometheus.responses.Vector;
+import de.tu_berlin.dos.arm.khaos.common.data.Observation;
+import de.tu_berlin.dos.arm.khaos.common.data.TimeSeries;
 import de.tu_berlin.dos.arm.khaos.common.utils.DatasetSorter;
+import de.tu_berlin.dos.arm.khaos.common.utils.FileParser;
+import de.tu_berlin.dos.arm.khaos.common.utils.FileReader;
 import de.tu_berlin.dos.arm.khaos.common.utils.SequenceFSM;
 import de.tu_berlin.dos.arm.khaos.workload_manager.Context.Experiment;
+import de.tu_berlin.dos.arm.khaos.workload_manager.Context.Experiment.CheckpointSummary;
+import de.tu_berlin.dos.arm.khaos.workload_manager.Context.Experiment.FailureMetrics;
 import de.tu_berlin.dos.arm.khaos.workload_manager.ReplayCounter.Listener;
 import de.tu_berlin.dos.arm.khaos.workload_manager.io.FileToQueue;
 import de.tu_berlin.dos.arm.khaos.workload_manager.io.KafkaToFile;
 import de.tu_berlin.dos.arm.khaos.workload_manager.io.QueueToKafka;
+import de.tu_berlin.dos.arm.khaos.workload_manager.modeling.AnomalyDetector;
 import org.apache.log4j.Logger;
 import scala.Tuple2;
-import scala.Tuple3;
 import scala.Tuple4;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.sql.Timestamp;
 import java.time.Instant;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.StringJoiner;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Stream;
 
 public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
@@ -35,8 +36,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
         public ExecutionGraph runStage(Context context) {
 
-            LOG.info("START -> RECORD");
-            return SORT;
+            return ANALYZE;
         }
     },
     RECORD {
@@ -52,7 +52,6 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                     context.timeLimit);
             manager.run();
 
-            LOG.info("RECORD -> SORT");
             return SORT;
         }
     },
@@ -67,8 +66,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                 context.sortedFilePath,
                 context.tsLabel);
 
-            LOG.info("SORT -> EXTRACT");
-            return STOP;
+            return ANALYZE;
         }
     },
     ANALYZE {
@@ -90,18 +88,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
             scenario.forEach(System.out::println);
             System.out.println(scenario.size());
 
-            LOG.info("ANALYZE -> TRAIN");
-            return DEPLOY;
-        }
-    },
-    TRAIN {
-
-        public ExecutionGraph runStage(Context context) throws Exception {
-
-            // TODO train anomaly detection model
-
-            LOG.info("TRAIN -> DEPLOY");
-            return DEPLOY;
+            return REGISTER;
         }
     },
     DEPLOY {
@@ -118,20 +105,18 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                 experiment.setJobId(jobId);
 
                 // store list of operator ids
-                List<Vertices.Node> vertices =
-                    context.flinkApiClient
-                        .getVertices(jobId).plan.nodes;
+                List<Vertices.Node> vertices = context.flinkApiClient.getVertices(jobId).plan.nodes;
                 ArrayList<String> operatorIds = new ArrayList<>();
                 for (Vertices.Node vertex: vertices) {
+
                     operatorIds.add(vertex.id);
                     if (vertex.description.startsWith(context.sinkOperatorName)) {
+
                         experiment.setSinkId(vertex.id);
                     }
-
                 }
                 experiment.setOperatorIds(operatorIds);
             }
-            LOG.info("DEPLOY -> REGISTER");
             return REGISTER;
         }
     },
@@ -142,7 +127,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
             // register points for failure injection with counter manager
             context.analyzer.getFailureScenario().forEach(point -> {
 
-                context.replayCounter.register(new Listener(point, (throughput) -> {
+                context.replayCounter.register(new Listener(point, (avgThr) -> {
 
                     // inject failure in all experiments
                     for (Experiment experiment : context.experiments) {
@@ -155,43 +140,48 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                                     "/count(%s{job_id=\"%s\",quantile=\"0.95\",operator_id=\"%s\"})",
                                     context.latency, experiment.getJobId(), experiment.getSinkId(),
                                     context.latency, experiment.getJobId(), experiment.getSinkId());
-                            Matrix matrix =
+                            long current = Instant.now().getEpochSecond();
+                            TimeSeries tsLat =
                                 context.prometheusApiClient.queryRange(
-                                    query, Instant.now().getEpochSecond() - context.averagingWindowSize + "",
-                                    Instant.now().getEpochSecond() + "", "1", "120");
+                                    query, current - context.averagingWindow, current);
                             double sum = 0;
                             int count = 0;
-                            for (int i = 0; i < matrix.data.result.get(0).values.size(); i++) {
+                            for (int i = 0; i < tsLat.size(); i++) {
 
-                                sum += matrix.data.result.get(0).values.get(i).get(1);
-                                count++;
+                                Observation observation = tsLat.observations.get(i);
+                                if (!Double.isNaN(observation.value)) {
+
+                                    sum += observation.value;
+                                    count++;
+                                }
                             }
-                            double avgLatency = sum / count;
-
-                            // read last checkpoint and calculate distance
-                            long startTime = System.nanoTime();
-                            long lastCheckpoint =
-                                context.flinkApiClient
-                                    .getCheckpoints(experiment.getJobId())
-                                    .latest.completed.latestAckTimestamp;
-                            long endTime = System.nanoTime();
-                            long duration = (endTime - startTime);
-                            // determine when the last checkpoint occurred taking request time into account
-                            long checkpointDistance = Instant.now().toEpochMilli() - lastCheckpoint - duration / 2;
+                            double avgLat = sum / count;
 
                             // inject failure
                             String jobId = experiment.getJobId();
-                            String operatorId = experiment.getOperatorIds().get(0);  // TODO: randomize
+                            String operatorId = experiment.getOperatorIds().get(0);
                             String podName =
                                 context.flinkApiClient
                                     .getTaskManagers(jobId, operatorId)
-                                    .taskManagers.get(0).taskManagerId; // TODO: randomize
+                                    .taskManagers.get(0).taskManagerId;
                             FailureInjector failureInjector = new FailureInjector();
                             failureInjector.crashFailure(podName, context.k8sNamespace);
                             failureInjector.client.close();
 
-                            // save metrics
-                            experiment.metrics.add(new Tuple4<>(Instant.now().getEpochSecond(), throughput, checkpointDistance, avgLatency));
+                            // read last checkpoint and calculate distance
+                            long startTime = System.nanoTime();
+                            long lastCheckpoint =
+                                context
+                                    .flinkApiClient.getCheckpoints(experiment.getJobId())
+                                    .latest.completed.latestAckTimestamp;
+                            long endTime = System.nanoTime();
+                            long duration = (endTime - startTime);
+                            // determine when the last checkpoint occurred taking request time into account
+                            long chkDist = Instant.now().toEpochMilli() - lastCheckpoint - duration / 2;
+
+                            // save gathered metrics
+                            experiment.failureMetricsList.add(
+                                new FailureMetrics(Instant.now().getEpochSecond(), avgThr, avgLat, chkDist));
                             LOG.info(experiment);
                         }
                         catch (Exception e) {
@@ -202,13 +192,15 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                 }));
             });
 
-            LOG.info("REGISTER -> REPLAY");
-            return REPLAY;
+            return MEASURE;
         }
     },
     REPLAY {
 
         public ExecutionGraph runStage(Context context) {
+
+            // record start time of experiment
+            Experiment.startTimestamp = Instant.now().getEpochSecond();
 
             // start generator
             CountDownLatch latch = new CountDownLatch(2);
@@ -241,6 +233,11 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                 e.printStackTrace();
             }
 
+            // record end time of experiment
+            Experiment.stopTimestamp = Instant.now().getEpochSecond();
+
+            LOG.info(context.experiments);
+
             return DELETE;
         }
     },
@@ -250,24 +247,94 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
             for (Experiment experiment : context.experiments) {
 
+                // save checkpoint metrics
+                Checkpoints checkpoints = context.flinkApiClient.getCheckpoints(experiment.getJobId());
+                experiment.setSummary(
+                    new CheckpointSummary(
+                        checkpoints.summary.endToEndDuration.min,
+                        checkpoints.summary.endToEndDuration.avg,
+                        checkpoints.summary.endToEndDuration.max,
+                        checkpoints.summary.stateSize.min,
+                        checkpoints.summary.stateSize.avg,
+                        checkpoints.summary.stateSize.max));
+                // Stop experimental job
                 context.flinkApiClient.stopJob(experiment.getJobId());
             }
-
-            LOG.info("DELETE -> END");
             return MEASURE;
         }
     },
     MEASURE {
 
-        public ExecutionGraph runStage(Context context) {
+        public ExecutionGraph runStage(Context context) throws Exception {
 
-            // read prometheus
+            int numOfCores = Runtime.getRuntime().availableProcessors();
+            final ExecutorService service = Executors.newFixedThreadPool(numOfCores);
+            final CountDownLatch latch = new CountDownLatch(context.numOfConfigs * context.numFailures);
 
-            // use anomaly detector to measure recovery times
-            // context.detector.fit();
+            /*File thrFile = FileReader.GET.read("iot_8_thr_vehicles-cId5yU0Jb1.csv", File.class);
+            File lagFile = FileReader.GET.read("iot_8_lag_vehicles-cId5yU0Jb1.csv", File.class);
+            TimeSeries thrTs = FileParser.GET.fromCSV(thrFile, "\\|", true);
+            TimeSeries lagTs = FileParser.GET.fromCSV(lagFile, "\\|", true);
 
-            LOG.info("DELETE -> END");
-            return MODEL;
+            List<Long> failurePoints =
+                Arrays.asList(
+                    1615553479L, 1615575588L, 1615580781L, 1615594548L, 1615607816L,
+                    1615612826L, 1615615276L, 1615616403L, 1615626120L, 1615630005L);
+
+            for (Experiment experiment : context.experiments) {
+
+                for (long failurePoint : failurePoints) {
+
+                    experiment.failureMetricsList.add(new FailureMetrics(failurePoint, 0, 0,0));
+                }
+            }
+            LOG.info(context.experiments);*/
+
+            for (Experiment experiment : context.experiments) {
+
+                // create queries for prometheus
+                String queryThr =
+                    String.format("sum(%s{job_id=\"%s\"})",
+                        context.throughput, experiment.getJobId());
+                String queryLag =
+                    String.format("sum(%s{job_id=\"%s\"})/count(%s{job_id=\"%s\"})",
+                        context.consumerLag, experiment.getJobId(),
+                        context.consumerLag, experiment.getJobId());
+
+                // query prometheus for metrics
+                TimeSeries thrTs =
+                    context.prometheusApiClient.queryRange(
+                        queryThr, Experiment.startTimestamp, Experiment.stopTimestamp);
+                TimeSeries lagTs =
+                    context.prometheusApiClient.queryRange(
+                        queryLag, Experiment.startTimestamp, Experiment.stopTimestamp);
+
+                // TODO remove when tested
+                String thrFileName =
+                    String.format("%s_%s_%s_thr_results.csv",
+                        context.jobName, context.parallelism, experiment.jobName);
+                FileParser.GET.toCSV(thrFileName, thrTs,"timestamp|value", "\\|");
+                String lagFileName =
+                    String.format("%s_%s_%s_lag_results.csv",
+                        context.jobName, context.parallelism, experiment.jobName);
+                FileParser.GET.toCSV(lagFileName, lagTs,"timestamp|value", "\\|");
+
+                for (FailureMetrics failureMetrics : experiment.failureMetricsList) {
+
+                    service.submit(() -> {
+                        AnomalyDetector detector = new AnomalyDetector(Arrays.asList(thrTs, lagTs));
+                        detector.fit(failureMetrics.timestamp, 1000);
+                        int duration = detector.measure(failureMetrics.timestamp, 600);
+                        failureMetrics.setDuration(duration);
+                        latch.countDown();
+                    });
+                }
+            }
+
+            latch.await();
+            LOG.info(context.experiments);
+
+            return STOP;
         }
     },
     MODEL {
@@ -276,7 +343,6 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
             // get values from experiments and fit models
 
-            LOG.info("DELETE -> END");
             return OPTIMIZE;
         }
     },
@@ -284,7 +350,6 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
         public ExecutionGraph runStage(Context context) {
 
-            LOG.info("DELETE -> END");
             return STOP;
         }
     },
@@ -292,7 +357,6 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
         public ExecutionGraph runStage(Context context) {
 
-            LOG.info("STOP");
             return this;
         }
     };

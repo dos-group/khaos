@@ -10,7 +10,7 @@ public class Matrix {
         public static class MatrixResult {
 
             public Map<String, String> metric;
-            public List<List<Float>> values;
+            public List<List<String>> values;
 
             @Override
             public String toString() {
@@ -20,7 +20,7 @@ public class Matrix {
         }
 
         public String resultType;
-        public List<MatrixResult> result;
+        public List<MatrixData.MatrixResult> result;
     }
 
     public String status;

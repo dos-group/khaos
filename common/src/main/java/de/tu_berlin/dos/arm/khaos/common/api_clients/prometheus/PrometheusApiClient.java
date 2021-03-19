@@ -1,53 +1,51 @@
 package de.tu_berlin.dos.arm.khaos.common.api_clients.prometheus;
 
-import de.tu_berlin.dos.arm.khaos.common.api_clients.prometheus.responses.KeyVal;
 import de.tu_berlin.dos.arm.khaos.common.api_clients.prometheus.responses.Matrix;
-import de.tu_berlin.dos.arm.khaos.common.api_clients.prometheus.responses.Vector;
+import de.tu_berlin.dos.arm.khaos.common.data.Observation;
+import de.tu_berlin.dos.arm.khaos.common.data.TimeSeries;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Objects;
 
 public class PrometheusApiClient {
 
-    public final String baseUrl;
-
-    private final Retrofit retrofit;
     private final PrometheusRest service;
+    private final int limit;
+    private final int step;
+    private final int timeout;
 
-    public PrometheusApiClient(String baseUrl) {
+    public PrometheusApiClient(String baseUrl, int step, int timeout) {
 
-        this.baseUrl = "http://" + baseUrl + "/";
-        this.retrofit =
+        Retrofit retrofit =
             new Retrofit.Builder()
-                .baseUrl(this.baseUrl)
+                .baseUrl("http://" + baseUrl + "/")
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         this.service = retrofit.create(PrometheusRest.class);
+        this.limit = 11000;
+        this.step = step;
+        this.timeout = timeout;
     }
 
-    public Vector query(String query) throws IOException {
+    public TimeSeries queryRange(String query, long start, long end) throws IOException {
 
-        return this.service.query(query, null, null).execute().body();
-    }
+        TimeSeries ts = TimeSeries.create(start, end);
+        long current = start;
+        while (current < end) {
 
-    public Vector query(String query, String time) throws IOException {
+            Matrix matrix = this.service.queryRange(query, current, end, this.step, this.timeout).execute().body();
+            List<List<String>> values = Objects.requireNonNull(matrix).data.result.get(0).values;
+            for (List<String> strings : values) {
 
-        return this.service.query(query, time, null).execute().body();
-    }
-
-    public Vector query(String query, String time, String timeout) throws IOException {
-
-        return this.service.query(query, time, timeout).execute().body();
-    }
-
-    public Matrix queryRange(String query, String start, String end, String step, String timeout) throws IOException {
-
-        return this.service.queryRange(query, start, end, step, timeout).execute().body();
-    }
-
-    public KeyVal findSeries(String match, String start, String end) throws IOException {
-
-        return this.service.findSeries(match, start, end).execute().body();
+                long timestamp = Long.parseLong(strings.get(0));
+                double value = Double.parseDouble(strings.get(1));
+                ts.setObservation(new Observation(timestamp, value));
+            }
+            current += this.limit;
+        }
+        return ts;
     }
 }

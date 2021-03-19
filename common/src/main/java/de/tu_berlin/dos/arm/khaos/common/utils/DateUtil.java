@@ -9,6 +9,7 @@ public interface DateUtil {
     String UTC_TIMEZONE_NAME = "UTC";
 
     static SimpleDateFormat provideDateFormat() {
+
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat(ISO_DATE_FORMAT_ZERO_OFFSET);
         simpleDateFormat.setTimeZone(TimeZone.getTimeZone(UTC_TIMEZONE_NAME));
         return simpleDateFormat;

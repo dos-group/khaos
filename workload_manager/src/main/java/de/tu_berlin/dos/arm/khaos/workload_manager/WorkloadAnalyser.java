@@ -155,7 +155,7 @@ public class WorkloadAnalyser {
     }
 
     public List<Tuple2<Integer, Integer>> getFailureScenario(
-            int minFailureInterval, int averagingWindowSize, int numFailures) {
+            int minFailureInterval, int averagingWindow, int numFailures) {
 
         LOG.info(this.workload.size());
 
@@ -165,10 +165,10 @@ public class WorkloadAnalyser {
         System.out.println(workload.size());
         for (int i = minFailureInterval; i < this.workload.size() - minFailureInterval; i++) {
             int sum = 0;
-            for (int j = i - averagingWindowSize + 1; j <= i; j++) {
+            for (int j = i - averagingWindow + 1; j <= i; j++) {
                 sum += this.workload.get(j)._2();
             }
-            int average = sum / averagingWindowSize;
+            int average = sum / averagingWindow;
             if (min.isEmpty()) min.add(this.workload.get(i));
             else if (min.get(0)._2() == average) min.add(this.workload.get(i));
             else if (average < min.get(0)._2()) {
@@ -197,11 +197,11 @@ public class WorkloadAnalyser {
         for (int i = minFailureInterval; i < this.workload.size() - minFailureInterval; i++) {
 
             int sum = 0;
-            for (int j = i - averagingWindowSize + 1; j <= i; j++) {
+            for (int j = i - averagingWindow + 1; j <= i; j++) {
 
                 sum += this.workload.get(j)._2();
             }
-            int average = sum / averagingWindowSize;
+            int average = sum / averagingWindow;
             // find range of values which is 1% of average
             int onePercent = (int) ((this.workload.size() / 100) + 0.5);
             List<Integer> targetRange =

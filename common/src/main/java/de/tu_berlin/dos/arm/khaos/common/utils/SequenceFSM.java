@@ -1,6 +1,10 @@
 package de.tu_berlin.dos.arm.khaos.common.utils;
 
+import org.apache.log4j.Logger;
+
 public interface SequenceFSM<C, E extends Enum<E> & SequenceFSM<C, E>> {
+
+    Logger LOG = Logger.getLogger(SequenceFSM.class);
 
     E runStage(C context) throws Exception;
 
@@ -14,7 +18,7 @@ public interface SequenceFSM<C, E extends Enum<E> & SequenceFSM<C, E>> {
 
             E prev = curState;
             curState = curState.runStage(context);
-            //System.out.println("STATE-CHANGE: " + prev + " -> " + curState);
+            LOG.info("STATE-CHANGE: " + prev + " -> " + curState);
         }
     }
 }

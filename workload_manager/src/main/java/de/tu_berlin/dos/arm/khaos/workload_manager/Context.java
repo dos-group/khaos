@@ -23,25 +23,99 @@ public enum Context { get;
 
     public static class Experiment {
 
+        public static class FailureMetrics {
+
+            public final long timestamp;
+            public final double avgThr;
+            public final double avgLat;
+            public final double chkDist;
+
+            private int duration;
+
+            public FailureMetrics(long timestamp, double avgThr, double avgLat, double chkDist) {
+                this.timestamp = timestamp;
+                this.avgThr = avgThr;
+                this.avgLat = avgLat;
+                this.chkDist = chkDist;
+            }
+
+            public int getDuration() {
+
+                return duration;
+            }
+
+            public void setDuration(int duration) {
+
+                this.duration = duration;
+            }
+
+            @Override
+            public String toString() {
+                return "FailureMetrics{" +
+                        "timestamp=" + timestamp +
+                        ", avgThr=" + avgThr +
+                        ", avgLat=" + avgLat +
+                        ", chkDist=" + chkDist +
+                        ", duration=" + duration +
+                        '}';
+            }
+        }
+
+        public static class CheckpointSummary {
+
+            public final long minDuration;
+            public final long avgDuration;
+            public final long maxDuration;
+            public final long minSize;
+            public final long avgSize;
+            public final long maxSize;
+
+            public CheckpointSummary(
+                    long minDuration, long avgDuration, long maxDuration,
+                    long minSize, long avgSize, long maxSize) {
+
+                this.minDuration = minDuration;
+                this.avgDuration = avgDuration;
+                this.maxDuration = maxDuration;
+                this.minSize = minSize;
+                this.avgSize = avgSize;
+                this.maxSize = maxSize;
+            }
+
+            @Override
+            public String toString() {
+                return "CheckpointSummary{" +
+                        "minDuration=" + minDuration +
+                        ", avgDuration=" + avgDuration +
+                        ", maxDuration=" + maxDuration +
+                        ", minSize=" + minSize +
+                        ", avgSize=" + avgSize +
+                        ", maxSize=" + maxSize +
+                        '}';
+            }
+        }
+
         public static String brokerList;
         public static String consumerTopic;
         public static String producerTopic;
         public static int partitions;
+        public static long startTimestamp;
+        public static long stopTimestamp;
 
         public final String jobName;
         public final int config;
+        public final List<FailureMetrics> failureMetricsList;
 
-        // Instant.now(), throughput, checkpointDistance, avgLatency
-        public final List<Tuple4<Long, Integer, Long, Double>> metrics = new ArrayList<>();
-
-        public String jobId;
+        private String jobId;
         private List<String> operatorIds;
         private String sinkId;
+        private CheckpointSummary summary;
 
         public Experiment(String jobName, int config) {
 
             this.jobName = jobName;
             this.config = config;
+            this.failureMetricsList = new ArrayList<>();
         }
 
         public String getJobId() {
@@ -65,12 +139,23 @@ public enum Context { get;
         }
 
         public void setSinkId(String sinkId) {
+
             this.sinkId = sinkId;
         }
 
         public String getSinkId() {
 
             return sinkId;
+        }
+
+        public CheckpointSummary getSummary() {
+
+            return summary;
+        }
+
+        public void setSummary(CheckpointSummary summary) {
+
+            this.summary = summary;
         }
 
         public String getProgramArgs() {
@@ -86,19 +171,19 @@ public enum Context { get;
 
         @Override
         public String toString() {
-            return "Experiment{" + '\n' +
-                "jobName='" + jobName + '\'' + '\n' +
-                ", brokerList='" + Experiment.brokerList + '\'' + '\n' +
-                ", consumerTopic='" + Experiment.consumerTopic + '\'' + '\n' +
-                ", producerTopic='" + Experiment.producerTopic + '\'' + '\n' +
-                ", partitions=" + Experiment.partitions + '\n' +
-                ", config=" + config + '\n' +
-                ", jobId='" + jobId + '\'' + '\n' +
-                ", operatorIds=" + Arrays.toString(this.operatorIds.toArray()) + '\n' +
-                ", sinkId=" + sinkId + '\n' +
-                ", metrics=" + Arrays.toString(this.metrics.toArray()) + '\n' +
-                '}';
+            return "Experiment{" +
+                    "startTimestamp=" + Experiment.startTimestamp +
+                    ", stopTimestamp=" + Experiment.stopTimestamp +
+                    ", jobName='" + jobName + '\'' +
+                    ", config=" + config +
+                    ", jobId='" + jobId + '\'' +
+                    ", operatorIds=" + operatorIds +
+                    ", sinkId='" + sinkId + '\'' +
+                    ", summary=" + summary +
+                    ", failureMetricsList=" + Arrays.toString(this.failureMetricsList.toArray()) +
+                    '}';
         }
+
         // x_1 configs:     1000 1000 1000 1000 1000 14222 14222 14222 14222 14222
         // x_2 throughputs: 486 24148 32276 12676 18647 486 24148 32276 12676 18647
 
@@ -129,7 +214,7 @@ public enum Context { get;
     public final String sortedFilePath;
     public final String tsLabel;
     public final int minFailureInterval;
-    public final int averagingWindowSize;
+    public final int averagingWindow;
     public final int numFailures;
     public final String k8sNamespace;
     public final String backupFolder;
@@ -153,9 +238,6 @@ public enum Context { get;
     public final PrometheusApiClient prometheusApiClient;
 
     public WorkloadAnalyser analyzer;
-
-    public AnomalyDetector detector;
-
     public RegressionModel performance;
     public RegressionModel availability;
 
@@ -181,7 +263,7 @@ public enum Context { get;
             this.sortedFilePath = props.getProperty("dataset.sortedFilePath");
             this.tsLabel = props.getProperty("dataset.tsLabel");
             this.minFailureInterval = Integer.parseInt(props.getProperty("analysis.minFailureInterval"));
-            this.averagingWindowSize = Integer.parseInt(props.getProperty("analysis.averagingWindowSize"));
+            this.averagingWindow = Integer.parseInt(props.getProperty("analysis.averagingWindow"));
             this.numFailures = Integer.parseInt(props.getProperty("analysis.numFailures"));
             this.k8sNamespace = props.getProperty("k8s.namespace");
             this.backupFolder = props.getProperty("flink.backupFolder");
@@ -203,10 +285,7 @@ public enum Context { get;
             this.replayCounter = new ReplayCounter();
             this.flinkApiClient = new FlinkApiClient(this.jobManagerUrl);
             this.failureInjector = new FailureInjector();
-            this.prometheusApiClient = new PrometheusApiClient(this.prometheusUrl);
-
-            // create anomaly detector
-            this.detector = new AnomalyDetector();
+            this.prometheusApiClient = new PrometheusApiClient(this.prometheusUrl, 1, 120);
 
             // create multiple regression models
             this.performance = new RegressionModel();

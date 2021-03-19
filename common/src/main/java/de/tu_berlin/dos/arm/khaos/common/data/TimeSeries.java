@@ -4,14 +4,22 @@ import java.util.*;
 
 public class TimeSeries {
 
-    public final LinkedList<Observation> observations;
-    public final double frequency;
+    public static TimeSeries create(long startTimestamp, long endTimestamp) {
 
-    public TimeSeries(LinkedList<Observation> observations, double frequency) {
+        LinkedList<Observation> observations = new LinkedList<>();
+        for (long i = startTimestamp; i <= endTimestamp; i++) {
+
+            observations.add(new Observation(i, Double.NaN));
+        }
+        return new TimeSeries(observations);
+    }
+
+    public final LinkedList<Observation> observations;
+
+    private TimeSeries(LinkedList<Observation> observations) {
 
         Collections.sort(observations);
         this.observations = observations;
-        this.frequency = frequency;
     }
 
     public int size() {
@@ -48,12 +56,17 @@ public class TimeSeries {
                 ++j;
             }
         }
-        return new TimeSeries(result, this.frequency / sampleRate);
+        return new TimeSeries(result);
     }
 
     public int getIndex(long timestamp) {
 
         return Collections.binarySearch(observations, new Observation(timestamp, Double.NaN));
+    }
+
+    public void setObservation(Observation observation) {
+
+        this.observations.set(this.observations.indexOf(observation), observation);
     }
 
     public Observation getObservation(long timestamp) {
@@ -72,7 +85,6 @@ public class TimeSeries {
 
         return "TimeSeries{" +
                 "observations=" + observations +
-                ", frequency=" + frequency +
                 ", count=" + observations.size() +
                 '}';
     }

@@ -16,7 +16,7 @@ public enum FileReader { GET;
 
     public static final Logger LOG = Logger.getLogger(FileReader.class);
 
-    private static Map<String, Object> fileMap = new HashMap<>();
+    private static final Map<String, Object> fileMap = new HashMap<>();
 
     public <T> T read(String fileName, Class<T> clazz) throws Exception {
 

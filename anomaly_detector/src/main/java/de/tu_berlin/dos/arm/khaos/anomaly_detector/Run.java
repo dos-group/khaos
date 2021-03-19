@@ -29,8 +29,8 @@ public class Run {
         // create time series from file
         File thrFile = FileReader.GET.read("iot_8_thr_vehicles-cId5yU0Jb1.csv", File.class);
         File lagFile = FileReader.GET.read("iot_8_lag_vehicles-cId5yU0Jb1.csv", File.class);
-        TimeSeries thrTS = new TimeSeries(FileParser.GET.csv(thrFile, "\\|", true), 86400);
-        TimeSeries lagTS = new TimeSeries(FileParser.GET.csv(lagFile, "\\|", true), 86400);
+        TimeSeries thrTS = FileParser.GET.fromCSV(thrFile, "\\|", true);
+        TimeSeries lagTS = FileParser.GET.fromCSV(lagFile, "\\|", true);
 
         // create and optimize anomaly detector
         ThresholdBreedingPart breeding1 = new CompleteHistoryThresholdBreedingPart(5.0);

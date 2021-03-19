@@ -1,8 +1,8 @@
 package de.tu_berlin.dos.arm.khaos.workload_manager.modeling;
 
 import de.tu_berlin.dos.arm.khaos.common.data.TimeSeries;
-import de.tu_berlin.dos.arm.khaos.workload_manager.Context;
 import iftm.anomalydetection.AutoMLAnomalyDetection;
+import iftm.anomalydetection.DistancePredictionResult;
 import iftm.anomalydetection.automl.identityfunctions.AbstractArimaBreeding;
 import iftm.anomalydetection.automl.identityfunctions.ArimaMultiBreeding;
 import iftm.anomalydetection.automl.identityfunctions.CompleteHistoryThresholdBreedingPart;
@@ -15,29 +15,33 @@ import java.util.List;
 public class AnomalyDetector {
 
     private static final Logger LOG = Logger.getLogger(AnomalyDetector.class);
+    private static final int TOLERANCE = 10;
 
     private final AutoMLAnomalyDetection detector;
+    private final List<TimeSeries> dataset;
+    private boolean trained = false;
 
-    public AnomalyDetector() {
+    public AnomalyDetector(List<TimeSeries> dataset) {
 
         ThresholdBreedingPart breeding1 = new CompleteHistoryThresholdBreedingPart(5.0);
         AbstractArimaBreeding breeding2 = new ArimaMultiBreeding(50, 4, 200, breeding1);
         this.detector = new AutoMLAnomalyDetection(breeding2, 1000, false);
+        this.dataset = dataset;
     }
 
-    public void fit(List<TimeSeries> trainingSet, int trainingSize, long injectionTimestamp) {
+    public AnomalyDetector fit(long injectionTimestamp, int trainingSize) {
 
+        LOG.info("Training Started");
         // extract values based on time window and injection time point
         for (int i = 0; i < trainingSize; i++) {
 
             // for current timestamp, extract training data points
             boolean proceed = true;
             long currTimestamp = injectionTimestamp - trainingSize + i;
-            TimeSeries currTimeSeries;
-            double[] currDataPoints = new double[trainingSet.size()];
-            for (int j = 0; j < trainingSet.size(); j++) {
+            double[] currDataPoints = new double[dataset.size()];
+            for (int j = 0; j < dataset.size(); j++) {
 
-                currTimeSeries = trainingSet.get(j);
+                TimeSeries currTimeSeries = dataset.get(j);
                 double value = currTimeSeries.getObservation(currTimestamp).value;
                 if (Double.isNaN(value)) {
                     proceed = false;
@@ -48,9 +52,70 @@ public class AnomalyDetector {
             // if no NaN values were detected in training points, then train the detector
             if (proceed) {
 
-                LOG.info("Train datapoint " + (i + 1) + " of " + trainingSize + " ... " + Arrays.toString(currDataPoints));
+                //LOG.info("Train datapoint " + (i + 1) + " of " + trainingSize + " ... " + Arrays.toString(currDataPoints));
                 this.detector.train(currDataPoints);
             }
+        }
+        this.trained = true;
+        LOG.info("Training finished");
+        return this;
+    }
+
+    // TODO add timeout
+    public int measure(long injectionTimestamp, int timeout) {
+
+        if (!this.trained) throw new IllegalStateException("Train the Anomaly Detector first");
+
+        boolean anomaly = false;
+        int duration = 0;
+        int history = 0;
+
+        // extract data points for current timestamp
+        int count = 1;
+        while (true) {
+
+            boolean proceed = true;
+            long currTimestamp = injectionTimestamp + count;
+            double[] currDataPoints = new double[dataset.size()];
+            for (int i = 0; i < dataset.size(); i++) {
+
+                TimeSeries currTimeSeries = dataset.get(i);
+                double value = currTimeSeries.getObservation(currTimestamp).value;
+                if (Double.isNaN(value)) {
+                    proceed = false;
+                    anomaly = true;
+                    history = 0;
+                    duration += 1;
+                    break;
+                }
+                else currDataPoints[i] = value;
+            }
+            // proceed only if no NaN values were found
+            if (proceed) {
+
+                DistancePredictionResult result = detector.predict(currDataPoints);
+                if (!result.isAnomaly() && !anomaly) detector.train(currDataPoints);
+                else if (result.isAnomaly()) {
+
+                    anomaly = true;
+                    history = 0;
+                    duration += 1;
+                }
+                else if (!result.isAnomaly()) {
+
+                    // if tolerance is exceeded, then break (its very likely that the anomaly actually terminated)
+                    if (TOLERANCE < history) {
+
+                        return duration - history;
+                    }
+                    // some tolerance (numbers of datapoints), i.e. if its actually an anomaly but the detector failed
+                    else {
+                        history += 1;
+                        duration += 1;
+                    }
+                }
+            }
+            count++;
         }
     }
 }

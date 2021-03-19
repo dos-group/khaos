@@ -2,25 +2,18 @@ package de.tu_berlin.dos.arm.khaos.common.api_clients;
 
 import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.FlinkRest;
 import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.Checkpoints;
-import de.tu_berlin.dos.arm.khaos.common.api_clients.prometheus.PrometheusApiClient;
 import de.tu_berlin.dos.arm.khaos.common.api_clients.prometheus.PrometheusRest;
 import de.tu_berlin.dos.arm.khaos.common.api_clients.prometheus.responses.Matrix;
-import de.tu_berlin.dos.arm.khaos.common.api_clients.prometheus.responses.Vector;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 import java.time.Instant;
-import java.time.LocalTime;
-import java.util.concurrent.CountDownLatch;
 
-public class Run2  {
+public class Run {
 
     public static void main(String[] args) throws Exception {
 
-        System.out.println(Instant.now().getEpochSecond());
+        /*System.out.println(Instant.now().getEpochSecond());
 
         String baseUrl = "http://130.149.249.40:30067/";
         Retrofit retrofit =
@@ -55,7 +48,6 @@ public class Run2  {
         String operatorId = "46f8730428df9ecd6d7318a02bdc405e";
 
 
-
         String query = String.format("sum(%s{job_name=\"vehicles\",quantile=\"0.95\",operator_id=\"%s\"})/count(%s{job_name=\"vehicles\",quantile=\"0.95\",operator_id=\"%s\"})", latency, operatorId, latency, operatorId);
         System.out.println(query);
         Vector vector = prometheusService.query(query, String.valueOf(Instant.now().toEpochMilli()), "120000").execute().body();
@@ -68,9 +60,9 @@ public class Run2  {
         int count = 0;
         for (int i = 0; i < matrix.data.result.get(0).values.size(); i++) {
 
-            sum += matrix.data.result.get(0).values.get(i).get(1);
+            sum += Double.parseDouble(matrix.data.result.get(0).values.get(i).get(1));
             count++;
         }
-        System.out.println(sum / count);
+        System.out.println(sum / count);*/
     }
 }
