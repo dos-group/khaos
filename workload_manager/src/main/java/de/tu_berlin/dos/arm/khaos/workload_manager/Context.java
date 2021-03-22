@@ -1,6 +1,7 @@
 package de.tu_berlin.dos.arm.khaos.workload_manager;
 
 import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.FlinkApiClient;
+import de.tu_berlin.dos.arm.khaos.common.api_clients.flink.responses.Vertices;
 import de.tu_berlin.dos.arm.khaos.common.api_clients.prometheus.PrometheusApiClient;
 import de.tu_berlin.dos.arm.khaos.common.utils.FileReader;
 import de.tu_berlin.dos.arm.khaos.workload_manager.modeling.RegressionModel;
@@ -19,7 +20,7 @@ public enum Context { get;
      * STATIC INNER CLASSES
      ******************************************************************************/
 
-    public static class Experiment {
+    public static class StreamingJob {
 
         public static class FailureMetrics {
 
@@ -28,33 +29,35 @@ public enum Context { get;
             public final double avgLat;
             public final double chkLast;
 
-            private double recDur;
+            private double duration;
 
             public FailureMetrics(long timestamp, double avgThr, double avgLat, double chkLast) {
+
                 this.timestamp = timestamp;
                 this.avgThr = avgThr;
                 this.avgLat = avgLat;
                 this.chkLast = chkLast;
             }
 
-            public double getRecDur() {
+            public double getDuration() {
 
-                return recDur;
+                return duration;
             }
 
-            public void setRecDur(double recDur) {
+            public void setDuration(double duration) {
 
-                this.recDur = recDur;
+                this.duration = duration;
             }
 
             @Override
             public String toString() {
+
                 return "FailureMetrics{" +
                         "timestamp=" + timestamp +
                         ", avgThr=" + avgThr +
                         ", avgLat=" + avgLat +
                         ", chkLast=" + chkLast +
-                        ", recDur=" + recDur +
+                        ", duration=" + duration +
                         '}';
             }
         }
@@ -69,6 +72,7 @@ public enum Context { get;
             public final long maxSize;
 
             public CheckpointSummary(
+
                     long minDuration, long avgDuration, long maxDuration,
                     long minSize, long avgSize, long maxSize) {
 
@@ -82,6 +86,7 @@ public enum Context { get;
 
             @Override
             public String toString() {
+
                 return "CheckpointSummary{" +
                         "minDuration=" + minDuration +
                         ", avgDuration=" + avgDuration +
@@ -101,18 +106,17 @@ public enum Context { get;
         public static long stopTimestamp;
 
         public final String jobName;
-        public final double config;
         public final List<FailureMetrics> failureMetricsList;
 
         private String jobId;
+        private double config;
         private List<String> operatorIds;
         private String sinkId;
         private CheckpointSummary chkSummary;
 
-        public Experiment(String jobName, int config) {
+        public StreamingJob(String jobName) {
 
             this.jobName = jobName;
-            this.config = config;
             this.failureMetricsList = new ArrayList<>();
         }
 
@@ -124,6 +128,16 @@ public enum Context { get;
         public void setJobId(String jobId) {
 
             this.jobId = jobId;
+        }
+
+        public double getConfig() {
+
+            return config;
+        }
+
+        public void setConfig(double config) {
+
+            this.config = config;
         }
 
         public void setOperatorIds(List<String> operatorIds) {
@@ -160,18 +174,19 @@ public enum Context { get;
 
             return String.join(",",
                 this.jobName,
-                Experiment.brokerList,
-                Experiment.consumerTopic,
-                Experiment.producerTopic,
-                Experiment.partitions + "",
+                StreamingJob.brokerList,
+                StreamingJob.consumerTopic,
+                StreamingJob.producerTopic,
+                StreamingJob.partitions + "",
                 this.config + "");
         }
 
         @Override
         public String toString() {
+
             return "Experiment{" +
-                    "startTimestamp=" + Experiment.startTimestamp +
-                    ", stopTimestamp=" + Experiment.stopTimestamp +
+                    "startTimestamp=" + StreamingJob.startTimestamp +
+                    ", stopTimestamp=" + StreamingJob.stopTimestamp +
                     ", jobName='" + jobName + '\'' +
                     ", config=" + config +
                     ", jobId='" + jobId + '\'' +
@@ -181,13 +196,6 @@ public enum Context { get;
                     ", failureMetricsList=" + Arrays.toString(this.failureMetricsList.toArray()) +
                     '}';
         }
-
-        // x_1 configs:     1000 1000 1000 1000 1000 14222 14222 14222 14222 14222
-        // x_2 throughputs: 486 24148 32276 12676 18647 486 24148 32276 12676 18647
-
-        // y latencies:   398 345 349 397 371 427 346 408 372 371 363
-
-        // y recovery:  time*dist/ci
     }
 
     /******************************************************************************
@@ -200,8 +208,13 @@ public enum Context { get;
      * INSTANCE STATE
      ******************************************************************************/
 
-    public final List<Experiment> experiments;
+    public final StreamingJob targetJob;
+    public final List<StreamingJob> experiments;
 
+    public final long constraintInterval;
+    public final long constraintPerformance;
+    public final long constraintAvailability;
+    public final long constraintWarmupTime;
     public final String brokerList;
     public final String consumerTopic;
     public final String producerTopic;
@@ -219,6 +232,7 @@ public enum Context { get;
     public final String jobManagerUrl;
     public final String jarId;
     public final String jobName;
+    public final String jobId;
     public final int parallelism;
     public final String sinkOperatorName;
     public final int numOfConfigs;
@@ -251,6 +265,10 @@ public enum Context { get;
             Properties props = FileReader.GET.read("iot.properties", Properties.class);
 
             // load properties into context
+            this.constraintPerformance = Long.parseLong(props.getProperty("constraint.performance"));
+            this.constraintAvailability = Long.parseLong(props.getProperty("constraint.availability"));
+            this.constraintInterval = Long.parseLong(props.getProperty("constraint.interval"));
+            this.constraintWarmupTime = Long.parseLong(props.getProperty("constraint.warmupTime"));
             this.brokerList = props.getProperty("kafka.brokerList");
             this.consumerTopic = props.getProperty("kafka.consumerTopic");
             this.producerTopic = props.getProperty("kafka.producerTopic");
@@ -268,6 +286,7 @@ public enum Context { get;
             this.jobManagerUrl = props.getProperty("flink.jobManagerUrl");
             this.jarId = props.getProperty("flink.jarid");
             this.jobName = props.getProperty("flink.jobName");
+            this.jobId = props.getProperty("flink.jobId");
             this.parallelism = Integer.parseInt(props.getProperty("flink.parallelism"));
             this.sinkOperatorName = props.getProperty("flink.sinkOperatorName");
             this.numOfConfigs = Integer.parseInt(props.getProperty("experiments.numOfConfigs"));
@@ -290,17 +309,34 @@ public enum Context { get;
             this.availability = new RegressionModel();
 
             // set global experiment variables
-            Experiment.brokerList = this.brokerList;
-            Experiment.consumerTopic = this.consumerTopic + "-" + RandomStringUtils.random(10, true, true);
-            Experiment.producerTopic = this.producerTopic + "-" + RandomStringUtils.random(10, true, true);
-            Experiment.partitions = this.partitions;
+            StreamingJob.brokerList = this.brokerList;
+            StreamingJob.consumerTopic = this.consumerTopic + "-" + RandomStringUtils.random(10, true, true);
+            StreamingJob.producerTopic = this.producerTopic + "-" + RandomStringUtils.random(10, true, true);
+            StreamingJob.partitions = this.partitions;
+
+            // create object for target job and store list of operator ids
+            this.targetJob = new StreamingJob(this.jobName);
+            this.targetJob.setJobId(this.jobId);
+            List<Vertices.Node> vertices = this.flinkApiClient.getVertices(this.targetJob.jobId).plan.nodes;
+            ArrayList<String> operatorIds = new ArrayList<>();
+            for (Vertices.Node vertex: vertices) {
+
+                operatorIds.add(vertex.id);
+                if (vertex.description.startsWith(this.sinkOperatorName)) {
+
+                    this.targetJob.setSinkId(vertex.id);
+                }
+            }
+            this.targetJob.setOperatorIds(operatorIds);
 
             // instantiate experiments list
             this.experiments = new ArrayList<>();
             int step = (int) (((this.maxConfigVal - this.minConfigVal) * 1.0 / (this.numOfConfigs - 1)) + 0.5);
             Stream.iterate(this.minConfigVal, i -> i + step).limit(this.numOfConfigs).forEach(config -> {
-                String uniqueJobName = this.jobName + "-" + RandomStringUtils.random(10, true, true);
-                this.experiments.add(new Experiment(uniqueJobName, config));
+                String uniqueJobName = this.targetJob.jobName + "-" + RandomStringUtils.random(10, true, true);
+                StreamingJob current = new StreamingJob(uniqueJobName);
+                current.setConfig(config);
+                this.experiments.add(current);
             });
         }
         catch (Exception e) {

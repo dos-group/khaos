@@ -80,6 +80,21 @@ public class TimeSeries {
         return this.observations.stream().mapToDouble(v -> v.value).toArray();
     }
 
+    public double average() {
+
+        double sum = 0;
+        int count = 0;
+        for (Observation observation : this.observations) {
+
+            if (!Double.isNaN(observation.value)) {
+
+                sum += observation.value;
+                count++;
+            }
+        }
+        return sum / count;
+    }
+
     @Override
     public String toString() {
 

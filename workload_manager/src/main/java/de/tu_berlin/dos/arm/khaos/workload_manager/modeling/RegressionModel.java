@@ -33,7 +33,8 @@ public class RegressionModel {
 
         double[] args_arr = ArrayUtils.toPrimitive(args.toArray(new Double[0]));
         double result = 0;
-        for(int i = 0; i < parameters.length; i++) {
+        for (int i = 0; i < parameters.length; i++) {
+            
             result += parameters[i] * args_arr[i];
         }
         return result;
