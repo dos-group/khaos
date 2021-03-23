@@ -109,7 +109,7 @@ public enum Context { get;
         public final List<FailureMetrics> failureMetricsList;
 
         private String jobId;
-        private double config;
+        private int config;
         private List<String> operatorIds;
         private String sinkId;
         private CheckpointSummary chkSummary;
@@ -135,7 +135,7 @@ public enum Context { get;
             return config;
         }
 
-        public void setConfig(double config) {
+        public void setConfig(int config) {
 
             this.config = config;
         }
