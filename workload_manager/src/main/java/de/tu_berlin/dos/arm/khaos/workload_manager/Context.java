@@ -244,6 +244,7 @@ public enum Context { get;
     public final String consumerLag;
     public final String topicMsgPerSec;
 
+    public final EventsManager eventsManager;
     public final ReplayCounter replayCounter;
     public final FlinkApiClient flinkApiClient;
     public final FailureInjector failureInjector;
@@ -298,16 +299,6 @@ public enum Context { get;
             this.consumerLag = props.getProperty("metrics.consumerLag");
             this.topicMsgPerSec = props.getProperty("metrics.topicMsgPerSec");
 
-            // create global context objects
-            this.replayCounter = new ReplayCounter();
-            this.flinkApiClient = new FlinkApiClient(this.jobManagerUrl);
-            this.failureInjector = new FailureInjector();
-            this.prometheusApiClient = new PrometheusApiClient(this.prometheusUrl, 1, 120);
-
-            // create multiple regression models
-            this.performance = new RegressionModel();
-            this.availability = new RegressionModel();
-
             // set global experiment variables
             StreamingJob.brokerList = this.brokerList;
             StreamingJob.consumerTopic = this.consumerTopic + "-" + RandomStringUtils.random(10, true, true);
@@ -317,7 +308,7 @@ public enum Context { get;
             // create object for target job and store list of operator ids
             this.targetJob = new StreamingJob(this.jobName);
             this.targetJob.setJobId(this.jobId);
-            List<Vertices.Node> vertices = this.flinkApiClient.getVertices(this.targetJob.jobId).plan.nodes;
+            /*List<Vertices.Node> vertices = this.flinkApiClient.getVertices(this.targetJob.jobId).plan.nodes;
             ArrayList<String> operatorIds = new ArrayList<>();
             for (Vertices.Node vertex: vertices) {
 
@@ -327,7 +318,7 @@ public enum Context { get;
                     this.targetJob.setSinkId(vertex.id);
                 }
             }
-            this.targetJob.setOperatorIds(operatorIds);
+            this.targetJob.setOperatorIds(operatorIds);*/
 
             // instantiate experiments list
             this.experiments = new ArrayList<>();
@@ -338,6 +329,17 @@ public enum Context { get;
                 current.setConfig(config);
                 this.experiments.add(current);
             });
+
+            // create global context objects
+            this.eventsManager = new EventsManager(this.brokerList, this.consumerTopic, StreamingJob.consumerTopic);
+            this.replayCounter = new ReplayCounter();
+            this.flinkApiClient = new FlinkApiClient(this.jobManagerUrl);
+            this.failureInjector = new FailureInjector();
+            this.prometheusApiClient = new PrometheusApiClient(this.prometheusUrl, 1, 120);
+
+            // create multiple regression models
+            this.performance = new RegressionModel();
+            this.availability = new RegressionModel();
         }
         catch (Exception e) {
 
