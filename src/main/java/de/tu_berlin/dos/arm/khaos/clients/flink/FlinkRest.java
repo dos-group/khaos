@@ -1,8 +1,8 @@
 package de.tu_berlin.dos.arm.khaos.clients.flink;
 
 import de.tu_berlin.dos.arm.khaos.clients.flink.responses.Checkpoints;
-import de.tu_berlin.dos.arm.khaos.clients.flink.responses.TaskManagers;
 import de.tu_berlin.dos.arm.khaos.clients.flink.responses.Job;
+import de.tu_berlin.dos.arm.khaos.clients.flink.responses.TaskManagers;
 import de.tu_berlin.dos.arm.khaos.clients.flink.responses.Vertices;
 import retrofit2.Call;
 import retrofit2.http.*;

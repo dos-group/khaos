@@ -20,7 +20,7 @@ public class Matrix {
         }
 
         public String resultType;
-        public List<MatrixData.MatrixResult> result;
+        public List<MatrixResult> result;
     }
 
     public String status;

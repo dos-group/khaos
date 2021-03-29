@@ -2,9 +2,8 @@ package de.tu_berlin.dos.arm.khaos.core;
 
 import de.tu_berlin.dos.arm.khaos.clients.ClientsManager;
 import de.tu_berlin.dos.arm.khaos.events.EventsManager;
-import de.tu_berlin.dos.arm.khaos.events.ReplayCounter;
-import de.tu_berlin.dos.arm.khaos.utils.FileReader;
 import de.tu_berlin.dos.arm.khaos.modeling.RegressionModel;
+import de.tu_berlin.dos.arm.khaos.utils.FileReader;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.log4j.Logger;
 
@@ -313,7 +312,8 @@ public enum Context { get;
         }
         catch (Exception e) {
 
-            throw new IllegalStateException(e.getMessage());
+            System.out.println(e.fillInStackTrace());
+            throw new IllegalStateException(e.fillInStackTrace());
         }
     }
 }

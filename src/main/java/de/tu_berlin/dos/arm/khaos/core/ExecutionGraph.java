@@ -1,13 +1,13 @@
 package de.tu_berlin.dos.arm.khaos.core;
 
 import de.tu_berlin.dos.arm.khaos.clients.flink.responses.Checkpoints;
-import de.tu_berlin.dos.arm.khaos.events.TimeSeries;
-import de.tu_berlin.dos.arm.khaos.utils.SequenceFSM;
 import de.tu_berlin.dos.arm.khaos.core.Context.StreamingJob;
 import de.tu_berlin.dos.arm.khaos.core.Context.StreamingJob.CheckpointSummary;
 import de.tu_berlin.dos.arm.khaos.core.Context.StreamingJob.FailureMetrics;
 import de.tu_berlin.dos.arm.khaos.events.ReplayCounter.Listener;
+import de.tu_berlin.dos.arm.khaos.events.TimeSeries;
 import de.tu_berlin.dos.arm.khaos.modeling.AnomalyDetector;
+import de.tu_berlin.dos.arm.khaos.utils.SequenceFSM;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.log4j.Logger;
@@ -36,9 +36,11 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
         public ExecutionGraph runStage(Context context) {
 
             // saves events from kafka consumer topic to database for a user defined time
-            context.eventsManager.recordKafkaToDatabase(context.consumerTopic, context.timeLimit, 50000);
+            //context.eventsManager.recordKafkaToDatabase(context.consumerTopic, context.timeLimit, 50000);
 
-            return DEPLOY;
+            context.eventsManager.extractWorkload();
+
+            return STOP;
         }
     },
     DEPLOY {

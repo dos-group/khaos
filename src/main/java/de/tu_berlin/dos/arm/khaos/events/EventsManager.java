@@ -8,7 +8,6 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.log4j.Logger;
-import scala.Tuple2;
 import scala.Tuple3;
 
 import java.sql.Connection;
@@ -29,7 +28,7 @@ public class EventsManager {
 
     public static class DatabaseToQueue implements Runnable {
 
-        private final List<Tuple3<Integer, Long, Integer>> workload;
+        public final List<Tuple3<Integer, Long, Integer>> workload;
         private final BlockingQueue<List<String>> queue;
 
         public DatabaseToQueue(List<Tuple3<Integer, Long, Integer>> workload, BlockingQueue<List<String>> queue) {
@@ -267,13 +266,22 @@ public class EventsManager {
             statement.executeUpdate(createIndex);
             statement.close();
             LOG.info("Finished Create Index");
+        }
+        catch (Exception e) {
 
+            LOG.error(e.getClass().getName() + ": " + e.getMessage());
+        }
+    }
+
+    public void extractWorkload() {
+
+        try (Connection conn = EventsManager.connect()) {
             LOG.info("Starting extract workload");
             this.workload = new ArrayList<>();
             String sql =
                 "SELECT timestamp, COUNT(*) AS count " +
                 "FROM events GROUP BY timestamp";
-            statement = conn.createStatement();
+            Statement statement = conn.createStatement();
             ResultSet rs = statement.executeQuery(sql);
             int counter = 1;
             while (rs.next()) {
@@ -284,6 +292,11 @@ public class EventsManager {
             rs.close();
             statement.close();
             LOG.info("Finished extract workload");
+
+            for (Tuple3<Integer, Long, Integer> current : this.workload) {
+
+                LOG.info(current._1() + "|" + current._2() + "|" + current._3());
+            }
         }
         catch (Exception e) {
 
