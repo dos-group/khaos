@@ -22,13 +22,16 @@ public class ReplayCounter {
         private static final ExecutorService service = Executors.newSingleThreadExecutor();
 
         private final int second;
-        private final int avgThr;
-        private final Consumer<Integer> callback;
+        //private final int avgThr;
+        //private final Consumer<Integer> callback;
+        private final Runnable callback;
 
-        public Listener(Tuple3<Integer, Long, Integer> point, Consumer<Integer> callback) {
+        public Listener(/*Tuple3<Integer, Long, Integer> point*/ int second, /*Consumer<Integer>*/ Runnable callback) {
 
-            this.second = point._1();
-            this.avgThr = point._3();
+            //this.second = point._1();
+            this.second = second;
+            //this.avgThr = point._3();
+            //this.callback = callback;
             this.callback = callback;
         }
 
@@ -37,7 +40,8 @@ public class ReplayCounter {
             service.execute(() -> {
                 try {
 
-                    this.callback.accept(this.avgThr);
+                    //this.callback.accept(this.avgThr);
+                    this.callback.run();
                 }
                 catch (Throwable t) {
 

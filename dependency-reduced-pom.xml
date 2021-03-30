@@ -43,7 +43,7 @@
                   <resource>reference.conf</resource>
                 </transformer>
                 <transformer>
-                  <mainClass>de.tu_berlin.dos.arm.de.tu_berlin.dos.arm.khaos.Run</mainClass>
+                  <mainClass>de.tu_berlin.dos.arm.khaos.Run</mainClass>
                 </transformer>
               </transformers>
             </configuration>

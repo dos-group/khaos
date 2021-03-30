@@ -6,6 +6,10 @@ import de.tu_berlin.dos.arm.khaos.modeling.RegressionModel;
 import de.tu_berlin.dos.arm.khaos.utils.FileReader;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.log4j.Logger;
+import smile.data.DataFrame;
+import smile.data.formula.Formula;
+import smile.regression.LinearModel;
+import smile.regression.OLS;
 
 import java.util.*;
 import java.util.stream.Stream;
@@ -68,7 +72,6 @@ public enum Context { get;
             public final long maxSize;
 
             public CheckpointSummary(
-
                     long minDuration, long avgDuration, long maxDuration,
                     long minSize, long avgSize, long maxSize) {
 
@@ -104,7 +107,7 @@ public enum Context { get;
         public final String jobName;
         public final List<FailureMetrics> failureMetricsList;
 
-        private Random rand = new Random();
+        private final Random rand = new Random();
         private String jobId;
         private double config;
         private List<String> operatorIds;
