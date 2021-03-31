@@ -18,41 +18,6 @@ public enum Context { get;
 
     public static class StreamingJob {
 
-        public static class CheckpointSummary {
-
-            public final long minDuration;
-            public final long avgDuration;
-            public final long maxDuration;
-            public final long minSize;
-            public final long avgSize;
-            public final long maxSize;
-
-            public CheckpointSummary(
-                    long minDuration, long avgDuration, long maxDuration,
-                    long minSize, long avgSize, long maxSize) {
-
-                this.minDuration = minDuration;
-                this.avgDuration = avgDuration;
-                this.maxDuration = maxDuration;
-                this.minSize = minSize;
-                this.avgSize = avgSize;
-                this.maxSize = maxSize;
-            }
-
-            @Override
-            public String toString() {
-
-                return "CheckpointSummary{" +
-                        "minDuration=" + minDuration +
-                        ", avgDuration=" + avgDuration +
-                        ", maxDuration=" + maxDuration +
-                        ", minSize=" + minSize +
-                        ", avgSize=" + avgSize +
-                        ", maxSize=" + maxSize +
-                        '}';
-            }
-        }
-
         public static String brokerList;
         public static String consumerTopic;
         public static String producerTopic;
@@ -62,12 +27,10 @@ public enum Context { get;
 
         public final String jobName;
 
-        private final Random rand = new Random();
         private String jobId;
         private double config;
         private List<String> operatorIds;
         private String sinkId;
-        private CheckpointSummary chkSummary;
 
         public StreamingJob(String jobName) {
 
@@ -99,11 +62,6 @@ public enum Context { get;
             this.operatorIds = operatorIds;
         }
 
-        public String getRandomOperatorId() {
-
-            return operatorIds.get(rand.nextInt(operatorIds.size()));
-        }
-
         public void setSinkId(String sinkId) {
 
             this.sinkId = sinkId;
@@ -112,16 +70,6 @@ public enum Context { get;
         public String getSinkId() {
 
             return sinkId;
-        }
-
-        public CheckpointSummary getChkSummary() {
-
-            return chkSummary;
-        }
-
-        public void setChkSummary(CheckpointSummary chkSummary) {
-
-            this.chkSummary = chkSummary;
         }
 
         public String getProgramArgs() {
@@ -140,7 +88,6 @@ public enum Context { get;
                     ", jobId='" + jobId + '\'' +
                     ", operatorIds=" + operatorIds +
                     ", sinkId='" + sinkId + '\'' +
-                    ", chkSummary=" + chkSummary +
                     '}';
         }
     }

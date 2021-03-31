@@ -105,8 +105,8 @@ public class ClientsManager {
 
         String query =
             String.format(
-                "sum(%s{job_id=\"%s\",quantile=\"0.95\",operator_id=\"%s\"})" +
-                "/count(%s{job_id=\"%s\",quantile=\"0.95\",operator_id=\"%s\"})",
+                "sum(%s{job_id=\"%s\",quantile=\"0.999\",operator_id=\"%s\"})" +
+                "/count(%s{job_id=\"%s\",quantile=\"0.999\",operator_id=\"%s\"})",
                 LATENCY, jobId, sinkId, LATENCY, jobId, sinkId);
         return this.prom.queryRange(query, startTs, stopTs);
     }

@@ -2,13 +2,15 @@ package de.tu_berlin.dos.arm.khaos.core;
 
 import de.tu_berlin.dos.arm.khaos.clients.flink.responses.Checkpoints;
 import de.tu_berlin.dos.arm.khaos.core.Context.StreamingJob;
-import de.tu_berlin.dos.arm.khaos.core.Context.StreamingJob.CheckpointSummary;
 import de.tu_berlin.dos.arm.khaos.io.ReplayCounter.Listener;
 import de.tu_berlin.dos.arm.khaos.io.TimeSeries;
+import de.tu_berlin.dos.arm.khaos.modeling.AnomalyDetector;
 import de.tu_berlin.dos.arm.khaos.utils.SequenceFSM;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.log4j.Logger;
+import scala.Tuple2;
+import scala.Tuple3;
 import smile.data.DataFrame;
 import smile.data.formula.Formula;
 import smile.regression.LinearModel;
@@ -34,11 +36,15 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
         public ExecutionGraph runStage(Context context) {
 
             // saves events from kafka consumer topic to database for a user defined time
-            context.IOManager.recordKafkaToDatabase(context.consumerTopic, context.timeLimit, 100000);
+            //context.IOManager.recordKafkaToDatabase(context.consumerTopic, context.timeLimit, 100000);
             context.IOManager.extractWorkload();
+            LOG.info(context.IOManager.getWorkload().size());
             context.IOManager.extractFailureScenario(0.1f);
+            for (Tuple3<Integer, Long, Integer> current : context.IOManager.getFailureScenario()) {
+                LOG.info(current._1() + " " + current._2() + " " + current._3());
+            }
 
-            return REPLAY;
+            return DEPLOY;
         }
     },
     DEPLOY {
@@ -78,7 +84,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
                             double avgThr = context.clientsManager.getThroughput(job.getJobId(), startTs, stopTs).average();
                             double avgLat = context.clientsManager.getLatency(job.getJobId(), job.getSinkId(), startTs, stopTs).average();
-                            context.clientsManager.injectFailure(job.getJobId(), job.getRandomOperatorId());
+                            context.clientsManager.injectFailure(job.getJobId(), job.getSinkId());
                             long chkLast = context.clientsManager.getLastCheckpoint(job.getJobId());
 
                             context.IOManager.addMetrics(job.getConfig(), stopTs, avgThr, avgLat, chkLast);
@@ -127,25 +133,28 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
             StreamingJob.stopTs = Instant.now().getEpochSecond();
             LOG.info(context.experiments);
 
-            return STOP;
+            return DELETE;
         }
     },
     DELETE {
 
         public ExecutionGraph runStage(Context context) throws Exception {
 
+            context.IOManager.initChkSums();
+
             for (StreamingJob job : context.experiments) {
 
                 // save checkpoint metrics
                 Checkpoints checkpoints = context.clientsManager.flink.getCheckpoints(job.getJobId());
-                job.setChkSummary(
-                    new CheckpointSummary(
-                        checkpoints.summary.endToEndDuration.min,
-                        checkpoints.summary.endToEndDuration.avg,
-                        checkpoints.summary.endToEndDuration.max,
-                        checkpoints.summary.stateSize.min,
-                        checkpoints.summary.stateSize.avg,
-                        checkpoints.summary.stateSize.max));
+                context.IOManager.addChkSum(
+                    job.getConfig(),
+                    checkpoints.summary.endToEndDuration.min,
+                    checkpoints.summary.endToEndDuration.avg,
+                    checkpoints.summary.endToEndDuration.max,
+                    checkpoints.summary.stateSize.min,
+                    checkpoints.summary.stateSize.avg,
+                    checkpoints.summary.stateSize.max);
+
                 // Stop experimental job
                 context.clientsManager.flink.stopJob(job.getJobId());
             }
@@ -160,27 +169,28 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
             final ExecutorService service = Executors.newFixedThreadPool(numOfCores);
             final CountDownLatch latch = new CountDownLatch(context.numOfConfigs * context.numFailures);
 
+            LOG.info("Starting measure failure durations");
             for (StreamingJob job : context.experiments) {
                 
                 TimeSeries thrTs = context.clientsManager.getThroughput(job.getJobId(), StreamingJob.startTs, StreamingJob.stopTs);
                 TimeSeries lagTs = context.clientsManager.getConsumerLag(job.getJobId(), StreamingJob.startTs, StreamingJob.stopTs);
 
-                /*for (FailureMetrics failureMetrics : job.failureMetricsList) {
+                for (Tuple2<Double, Long> metrics : context.IOManager.fetchMetrics(job.getConfig())) {
 
                     service.submit(() -> {
 
                         AnomalyDetector detector = new AnomalyDetector(Arrays.asList(thrTs, lagTs));
-                        detector.fit(failureMetrics.timestamp, 1000);
-                        double duration = detector.measure(failureMetrics.timestamp, 600);
-                        failureMetrics.setDuration(duration);
+                        detector.fit(metrics._2, 1000);
+                        double recTime = detector.measure(metrics._2, 600);
+                        context.IOManager.updateMetrics(job.getConfig(), metrics._2, recTime);
                         latch.countDown();
                     });
-                }*/
+                }
             }
             latch.await();
-            LOG.info(context.experiments);
+            LOG.info("Finished measure failure durations");
 
-            return MODEL;
+            return STOP;
         }
     },
     MODEL {

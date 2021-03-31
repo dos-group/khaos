@@ -35,9 +35,9 @@ public class TimeSeries {
         }
         // create time series using first and last element
         TimeSeries ts =
-                TimeSeries.create(
-                        Long.parseLong(lines.get(0).split(sep)[0]),
-                        Long.parseLong(lines.get(lines.size() - 1).split(sep)[0]));
+            TimeSeries.create(
+                Long.parseLong(lines.get(0).split(sep)[0]),
+                Long.parseLong(lines.get(lines.size() - 1).split(sep)[0]));
 
         for (String line : lines) {
 

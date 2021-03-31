@@ -8,6 +8,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.log4j.Logger;
+import scala.Tuple2;
 import scala.Tuple3;
 
 import java.sql.*;
@@ -137,7 +138,7 @@ public class IOManager {
      ******************************************************************************/
 
     private static final Logger LOG = Logger.getLogger(IOManager.class);
-    private static final String DB_FILE_NAME = "events_test";
+    private static final String DB_FILE_NAME = "events";
     private static final Random RANDOM = new Random();
     private static final StopWatch STOPWATCH = new StopWatch();
 
@@ -477,8 +478,58 @@ public class IOManager {
     public void addMetrics(double config, long timestamp, double avgThr, double avgLat, long chkLast) {
 
         String insertValue = String.format(
-            "INSERT INTO metrics (config, timestamp, avgThr, avgLat, chkLast) VALUES (%f,%d,%f,%f,%d);",
+            "INSERT INTO metrics " +
+            "(config, timestamp, avgThr, avgLat, chkLast) " +
+            "VALUES " +
+            "(%f,%d,%f,%f,%d);",
             config, timestamp, avgThr, avgLat, chkLast);
+        IOManager.executeUpdate(insertValue);
+    }
+
+    public List<Tuple2<Double, Long>> fetchMetrics(double config) {
+
+        List<Tuple2<Double, Long>> metrics = new ArrayList<>();
+        String selectValues = "SELECT config, timestamp FROM metrics;";
+        IOManager.executeQuery(selectValues, (rs) -> {
+            metrics.add(new Tuple2<>(rs.getDouble("config"), rs.getLong("timestamp")));
+        });
+        return metrics;
+    }
+
+    public void updateMetrics(double config, long timestamp, double recTime) {
+
+        String updateValue = String.format(
+            "UPDATE metrics " +
+            "SET recTime = %f " +
+            "WHERE config = %f " +
+            "AND timestamp = %d;",
+            recTime, config, timestamp);
+        IOManager.executeUpdate(updateValue);
+    }
+
+    public void initChkSums() {
+
+        String createTable =
+            "CREATE TABLE IF NOT EXISTS chk_sums " +
+            "(config REAL NOT NULL, " +
+            "minDuration INTEGER NOT NULL, " +
+            "avgDuration INTEGER NOT NULL, " +
+            "maxDuration INTEGER NOT NULL, " +
+            "minSize INTEGER NOT NULL, " +
+            "avgSize INTEGER NOT NULL, " +
+            "maxSize INTEGER NOT NULL);";
+        IOManager.executeUpdate(createTable);
+        IOManager.executeUpdate("DELETE FROM chk_sums;");
+    }
+
+    public void addChkSum(double config, long minDuration, long avgDuration, long maxDuration, long minSize, long avgSize, long maxSize) {
+
+        String insertValue = String.format(
+            "INSERT INTO chk_sums " +
+            "(config, minDuration, avgDuration, maxDuration, minSize, avgSize, maxSize) " +
+            "VALUES " +
+            "(%f,%d,%d,%d,%d,%d,%d);",
+            config, minDuration, avgDuration, maxDuration, minSize, avgSize, maxSize);
         IOManager.executeUpdate(insertValue);
     }
 
