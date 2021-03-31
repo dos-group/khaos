@@ -489,7 +489,9 @@ public class IOManager {
     public List<Tuple2<Double, Long>> fetchMetrics(double config) {
 
         List<Tuple2<Double, Long>> metrics = new ArrayList<>();
-        String selectValues = "SELECT config, timestamp FROM metrics;";
+        String selectValues = String.format(
+            "SELECT config, timestamp FROM metrics WHERE config = %f;",
+            config);
         IOManager.executeQuery(selectValues, (rs) -> {
             metrics.add(new Tuple2<>(rs.getDouble("config"), rs.getLong("timestamp")));
         });
