@@ -1,6 +1,7 @@
 package de.tu_berlin.dos.arm.khaos.clients;
 
 import de.tu_berlin.dos.arm.khaos.clients.flink.FlinkClient;
+import de.tu_berlin.dos.arm.khaos.clients.flink.responses.Job;
 import de.tu_berlin.dos.arm.khaos.clients.flink.responses.Vertices;
 import de.tu_berlin.dos.arm.khaos.clients.flink.responses.Vertices.Node;
 import de.tu_berlin.dos.arm.khaos.clients.kubernetes.KubernetesClient;
@@ -88,11 +89,7 @@ public class ClientsManager {
 
     public long getLastCheckpoint(String jobId) throws Exception {
 
-        long startTime = System.nanoTime();
-        long lastCheckpoint = this.flink.getCheckpoints(jobId).latest.completed.latestAckTimestamp;
-        long endTime = System.nanoTime();
-        // determine when the last checkpoint occurred taking request time into account
-        return Instant.now().toEpochMilli() - lastCheckpoint - (endTime - startTime) / 2;
+        return this.flink.getCheckpoints(jobId).latest.completed.latestAckTimestamp;
     }
 
     public void injectFailure(String jobId, String operatorId) throws Exception {

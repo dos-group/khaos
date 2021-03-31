@@ -2,6 +2,7 @@ package de.tu_berlin.dos.arm.khaos.core;
 
 import de.tu_berlin.dos.arm.khaos.clients.flink.responses.Checkpoints;
 import de.tu_berlin.dos.arm.khaos.core.Context.StreamingJob;
+import de.tu_berlin.dos.arm.khaos.io.IOManager;
 import de.tu_berlin.dos.arm.khaos.io.ReplayCounter.Listener;
 import de.tu_berlin.dos.arm.khaos.io.TimeSeries;
 import de.tu_berlin.dos.arm.khaos.modeling.AnomalyDetector;
@@ -11,6 +12,7 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.apache.log4j.Logger;
 import scala.Tuple2;
 import scala.Tuple3;
+import scala.Tuple6;
 import smile.data.DataFrame;
 import smile.data.formula.Formula;
 import smile.regression.LinearModel;
@@ -26,7 +28,11 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
     START {
 
-        public ExecutionGraph runStage(Context context) {
+        public ExecutionGraph runStage(Context context) throws Exception {
+
+            /*for (Tuple6<Double, Long, Double, Double, Long, Double> current : context.IOManager.fetchMetrics()) {
+                LOG.info(current);
+            }*/
 
             return RECORD;
         }
@@ -37,9 +43,9 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
             // saves events from kafka consumer topic to database for a user defined time
             //context.IOManager.recordKafkaToDatabase(context.consumerTopic, context.timeLimit, 100000);
-            context.IOManager.extractWorkload();
-            LOG.info(context.IOManager.getWorkload().size());
-            context.IOManager.extractFailureScenario(0.1f);
+            //context.IOManager.extractWorkload();
+            //LOG.info(context.IOManager.getWorkload().size());
+            //context.IOManager.extractFailureScenario(0.1f);
             for (Tuple3<Integer, Long, Integer> current : context.IOManager.getFailureScenario()) {
                 LOG.info(current._1() + " " + current._2() + " " + current._3());
             }
@@ -81,7 +87,6 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
                             long stopTs = Instant.now().getEpochSecond();
                             long startTs = stopTs - context.averagingWindow;
-
                             double avgThr = context.clientsManager.getThroughput(job.getJobId(), startTs, stopTs).average();
                             double avgLat = context.clientsManager.getLatency(job.getJobId(), job.getSinkId(), startTs, stopTs).average();
                             context.clientsManager.injectFailure(job.getJobId(), job.getSinkId());
@@ -175,14 +180,14 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                 TimeSeries thrTs = context.clientsManager.getThroughput(job.getJobId(), StreamingJob.startTs, StreamingJob.stopTs);
                 TimeSeries lagTs = context.clientsManager.getConsumerLag(job.getJobId(), StreamingJob.startTs, StreamingJob.stopTs);
 
-                for (Tuple2<Double, Long> metrics : context.IOManager.fetchMetrics(job.getConfig())) {
+                for (long timestamp : context.IOManager.fetchMetrics(job.getConfig())) {
 
                     service.submit(() -> {
 
                         AnomalyDetector detector = new AnomalyDetector(Arrays.asList(thrTs, lagTs));
-                        detector.fit(metrics._2, 1000);
-                        double recTime = detector.measure(metrics._2, 600);
-                        context.IOManager.updateMetrics(job.getConfig(), metrics._2, recTime);
+                        detector.fit(timestamp, 1000);
+                        double recTime = detector.measure(timestamp, 600);
+                        context.IOManager.updateMetrics(job.getConfig(), timestamp, recTime);
                         latch.countDown();
                     });
                 }

@@ -10,6 +10,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.log4j.Logger;
 import scala.Tuple2;
 import scala.Tuple3;
+import scala.Tuple6;
 
 import java.sql.*;
 import java.time.Duration;
@@ -111,7 +112,7 @@ public class IOManager {
                             events.forEach(e -> kafkaProducer.send(new ProducerRecord<>(producerTopic, e)));
                             //long endTime = System.currentTimeMillis();
                             //long timeNeeded =  endTime - startTime;
-                            LOG.info(replayCounter.getCounter() + " " + events.size());
+                            //LOG.info(replayCounter.getCounter() + " " + events.size());
                         }
                         catch (InterruptedException ex) {
                             LOG.error(ex);
@@ -303,7 +304,7 @@ public class IOManager {
         IOManager.executeUpdate("DELETE FROM workload;");
         LOG.info("Finished create workload table");
 
-        LOG.info("Starting extract and insert workload");
+        LOG.info("Starting extract workload");
         String selectEvents =
             "SELECT timestamp, COUNT(*) AS count " +
             "FROM events GROUP BY timestamp";
@@ -314,7 +315,7 @@ public class IOManager {
                 second.getAndAdd(1), rs.getLong("timestamp"), rs.getInt("count"));
             IOManager.executeUpdate(insertValue);
         });
-        LOG.info("Finished extract and insert workload");
+        LOG.info("Finished extract workload");
     }
 
     public List<Tuple3<Integer, Long, Integer>> getWorkload() {
@@ -486,14 +487,30 @@ public class IOManager {
         IOManager.executeUpdate(insertValue);
     }
 
-    public List<Tuple2<Double, Long>> fetchMetrics(double config) {
+    public List<Long> fetchMetrics(double config) {
 
-        List<Tuple2<Double, Long>> metrics = new ArrayList<>();
+        List<Long> metrics = new ArrayList<>();
         String selectValues = String.format(
-            "SELECT config, timestamp FROM metrics WHERE config = %f;",
+            "SELECT timestamp " +
+            "FROM metrics " +
+            "WHERE config = %f " +
+            "ORDER BY timestamp ASC;",
             config);
         IOManager.executeQuery(selectValues, (rs) -> {
-            metrics.add(new Tuple2<>(rs.getDouble("config"), rs.getLong("timestamp")));
+            metrics.add(rs.getLong("timestamp"));
+        });
+        return metrics;
+    }
+
+    public List<Tuple6<Double, Long, Double, Double, Long, Double>> fetchMetrics() {
+
+        List<Tuple6<Double, Long, Double, Double, Long, Double>> metrics = new ArrayList<>();
+        String selectValues = String.format(
+            "SELECT config, timestamp, avgThr, avgLat, chkLast, recTime " +
+            "FROM metrics " +
+            "ORDER BY timestamp ASC;");
+        IOManager.executeQuery(selectValues, (rs) -> {
+            metrics.add(new Tuple6<>(rs.getDouble("config"), rs.getLong("timestamp"), rs.getDouble("avgThr"), rs.getDouble("avgLat"), rs.getLong("chkLast"), rs.getDouble("recTime")));
         });
         return metrics;
     }

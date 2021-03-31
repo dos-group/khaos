@@ -74,7 +74,7 @@ public enum Context { get;
 
         public String getProgramArgs() {
 
-            return String.join(",", this.jobName, brokerList, consumerTopic, producerTopic, partitions + "", this.config + "");
+            return String.join(",", this.jobName, brokerList, consumerTopic, producerTopic, partitions + "", (int) this.config + "");
         }
 
         @Override
