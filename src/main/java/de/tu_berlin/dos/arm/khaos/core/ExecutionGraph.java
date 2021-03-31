@@ -46,20 +46,11 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
         public ExecutionGraph runStage(Context context) throws Exception {
 
             // saves events from kafka consumer topic to database for a user defined time
-            context.eventsManager.recordKafkaToDatabase(context.consumerTopic, context.timeLimit, 10000);
+            context.eventsManager.recordKafkaToDatabase(context.consumerTopic, context.timeLimit, 100000);
             context.eventsManager.extractWorkload();
-            for (Tuple3<Integer, Long, Integer> current : context.eventsManager.getWorkload()) {
+            context.eventsManager.extractFailureScenario(0.1f);
 
-                LOG.info(current._1() + " " + current._2() + " " + current._3());
-            }
-            /*LOG.info("Failure scenarios");
-            context.eventsManager.setFailureScenario();
-            for (Tuple3<Integer, Long, Integer> current : context.eventsManager.getFailureScenario()) {
-
-                LOG.info(current._1() + " " + current._2() + " " + current._3());
-            }*/
-
-            return STOP;
+            return REPLAY;
         }
     },
     DEPLOY {
@@ -81,9 +72,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
         public ExecutionGraph runStage(Context context) throws Exception {
 
-            BufferedWriter in = new BufferedWriter(new FileWriter("metrics.csv"));
-            in.write("config|timestamp|avgThr|avgLat|chkLast\n");
-            in.close();
+            context.eventsManager.initMetrics();
 
             // register points for failure injection with counter manager
             context.eventsManager.getFailureScenario().forEach(point -> {
@@ -94,7 +83,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                     // inject failure in all experiments
                     for (StreamingJob job : context.experiments) {
 
-                        try (BufferedWriter bw = new BufferedWriter(new FileWriter("metrics.csv", true))) {
+                        try {
 
                             long stopTs = Instant.now().getEpochSecond();
                             long startTs = stopTs - context.averagingWindow;
@@ -104,11 +93,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                             context.clientsManager.injectFailure(job.getJobId(), job.getRandomOperatorId());
                             long chkLast = context.clientsManager.getLastCheckpoint(job.getJobId());
 
-                            FailureMetrics metrics = new FailureMetrics(stopTs, avgThr, avgLat, chkLast);
-                            job.failureMetricsList.add(metrics);
-
-                            LOG.info(job);
-                            bw.write(String.format("%f|%d|%f|%f|%d\n", job.getConfig(), stopTs, avgThr, avgLat, chkLast));
+                            context.eventsManager.addMetrics(job.getConfig(), stopTs, avgThr, avgLat, chkLast);
                         }
                         catch (Exception e) {
 

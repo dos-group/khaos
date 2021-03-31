@@ -43,12 +43,6 @@ public class EventsManager {
         void accept(T t) throws SQLException;
     }
 
-    @FunctionalInterface
-    public interface CheckedBiConsumer<T1, T2> {
-
-        void accept(T1 t1, T2 t2) throws SQLException;
-    }
-
     public static class DatabaseToQueue implements Runnable {
 
         public final List<Tuple3<Integer, Long, Integer>> workload;
@@ -63,29 +57,23 @@ public class EventsManager {
         @Override
         public void run() {
 
-            try (Connection conn = EventsManager.connect()) {
+            LOG.info("Starting replay events from database to queue");
+            for (Tuple3<Integer, Long, Integer> current : this.workload) {
 
-                LOG.info("Starting replay events from database to queue");
-                for (Tuple3<Integer, Long, Integer> current : this.workload) {
-
-                    String selectStatement = "SELECT body FROM events WHERE timestamp = " + current._2() + ";";
-                    Statement statement = conn.createStatement();
-                    ResultSet rs = statement.executeQuery(selectStatement);
-                    List<String> events = new ArrayList<>();
-                    while (rs.next()) {
-
-                        events.add(rs.getString("body"));
-                    }
+                List<String> events = new ArrayList<>();
+                String selectValue = "SELECT body FROM events WHERE timestamp = " + current._2() + ";";
+                EventsManager.executeQuery(selectValue, (rs) -> {
+                    events.add(rs.getString("body"));
+                });
+                try {
                     queue.put(events);
-                    rs.close();
-                    statement.close();
                 }
-                LOG.info("Stopping replay events from database to queue");
-            }
-            catch (Exception e) {
+                catch (InterruptedException e) {
 
-                LOG.error(e.getClass().getName() + ": " + e.getMessage());
+                    LOG.error(e.getClass().getName() + ": " + e.getMessage());
+                }
             }
+            LOG.info("Stopping replay events from database to queue");
         }
     }
 
@@ -159,19 +147,20 @@ public class EventsManager {
 
     private static final Logger LOG = Logger.getLogger(EventsManager.class);
     private static final String DB_FILE_NAME = "events_test";
+    private static final Random RANDOM = new Random();
     private static final StopWatch STOPWATCH = new StopWatch();
 
     /******************************************************************************
-     * CLASS BEHAVIOURS
+     * STATIC BEHAVIOURS
      ******************************************************************************/
 
-    public static Connection connect() throws Exception {
+    private static Connection connect() throws Exception {
 
         Class.forName("org.sqlite.JDBC");
         return DriverManager.getConnection(String.format("jdbc:sqlite:%s.db", DB_FILE_NAME));
     }
 
-    public static void executeUpdate(String query) {
+    private static void executeUpdate(String query) {
 
         try (Connection conn = connect();
              Statement statement = conn.createStatement()) {
@@ -184,7 +173,7 @@ public class EventsManager {
         }
     }
 
-    public static void executeQuery(String query, CheckedConsumer<ResultSet> callback) {
+    private static void executeQuery(String query, CheckedConsumer<ResultSet> callback) {
 
         try (Connection connection = connect();
              Statement statement = connection.createStatement();
@@ -193,23 +182,6 @@ public class EventsManager {
             while (resultSet.next()) {
 
                 callback.accept(resultSet);
-            }
-        }
-        catch (Exception e) {
-
-            LOG.error(e.getClass().getName() + ": " + e.getMessage());
-        }
-    }
-
-    public static <T> void executeQuery(String query, T target, CheckedBiConsumer<ResultSet, T> callback) {
-
-        try (Connection connection = connect();
-            Statement statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery(query)) {
-
-            while (resultSet.next()) {
-
-                callback.accept(resultSet, target);
             }
         }
         catch (Exception e) {
@@ -269,105 +241,65 @@ public class EventsManager {
 
     public void recordKafkaToDatabase(String topic, int timeLimit, int bufferSize) {
 
-        try (Connection conn = EventsManager.connect()) {
+        EventsManager.executeUpdate("PRAGMA journal_mode=WAL;");
+        EventsManager.executeUpdate("PRAGMA synchronous=off;");
 
-            EventsManager.executeUpdate("PRAGMA journal_mode=WAL;");
-            EventsManager.executeUpdate("PRAGMA synchronous=off;");
+        LOG.info("Starting create events table");
+        String createTable =
+            "CREATE TABLE IF NOT EXISTS events " +
+            "(timestamp INTEGER NOT NULL, " +
+            "body TEXT NOT NULL);";
+        EventsManager.executeUpdate(createTable);
+        LOG.info("Finished create events table");
 
-            /*Statement statement = conn.createStatement();
-            statement.executeUpdate("PRAGMA journal_mode=WAL;");
-            statement.close();
-            statement = conn.createStatement();
-            statement.executeUpdate("PRAGMA synchronous=off;");
-            statement.close();*/
+        KafkaConsumer<String, String> consumer = new KafkaConsumer<>(this.consumerProps);
+        consumer.subscribe(Collections.singletonList(topic));
 
-            LOG.info("Starting create events table");
-            String createTable =
-                "CREATE TABLE IF NOT EXISTS events " +
-                "(timestamp INTEGER NOT NULL, " +
-                "body TEXT NOT NULL);";
-            EventsManager.executeUpdate(createTable);
-            LOG.info("Finished create events table");
+        LOG.info("Starting record events");
+        STOPWATCH.reset();
+        STOPWATCH.start();
+        while (STOPWATCH.getTime(TimeUnit.SECONDS) < timeLimit) {
 
+            List<ConsumerRecords<String, String>> recordsList = new ArrayList<>();
+            int buffer = 0;
+            while (buffer < bufferSize) {
 
-            /*String createTable =
-                "CREATE TABLE IF NOT EXISTS events " +
-                "(timestamp INTEGER NOT NULL, " +
-                "body TEXT NOT NULL);";
-            statement = conn.createStatement();
-            statement.executeUpdate(createTable);
-            statement.close();
-            String deleteRows = "DELETE FROM events;";
-            statement = conn.createStatement();
-            statement.executeUpdate(deleteRows);
-            statement.close();
-            LOG.info("Finished create events table");*/
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
+                if (records.count() > 0) {
 
-            KafkaConsumer<String, String> consumer = new KafkaConsumer<>(this.consumerProps);
-            consumer.subscribe(Collections.singletonList(topic));
-
-            LOG.info("Starting record events");
-            STOPWATCH.reset();
-            STOPWATCH.start();
-            while (STOPWATCH.getTime(TimeUnit.SECONDS) < timeLimit) {
-
-                List<ConsumerRecords<String, String>> recordsList = new ArrayList<>();
-                int buffer = 0;
-                while (buffer < bufferSize) {
-
-                    ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
-                    if (records.count() > 0) {
-
-                        buffer += records.count();
-                        recordsList.add(records);
-                    }
+                    buffer += records.count();
+                    recordsList.add(records);
                 }
-                StringBuilder insertValue = new StringBuilder().append("INSERT INTO events (timestamp, body) VALUES ");
-                Iterator<ConsumerRecords<String, String>> listIterator = recordsList.iterator();
-                while (listIterator.hasNext()) {
-
-                    ConsumerRecords<String, String> records = listIterator.next();
-                    Iterator<ConsumerRecord<String, String>> recordsIterator = records.iterator();
-                    while (recordsIterator.hasNext()) {
-
-                        ConsumerRecord<String, String> record = recordsIterator.next();
-                        insertValue.append(String.format("(%d,'%s')", record.timestamp(), record.value()));
-                        if (recordsIterator.hasNext()) insertValue.append(",");
-                    }
-                    if (listIterator.hasNext()) insertValue.append(",");
-                }
-                EventsManager.executeUpdate(insertValue.append(";").toString());
-                /*statement = conn.createStatement();
-                statement.executeUpdate(insertValue.append(";").toString());
-                statement.close();*/
             }
-            LOG.info("Finished record events");
+            StringBuilder insertValue = new StringBuilder().append("INSERT INTO events (timestamp, body) VALUES ");
+            Iterator<ConsumerRecords<String, String>> listIterator = recordsList.iterator();
+            while (listIterator.hasNext()) {
 
-            LOG.info("Starting create index");
-            String createIndex =
-                "CREATE INDEX IF NOT EXISTS timestamp_index " +
-                "ON events (timestamp);";
-            EventsManager.executeUpdate(createIndex);
-            /*statement = conn.createStatement();
-            statement.executeUpdate(createIndex);
-            statement.close();*/
+                ConsumerRecords<String, String> records = listIterator.next();
+                Iterator<ConsumerRecord<String, String>> recordsIterator = records.iterator();
+                while (recordsIterator.hasNext()) {
 
-            LOG.info("Finished create index");
-
-            EventsManager.executeUpdate("PRAGMA synchronous=normal;");
-            /*statement = conn.createStatement();
-            statement.executeUpdate("PRAGMA synchronous=normal;");
-            statement.close();*/
+                    ConsumerRecord<String, String> record = recordsIterator.next();
+                    insertValue.append(String.format("(%d,'%s')", record.timestamp(), record.value()));
+                    if (recordsIterator.hasNext()) insertValue.append(",");
+                }
+                if (listIterator.hasNext()) insertValue.append(",");
+            }
+            EventsManager.executeUpdate(insertValue.append(";").toString());
         }
-        catch (Exception e) {
+        LOG.info("Finished record events");
 
-            LOG.error(e.getClass().getName() + ": " + e.getMessage());
-        }
+        LOG.info("Starting create index");
+        String createIndex =
+            "CREATE INDEX IF NOT EXISTS timestamp_index " +
+            "ON events (timestamp);";
+        EventsManager.executeUpdate(createIndex);
+        LOG.info("Finished create index");
+
+        EventsManager.executeUpdate("PRAGMA synchronous=normal;");
     }
 
     public void extractWorkload() {
-
-        //try (Connection conn = EventsManager.connect()) {
 
         LOG.info("Starting create workload table");
         String createTable =
@@ -376,13 +308,6 @@ public class EventsManager {
             "timestamp INTEGER NOT NULL, " +
             "count INTEGER NOT NULL);";
         EventsManager.executeUpdate(createTable);
-        /*Statement statement = conn.createStatement();
-        statement.executeUpdate(createTable);
-        statement.close();*/
-        /*String deleteRows = "DELETE FROM workload;";
-        statement = conn.createStatement();
-        statement.executeUpdate(deleteRows);
-        statement.close();*/
         EventsManager.executeUpdate("DELETE FROM workload;");
         LOG.info("Finished create workload table");
 
@@ -398,28 +323,6 @@ public class EventsManager {
             EventsManager.executeUpdate(insertValue);
         });
         LOG.info("Finished extract and insert workload");
-
-        /*statement = conn.createStatement();
-        ResultSet rs = statement.executeQuery(selectEvents);
-        int second = 1;
-        while (rs.next()) {
-
-            statement = conn.createStatement();
-            String insertValue = String.format(
-                "INSERT INTO workload (second, timestamp, count) VALUES (%d,%d,%d);",
-                second, rs.getLong("timestamp"), rs.getInt("count"));
-            statement.executeUpdate(insertValue);
-            statement.close();
-            second++;
-        }
-        rs.close();
-        statement.close();
-        LOG.info("Finished extract workload");*/
-        /*}
-        catch (Exception e) {
-
-            LOG.error(e.getClass().getName() + ": " + e.getMessage());
-        }*/
     }
 
     public List<Tuple3<Integer, Long, Integer>> getWorkload() {
@@ -430,38 +333,17 @@ public class EventsManager {
         String selectValues =
             "SELECT second, timestamp, count " +
             "FROM workload ORDER BY timestamp ASC";
-        EventsManager.executeQuery(selectValues, workload, (rs, target) -> {
-            target.add(new Tuple3<>(rs.getInt("second"), rs.getLong("timestamp"), rs.getInt("count")));
+        EventsManager.executeQuery(selectValues, (rs) -> {
+            workload.add(new Tuple3<>(rs.getInt("second"), rs.getLong("timestamp"), rs.getInt("count")));
         });
         LOG.info("Finished get workload");
 
-        /*try (Connection conn = EventsManager.connect()) {
-
-            LOG.info("Starting get workload");
-            String sql =
-                "SELECT second, timestamp, count " +
-                "FROM workload ORDER BY timestamp ASC";
-            Statement statement = conn.createStatement();
-            ResultSet rs = statement.executeQuery(sql);
-            while (rs.next()) {
-
-                workload.add(new Tuple3<>(rs.getInt("second"), rs.getLong("timestamp"), rs.getInt("count")));
-            }
-            rs.close();
-            statement.close();
-            LOG.info("Finished get workload");
-        }
-        catch (Exception e) {
-
-            LOG.error(e.getClass().getName() + ": " + e.getMessage());
-        }*/
         return workload;
     }
 
-    public void extractFailureScenario() {
+    public void extractFailureScenario(float tolerance) {
 
         List<Tuple3<Integer, Long, Integer>> workload = this.getWorkload();
-        LOG.info(workload.size());
 
         // find list of the max and minimum points
         List<Tuple3<Integer, Long, Integer>> min = new ArrayList<>();
@@ -505,11 +387,12 @@ public class EventsManager {
                 sum += workload.get(j)._3();
             }
             int average = sum / this.averagingWindow;
-            // find range of values which is 1% of average
+            // find range of values which is within user defined tolerance of average
             int onePercent = (int) ((workload.size() / 100) + 0.5);
+            int withTolerance = (int) (onePercent * (tolerance / 2));
             List<Integer> targetRange =
                 IntStream
-                    .rangeClosed(average - onePercent , average + onePercent)
+                    .rangeClosed(average - withTolerance , average + withTolerance)
                     .boxed()
                     .collect(Collectors.toList());
             // find all intersects that are in 1% range of target
@@ -520,23 +403,25 @@ public class EventsManager {
                     intersects.get(valueInRange).add(workload.get(i));
             }
         }
-        LOG.info(intersects.size());
         // test if enough points were found at each intersect
         intersects.forEach((k,v) -> {
+            LOG.info(k + " " + v.size());
             if (v.size() == 0) throw new IllegalStateException("Unable to find intersect for " + k);
         });
         // randomly select combination of intersects where at least one full set exists
-        List<Tuple3<Integer, Long, Integer>> scenario = new ArrayList<>();
-        Random rand = new Random();
-        StopWatch timer = new StopWatch();
-        timer.start();
+        STOPWATCH.reset();
+        STOPWATCH.start();
         while (true) {
 
-            intersects.forEach((k,v) -> scenario.add(v.get(rand.nextInt(v.size()))));
+            List<Tuple3<Integer, Long, Integer>> scenario = new ArrayList<>();
+            intersects.forEach((k,v) -> scenario.add(v.get(RANDOM.nextInt(v.size()))));
             boolean valid = true;
             for (int i = 0; i < scenario.size(); i++) {
+
                 for (int j = i+1; j < scenario.size(); j++) {
-                    if (Math.abs(scenario.get(i)._3() - scenario.get(j)._3()) < this.minFailureInterval) {
+
+                    if (Math.abs(scenario.get(i)._1() - scenario.get(j)._1()) < this.minFailureInterval) {
+
                         valid = false;
                         break;
                     }
@@ -544,37 +429,27 @@ public class EventsManager {
             }
             if (valid) {
 
-                try (Connection conn = EventsManager.connect()) {
+                String createTable =
+                    "CREATE TABLE IF NOT EXISTS scenario " +
+                    "(second INTEGER NOT NULL, " +
+                    "timestamp INTEGER NOT NULL, " +
+                    "count INTEGER NOT NULL);";
+                EventsManager.executeUpdate(createTable);
+                EventsManager.executeUpdate("DELETE FROM scenario;");
 
-                    String createTable =
-                        "CREATE TABLE IF NOT EXISTS scenario " +
-                        "(second INTEGER NOT NULL, " +
-                        "timestamp INTEGER NOT NULL, " +
-                        "count INTEGER NOT NULL);";
-                    Statement statement = conn.createStatement();
-                    statement.executeUpdate(createTable);
-                    statement.close();
-                    String deleteRows = "DELETE FROM scenario;";
-                    statement = conn.createStatement();
-                    statement.executeUpdate(deleteRows);
-                    statement.close();
+                StringBuilder insertValue = new StringBuilder().append("INSERT INTO scenario (second, timestamp, count) VALUES ");
+                Iterator<Tuple3<Integer, Long, Integer>> iterator = scenario.listIterator();
+                while (iterator.hasNext()) {
 
-                    for (Tuple3<Integer, Long, Integer> current : scenario) {
-
-                        statement = conn.createStatement();
-                        String insertValue = String.format(
-                            "INSERT INTO scenario (second, timestamp, count) VALUES (%d,%d,%d);",
-                            current._1(), current._2(), current._3());
-                        statement.executeUpdate(insertValue);
-                        statement.close();
-                    }
+                    Tuple3<Integer, Long, Integer> current = iterator.next();
+                    insertValue.append(String.format("(%d,%d,%d)", current._1(), current._2(), current._3()));
+                    if (iterator.hasNext()) insertValue.append(",");
                 }
-                catch (Exception e) {
-
-                    throw new IllegalStateException(e.getClass().getName() + ": " + e.getMessage());
-                }
+                EventsManager.executeUpdate(insertValue.append(";").toString());
+                STOPWATCH.stop();
+                return;
             }
-            if (timer.getTime(TimeUnit.SECONDS) > 120)
+            if (STOPWATCH.getTime(TimeUnit.SECONDS) > 120)
                 throw new IllegalStateException("Unable to find combination of intersects");
         }
     }
@@ -583,27 +458,37 @@ public class EventsManager {
 
         List<Tuple3<Integer, Long, Integer>> scenario = new ArrayList<>();
 
-        try (Connection conn = EventsManager.connect()) {
-
-            LOG.info("Starting get scenario");
-            String sql =
-                "SELECT second, timestamp, count " +
-                "FROM scenario ORDER BY second ASC";
-            Statement statement = conn.createStatement();
-            ResultSet rs = statement.executeQuery(sql);
-            while (rs.next()) {
-
-                scenario.add(new Tuple3<>(rs.getInt("second"), rs.getLong("timestamp"), rs.getInt("count")));
-            }
-            rs.close();
-            statement.close();
-            LOG.info("Finished get scenario");
-        }
-        catch (Exception e) {
-
-            LOG.error(e.getClass().getName() + ": " + e.getMessage());
-        }
+        LOG.info("Starting get scenario");
+        String selectValues =
+            "SELECT second, timestamp, count " +
+            "FROM scenario ORDER BY second ASC";
+        EventsManager.executeQuery(selectValues, (rs) -> {
+            scenario.add(new Tuple3<>(rs.getInt("second"), rs.getLong("timestamp"), rs.getInt("count")));
+        });
+        LOG.info("Finished get scenario");
         return scenario;
+    }
+
+    public void initMetrics() {
+
+        String createTable =
+            "CREATE TABLE IF NOT EXISTS metrics " +
+            "(config REAL NOT NULL, " +
+            "timestamp INTEGER NOT NULL, " +
+            "avgThr REAL NOT NULL, " +
+            "avgLat REAL NOT NULL, " +
+            "chkLast INTEGER NOT NULL, " +
+            "recTime REAL);";
+        EventsManager.executeUpdate(createTable);
+        EventsManager.executeUpdate("DELETE FROM metrics;");
+    }
+
+    public void addMetrics(double config, long timestamp, double avgThr, double avgLat, long chkLast) {
+
+        String insertValue = String.format(
+            "INSERT INTO metrics (config, timestamp, avgThr, avgLat, chkLast) VALUES (%f,%d,%f,%f,%d);",
+            config, timestamp, avgThr, avgLat, chkLast);
+        EventsManager.executeUpdate(insertValue);
     }
 
     public void registerListener(Listener listener) {

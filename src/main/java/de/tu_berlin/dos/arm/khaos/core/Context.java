@@ -210,7 +210,6 @@ public enum Context { get;
     public final String consumerTopic;
     public final String producerTopic;
     public final int partitions;
-    public final String dbFileName;
     public final int timeLimit;
     public final String originalFilePath;
     public final String tempSortDir;
@@ -262,7 +261,6 @@ public enum Context { get;
             this.consumerTopic = props.getProperty("kafka.consumerTopic");
             this.producerTopic = props.getProperty("kafka.producerTopic");
             this.partitions = Integer.parseInt(props.getProperty("kafka.partitions"));
-            this.dbFileName = props.getProperty("database.fileName");
             this.timeLimit = Integer.parseInt(props.getProperty("database.timeLimit"));
             this.originalFilePath = props.getProperty("dataset.originalFilePath");
             this.tempSortDir = props.getProperty("dataset.tempSortDir");
@@ -315,7 +313,6 @@ public enum Context { get;
         }
         catch (Exception e) {
 
-            System.out.println(e.fillInStackTrace());
             throw new IllegalStateException(e.fillInStackTrace());
         }
     }
