@@ -1,8 +1,8 @@
 package de.tu_berlin.dos.arm.khaos.clients.prometheus;
 
 import de.tu_berlin.dos.arm.khaos.clients.prometheus.responses.Matrix;
-import de.tu_berlin.dos.arm.khaos.events.Observation;
-import de.tu_berlin.dos.arm.khaos.events.TimeSeries;
+import de.tu_berlin.dos.arm.khaos.io.Observation;
+import de.tu_berlin.dos.arm.khaos.io.TimeSeries;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 

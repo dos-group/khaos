@@ -1,6 +1,6 @@
-package de.tu_berlin.dos.arm.khaos.events;
+package de.tu_berlin.dos.arm.khaos.io;
 
-import de.tu_berlin.dos.arm.khaos.events.ReplayCounter.Listener;
+import de.tu_berlin.dos.arm.khaos.io.ReplayCounter.Listener;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -8,14 +8,8 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.log4j.Logger;
-import scala.Tuple2;
 import scala.Tuple3;
 
-import javax.xml.stream.FactoryConfigurationError;
-import java.io.BufferedWriter;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.time.Duration;
 import java.util.*;
@@ -24,14 +18,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class EventsManager {
+public class IOManager {
 
     /******************************************************************************
      * STATIC INNER CLASSES
@@ -62,7 +53,7 @@ public class EventsManager {
 
                 List<String> events = new ArrayList<>();
                 String selectValue = "SELECT body FROM events WHERE timestamp = " + current._2() + ";";
-                EventsManager.executeQuery(selectValue, (rs) -> {
+                IOManager.executeQuery(selectValue, (rs) -> {
                     events.add(rs.getString("body"));
                 });
                 try {
@@ -145,7 +136,7 @@ public class EventsManager {
      * STATIC VARIABLES
      ******************************************************************************/
 
-    private static final Logger LOG = Logger.getLogger(EventsManager.class);
+    private static final Logger LOG = Logger.getLogger(IOManager.class);
     private static final String DB_FILE_NAME = "events_test";
     private static final Random RANDOM = new Random();
     private static final StopWatch STOPWATCH = new StopWatch();
@@ -205,7 +196,7 @@ public class EventsManager {
      * CONSTRUCTOR(S)
      ******************************************************************************/
 
-    public EventsManager(int minFailureInterval, int averagingWindow, int numFailures, String brokerList) {
+    public IOManager(int minFailureInterval, int averagingWindow, int numFailures, String brokerList) {
 
         this.replayCounter = new ReplayCounter();
         this.minFailureInterval = minFailureInterval;
@@ -241,15 +232,15 @@ public class EventsManager {
 
     public void recordKafkaToDatabase(String topic, int timeLimit, int bufferSize) {
 
-        EventsManager.executeUpdate("PRAGMA journal_mode=WAL;");
-        EventsManager.executeUpdate("PRAGMA synchronous=off;");
+        IOManager.executeUpdate("PRAGMA journal_mode=WAL;");
+        IOManager.executeUpdate("PRAGMA synchronous=off;");
 
         LOG.info("Starting create events table");
         String createTable =
             "CREATE TABLE IF NOT EXISTS events " +
             "(timestamp INTEGER NOT NULL, " +
             "body TEXT NOT NULL);";
-        EventsManager.executeUpdate(createTable);
+        IOManager.executeUpdate(createTable);
         LOG.info("Finished create events table");
 
         KafkaConsumer<String, String> consumer = new KafkaConsumer<>(this.consumerProps);
@@ -285,7 +276,7 @@ public class EventsManager {
                 }
                 if (listIterator.hasNext()) insertValue.append(",");
             }
-            EventsManager.executeUpdate(insertValue.append(";").toString());
+            IOManager.executeUpdate(insertValue.append(";").toString());
         }
         LOG.info("Finished record events");
 
@@ -293,10 +284,10 @@ public class EventsManager {
         String createIndex =
             "CREATE INDEX IF NOT EXISTS timestamp_index " +
             "ON events (timestamp);";
-        EventsManager.executeUpdate(createIndex);
+        IOManager.executeUpdate(createIndex);
         LOG.info("Finished create index");
 
-        EventsManager.executeUpdate("PRAGMA synchronous=normal;");
+        IOManager.executeUpdate("PRAGMA synchronous=normal;");
     }
 
     public void extractWorkload() {
@@ -307,8 +298,8 @@ public class EventsManager {
             "(second INTEGER NOT NULL, " +
             "timestamp INTEGER NOT NULL, " +
             "count INTEGER NOT NULL);";
-        EventsManager.executeUpdate(createTable);
-        EventsManager.executeUpdate("DELETE FROM workload;");
+        IOManager.executeUpdate(createTable);
+        IOManager.executeUpdate("DELETE FROM workload;");
         LOG.info("Finished create workload table");
 
         LOG.info("Starting extract and insert workload");
@@ -316,11 +307,11 @@ public class EventsManager {
             "SELECT timestamp, COUNT(*) AS count " +
             "FROM events GROUP BY timestamp";
         AtomicInteger second = new AtomicInteger(1);
-        EventsManager.executeQuery(selectEvents, (rs) -> {
+        IOManager.executeQuery(selectEvents, (rs) -> {
             String insertValue = String.format(
                 "INSERT INTO workload (second, timestamp, count) VALUES (%d,%d,%d);",
                 second.getAndAdd(1), rs.getLong("timestamp"), rs.getInt("count"));
-            EventsManager.executeUpdate(insertValue);
+            IOManager.executeUpdate(insertValue);
         });
         LOG.info("Finished extract and insert workload");
     }
@@ -333,7 +324,7 @@ public class EventsManager {
         String selectValues =
             "SELECT second, timestamp, count " +
             "FROM workload ORDER BY timestamp ASC";
-        EventsManager.executeQuery(selectValues, (rs) -> {
+        IOManager.executeQuery(selectValues, (rs) -> {
             workload.add(new Tuple3<>(rs.getInt("second"), rs.getLong("timestamp"), rs.getInt("count")));
         });
         LOG.info("Finished get workload");
@@ -434,8 +425,8 @@ public class EventsManager {
                     "(second INTEGER NOT NULL, " +
                     "timestamp INTEGER NOT NULL, " +
                     "count INTEGER NOT NULL);";
-                EventsManager.executeUpdate(createTable);
-                EventsManager.executeUpdate("DELETE FROM scenario;");
+                IOManager.executeUpdate(createTable);
+                IOManager.executeUpdate("DELETE FROM scenario;");
 
                 StringBuilder insertValue = new StringBuilder().append("INSERT INTO scenario (second, timestamp, count) VALUES ");
                 Iterator<Tuple3<Integer, Long, Integer>> iterator = scenario.listIterator();
@@ -445,7 +436,7 @@ public class EventsManager {
                     insertValue.append(String.format("(%d,%d,%d)", current._1(), current._2(), current._3()));
                     if (iterator.hasNext()) insertValue.append(",");
                 }
-                EventsManager.executeUpdate(insertValue.append(";").toString());
+                IOManager.executeUpdate(insertValue.append(";").toString());
                 STOPWATCH.stop();
                 return;
             }
@@ -462,7 +453,7 @@ public class EventsManager {
         String selectValues =
             "SELECT second, timestamp, count " +
             "FROM scenario ORDER BY second ASC";
-        EventsManager.executeQuery(selectValues, (rs) -> {
+        IOManager.executeQuery(selectValues, (rs) -> {
             scenario.add(new Tuple3<>(rs.getInt("second"), rs.getLong("timestamp"), rs.getInt("count")));
         });
         LOG.info("Finished get scenario");
@@ -479,8 +470,8 @@ public class EventsManager {
             "avgLat REAL NOT NULL, " +
             "chkLast INTEGER NOT NULL, " +
             "recTime REAL);";
-        EventsManager.executeUpdate(createTable);
-        EventsManager.executeUpdate("DELETE FROM metrics;");
+        IOManager.executeUpdate(createTable);
+        IOManager.executeUpdate("DELETE FROM metrics;");
     }
 
     public void addMetrics(double config, long timestamp, double avgThr, double avgLat, long chkLast) {
@@ -488,7 +479,7 @@ public class EventsManager {
         String insertValue = String.format(
             "INSERT INTO metrics (config, timestamp, avgThr, avgLat, chkLast) VALUES (%f,%d,%f,%f,%d);",
             config, timestamp, avgThr, avgLat, chkLast);
-        EventsManager.executeUpdate(insertValue);
+        IOManager.executeUpdate(insertValue);
     }
 
     public void registerListener(Listener listener) {

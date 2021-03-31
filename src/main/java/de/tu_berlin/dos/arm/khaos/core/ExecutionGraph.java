@@ -3,29 +3,17 @@ package de.tu_berlin.dos.arm.khaos.core;
 import de.tu_berlin.dos.arm.khaos.clients.flink.responses.Checkpoints;
 import de.tu_berlin.dos.arm.khaos.core.Context.StreamingJob;
 import de.tu_berlin.dos.arm.khaos.core.Context.StreamingJob.CheckpointSummary;
-import de.tu_berlin.dos.arm.khaos.core.Context.StreamingJob.FailureMetrics;
-import de.tu_berlin.dos.arm.khaos.events.EventsManager;
-import de.tu_berlin.dos.arm.khaos.events.ReplayCounter.Listener;
-import de.tu_berlin.dos.arm.khaos.events.TimeSeries;
-import de.tu_berlin.dos.arm.khaos.modeling.AnomalyDetector;
+import de.tu_berlin.dos.arm.khaos.io.ReplayCounter.Listener;
+import de.tu_berlin.dos.arm.khaos.io.TimeSeries;
 import de.tu_berlin.dos.arm.khaos.utils.SequenceFSM;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.log4j.Logger;
-import scala.Tuple3;
 import smile.data.DataFrame;
 import smile.data.formula.Formula;
 import smile.regression.LinearModel;
 import smile.regression.OLS;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.Statement;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -36,19 +24,19 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
     START {
 
-        public ExecutionGraph runStage(Context context) throws Exception {
+        public ExecutionGraph runStage(Context context) {
 
             return RECORD;
         }
     },
     RECORD {
 
-        public ExecutionGraph runStage(Context context) throws Exception {
+        public ExecutionGraph runStage(Context context) {
 
             // saves events from kafka consumer topic to database for a user defined time
-            context.eventsManager.recordKafkaToDatabase(context.consumerTopic, context.timeLimit, 100000);
-            context.eventsManager.extractWorkload();
-            context.eventsManager.extractFailureScenario(0.1f);
+            context.IOManager.recordKafkaToDatabase(context.consumerTopic, context.timeLimit, 100000);
+            context.IOManager.extractWorkload();
+            context.IOManager.extractFailureScenario(0.1f);
 
             return REPLAY;
         }
@@ -70,15 +58,15 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
     },
     REGISTER {
 
-        public ExecutionGraph runStage(Context context) throws Exception {
+        public ExecutionGraph runStage(Context context) {
 
-            context.eventsManager.initMetrics();
+            context.IOManager.initMetrics();
 
             // register points for failure injection with counter manager
-            context.eventsManager.getFailureScenario().forEach(point -> {
+            context.IOManager.getFailureScenario().forEach(point -> {
 
                 //context.eventsManager.registerListener(new Listener(point, (avgThr) -> {
-                context.eventsManager.registerListener(new Listener(point._1(), () -> {
+                context.IOManager.registerListener(new Listener(point._1(), () -> {
 
                     // inject failure in all experiments
                     for (StreamingJob job : context.experiments) {
@@ -93,7 +81,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                             context.clientsManager.injectFailure(job.getJobId(), job.getRandomOperatorId());
                             long chkLast = context.clientsManager.getLastCheckpoint(job.getJobId());
 
-                            context.eventsManager.addMetrics(job.getConfig(), stopTs, avgThr, avgLat, chkLast);
+                            context.IOManager.addMetrics(job.getConfig(), stopTs, avgThr, avgLat, chkLast);
                         }
                         catch (Exception e) {
 
@@ -119,13 +107,13 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
             AtomicBoolean isDone = new AtomicBoolean(false);
             // start reading from file into queue and then into kafka
             CompletableFuture
-                .runAsync(context.eventsManager.databaseToQueue(queue))
+                .runAsync(context.IOManager.databaseToQueue(queue))
                 .thenRun(() -> {
                     isDone.set(true);
                     latch.countDown();
                 });
             CompletableFuture
-                .runAsync(context.eventsManager.queueToKafka(queue, StreamingJob.consumerTopic, isDone))
+                .runAsync(context.IOManager.queueToKafka(queue, StreamingJob.consumerTopic, isDone))
                 .thenRun(latch::countDown);
             // wait till full workload has been replayed
             try {
@@ -177,7 +165,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                 TimeSeries thrTs = context.clientsManager.getThroughput(job.getJobId(), StreamingJob.startTs, StreamingJob.stopTs);
                 TimeSeries lagTs = context.clientsManager.getConsumerLag(job.getJobId(), StreamingJob.startTs, StreamingJob.stopTs);
 
-                for (FailureMetrics failureMetrics : job.failureMetricsList) {
+                /*for (FailureMetrics failureMetrics : job.failureMetricsList) {
 
                     service.submit(() -> {
 
@@ -187,7 +175,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                         failureMetrics.setDuration(duration);
                         latch.countDown();
                     });
-                }
+                }*/
             }
             latch.await();
             LOG.info(context.experiments);

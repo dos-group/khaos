@@ -1,14 +1,12 @@
-package de.tu_berlin.dos.arm.khaos.events;
+package de.tu_berlin.dos.arm.khaos.io;
 
 import org.apache.log4j.Logger;
-import scala.Tuple3;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 
 public class ReplayCounter {
 

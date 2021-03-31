@@ -1,15 +1,11 @@
 package de.tu_berlin.dos.arm.khaos.core;
 
 import de.tu_berlin.dos.arm.khaos.clients.ClientsManager;
-import de.tu_berlin.dos.arm.khaos.events.EventsManager;
+import de.tu_berlin.dos.arm.khaos.io.IOManager;
 import de.tu_berlin.dos.arm.khaos.modeling.RegressionModel;
 import de.tu_berlin.dos.arm.khaos.utils.FileReader;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.log4j.Logger;
-import smile.data.DataFrame;
-import smile.data.formula.Formula;
-import smile.regression.LinearModel;
-import smile.regression.OLS;
 
 import java.util.*;
 import java.util.stream.Stream;
@@ -21,46 +17,6 @@ public enum Context { get;
      ******************************************************************************/
 
     public static class StreamingJob {
-
-        public static class FailureMetrics {
-
-            public final long timestamp;
-            public final double avgThr;
-            public final double avgLat;
-            public final double chkLast;
-
-            private double duration;
-
-            public FailureMetrics(long timestamp, double avgThr, double avgLat, double chkLast) {
-
-                this.timestamp = timestamp;
-                this.avgThr = avgThr;
-                this.avgLat = avgLat;
-                this.chkLast = chkLast;
-            }
-
-            public double getDuration() {
-
-                return duration;
-            }
-
-            public void setDuration(double duration) {
-
-                this.duration = duration;
-            }
-
-            @Override
-            public String toString() {
-
-                return "FailureMetrics{" +
-                        "timestamp=" + timestamp +
-                        ", avgThr=" + avgThr +
-                        ", avgLat=" + avgLat +
-                        ", chkLast=" + chkLast +
-                        ", duration=" + duration +
-                        '}';
-            }
-        }
 
         public static class CheckpointSummary {
 
@@ -105,7 +61,6 @@ public enum Context { get;
         public static long stopTs;
 
         public final String jobName;
-        public final List<FailureMetrics> failureMetricsList;
 
         private final Random rand = new Random();
         private String jobId;
@@ -117,7 +72,6 @@ public enum Context { get;
         public StreamingJob(String jobName) {
 
             this.jobName = jobName;
-            this.failureMetricsList = new ArrayList<>();
         }
 
         public String getJobId() {
@@ -187,7 +141,6 @@ public enum Context { get;
                     ", operatorIds=" + operatorIds +
                     ", sinkId='" + sinkId + '\'' +
                     ", chkSummary=" + chkSummary +
-                    ", failureMetricsList=" + Arrays.toString(this.failureMetricsList.toArray()) +
                     '}';
         }
     }
@@ -235,7 +188,7 @@ public enum Context { get;
     public final StreamingJob targetJob;
     public final List<StreamingJob> experiments;
 
-    public final EventsManager eventsManager;
+    public final IOManager IOManager;
     public final ClientsManager clientsManager;
 
     public RegressionModel performance;
@@ -304,7 +257,7 @@ public enum Context { get;
             });
 
             // create global context objects
-            this.eventsManager = new EventsManager(this.minFailureInterval, this.averagingWindow, this.numFailures, this.brokerList);
+            this.IOManager = new IOManager(this.minFailureInterval, this.averagingWindow, this.numFailures, this.brokerList);
             this.clientsManager = new ClientsManager(this.promUrl, this.flinkUrl, this.jarId, this.parallelism, this.k8sNamespace, this.averagingWindow);
 
             // create multiple regression models

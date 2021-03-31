@@ -5,7 +5,7 @@ import de.tu_berlin.dos.arm.khaos.clients.flink.responses.Vertices;
 import de.tu_berlin.dos.arm.khaos.clients.flink.responses.Vertices.Node;
 import de.tu_berlin.dos.arm.khaos.clients.kubernetes.KubernetesClient;
 import de.tu_berlin.dos.arm.khaos.clients.prometheus.PrometheusClient;
-import de.tu_berlin.dos.arm.khaos.events.TimeSeries;
+import de.tu_berlin.dos.arm.khaos.io.TimeSeries;
 import org.apache.log4j.Logger;
 
 import java.time.Instant;

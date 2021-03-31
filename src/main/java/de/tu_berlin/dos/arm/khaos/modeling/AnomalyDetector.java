@@ -1,6 +1,6 @@
 package de.tu_berlin.dos.arm.khaos.modeling;
 
-import de.tu_berlin.dos.arm.khaos.events.TimeSeries;
+import de.tu_berlin.dos.arm.khaos.io.TimeSeries;
 import iftm.anomalydetection.AutoMLAnomalyDetection;
 import iftm.anomalydetection.DistancePredictionResult;
 import iftm.anomalydetection.automl.identityfunctions.AbstractArimaBreeding;
