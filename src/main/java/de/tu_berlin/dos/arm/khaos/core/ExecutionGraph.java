@@ -2,7 +2,6 @@ package de.tu_berlin.dos.arm.khaos.core;
 
 import de.tu_berlin.dos.arm.khaos.clients.flink.responses.Checkpoints;
 import de.tu_berlin.dos.arm.khaos.core.Context.StreamingJob;
-import de.tu_berlin.dos.arm.khaos.io.IOManager;
 import de.tu_berlin.dos.arm.khaos.io.ReplayCounter.Listener;
 import de.tu_berlin.dos.arm.khaos.io.TimeSeries;
 import de.tu_berlin.dos.arm.khaos.modeling.AnomalyDetector;
@@ -10,7 +9,6 @@ import de.tu_berlin.dos.arm.khaos.utils.SequenceFSM;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.log4j.Logger;
-import scala.Tuple2;
 import scala.Tuple3;
 import scala.Tuple6;
 import smile.data.DataFrame;
@@ -77,7 +75,6 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
             // register points for failure injection with counter manager
             context.IOManager.getFailureScenario().forEach(point -> {
 
-                //context.eventsManager.registerListener(new Listener(point, (avgThr) -> {
                 context.IOManager.registerListener(new Listener(point._1(), () -> {
 
                     // inject failure in all experiments
