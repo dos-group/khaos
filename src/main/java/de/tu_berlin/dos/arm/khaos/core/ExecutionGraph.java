@@ -174,26 +174,25 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
             final ExecutorService service = Executors.newFixedThreadPool(numOfCores);
             final CountDownLatch latch = new CountDownLatch(context.numOfConfigs * context.numFailures);
 
-            LOG.info("Starting measure failure durations");
+            LOG.info("Starting measure recovery times");
             for (StreamingJob job : context.experiments) {
                 
                 TimeSeries thrTs = context.clientsManager.getThroughput(job.getJobId(), StreamingJob.startTs, StreamingJob.stopTs);
                 TimeSeries lagTs = context.clientsManager.getConsumerLag(job.getJobId(), StreamingJob.startTs, StreamingJob.stopTs);
-
-                for (long timestamp : context.IOManager.fetchMetrics(job.getConfig())) {
+                for (Tuple6<Double, Long, Double, Double, Long, Double> current : context.IOManager.fetchMetrics(job.getConfig())) {
 
                     service.submit(() -> {
 
                         AnomalyDetector detector = new AnomalyDetector(Arrays.asList(thrTs, lagTs));
-                        detector.fit(timestamp, 1000);
-                        double recTime = detector.measure(timestamp, 600);
-                        context.IOManager.updateMetrics(job.getConfig(), timestamp, recTime);
+                        detector.fit(current._2(), 1000);
+                        double recTime = detector.measure(current._2(), 600);
+                        context.IOManager.updateMetrics(job.getConfig(), current._2(), recTime);
                         latch.countDown();
                     });
                 }
             }
             latch.await();
-            LOG.info("Finished measure failure durations");
+            LOG.info("Finished measure recovery times");
 
             return STOP;
         }

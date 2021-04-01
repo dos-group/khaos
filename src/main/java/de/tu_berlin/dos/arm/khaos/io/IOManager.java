@@ -487,7 +487,7 @@ public class IOManager {
         IOManager.executeUpdate(insertValue);
     }
 
-    public List<Long> fetchMetrics(double config) {
+    /*public List<Long> fetchMetrics(double config) {
 
         List<Long> metrics = new ArrayList<>();
         String selectValues = String.format(
@@ -500,17 +500,26 @@ public class IOManager {
             metrics.add(rs.getLong("timestamp"));
         });
         return metrics;
-    }
+    }*/
 
-    public List<Tuple6<Double, Long, Double, Double, Long, Double>> fetchMetrics() {
+    public List<Tuple6<Double, Long, Double, Double, Long, Double>> fetchMetrics(double config) {
 
         List<Tuple6<Double, Long, Double, Double, Long, Double>> metrics = new ArrayList<>();
         String selectValues = String.format(
             "SELECT config, timestamp, avgThr, avgLat, chkLast, recTime " +
             "FROM metrics " +
-            "ORDER BY timestamp ASC;");
+            "WHERE config = %f " +
+            "ORDER BY timestamp ASC;",
+            config);
         IOManager.executeQuery(selectValues, (rs) -> {
-            metrics.add(new Tuple6<>(rs.getDouble("config"), rs.getLong("timestamp"), rs.getDouble("avgThr"), rs.getDouble("avgLat"), rs.getLong("chkLast"), rs.getDouble("recTime")));
+            metrics.add(
+                new Tuple6<>(
+                    rs.getDouble("config"),
+                    rs.getLong("timestamp"),
+                    rs.getDouble("avgThr"),
+                    rs.getDouble("avgLat"),
+                    rs.getLong("chkLast"),
+                    rs.getDouble("recTime")));
         });
         return metrics;
     }
