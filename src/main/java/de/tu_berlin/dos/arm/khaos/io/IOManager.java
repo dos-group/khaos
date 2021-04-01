@@ -20,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -55,9 +56,7 @@ public class IOManager {
 
                 List<String> events = new ArrayList<>();
                 String selectValue = "SELECT body FROM events WHERE timestamp = " + current._2() + ";";
-                IOManager.executeQuery(selectValue, (rs) -> {
-                    events.add(rs.getString("body"));
-                });
+                IOManager.executeQuery(selectValue, (rs) -> events.add(rs.getString("body")));
                 try {
                     queue.put(events);
                 }
@@ -107,12 +106,8 @@ public class IOManager {
                     int current = (int) STOPWATCH.getTime(TimeUnit.SECONDS);
                     CompletableFuture.runAsync(() -> {
                         try {
-                            //long startTime = System.currentTimeMillis();
                             List<String> events = queue.take();
                             events.forEach(e -> kafkaProducer.send(new ProducerRecord<>(producerTopic, e)));
-                            //long endTime = System.currentTimeMillis();
-                            //long timeNeeded =  endTime - startTime;
-                            //LOG.info(replayCounter.getCounter() + " " + events.size());
                         }
                         catch (InterruptedException ex) {
                             LOG.error(ex);
@@ -524,7 +519,7 @@ public class IOManager {
         return metrics;
     }
 
-    public void updateMetrics(double config, long timestamp, double recTime) {
+    public void updateRecTime(double config, long timestamp, double recTime) {
 
         String updateValue = String.format(
             "UPDATE metrics " +

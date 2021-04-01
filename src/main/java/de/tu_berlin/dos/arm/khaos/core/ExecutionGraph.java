@@ -183,7 +183,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                         AnomalyDetector detector = new AnomalyDetector(Arrays.asList(thrTs, lagTs));
                         detector.fit(current._2(), 1000);
                         double recTime = detector.measure(current._2());
-                        context.IOManager.updateMetrics(job.getConfig(), current._2(), recTime);
+                        context.IOManager.updateRecTime(job.getConfig(), current._2(), recTime);
                         latch.countDown();
                     });
                 }
@@ -309,7 +309,6 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
             context.targetJob.setSinkId(context.clientsManager.getSinkOperatorId(context.jobId, context.sinkRegex));
 
-            final AtomicBoolean isWarmupTime = new AtomicBoolean(false);
             final StopWatch stopWatch = new StopWatch();
             while (true) {
 
@@ -327,20 +326,20 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                     double recTime = context.availability.predict(Arrays.asList());
 
                     // evaluate metrics based on constraints
-                    if (context.latencyConst < avgLat && recTime < context.recTimeConst) {
+                    if (context.avgLatConst < avgLat && recTime < context.recTimeConst) {
 
                         // TODO perform optimization step for performance
 
                     }
-                    else if (context.recTimeConst < recTime && avgLat < context.latencyConst) {
+                    else if (context.recTimeConst < recTime && avgLat < context.avgLatConst) {
 
                         // TODO perform optimization step for availability
 
                     }
-                    else if (context.recTimeConst < recTime && context.latencyConst < avgLat) {
+                    else if (context.recTimeConst < recTime && context.avgLatConst < avgLat) {
 
                         LOG.error(String.format("Unable to optimize, %s < %f and %d < %f",
-                            context.latencyConst, avgLat, context.recTimeConst, recTime));
+                            context.avgLatConst, avgLat, context.recTimeConst, recTime));
                     }
 
                     // wait until next interval is reached

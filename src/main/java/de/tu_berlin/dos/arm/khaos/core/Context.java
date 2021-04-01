@@ -102,7 +102,7 @@ public enum Context { get;
      * INSTANCE STATE
      ******************************************************************************/
 
-    public final long latencyConst;
+    public final long avgLatConst;
     public final long recTimeConst;
     public final long optInterval;
     public final int minUpTime;
@@ -147,7 +147,7 @@ public enum Context { get;
             Properties props = FileReader.GET.read("iot.properties", Properties.class);
 
             // load properties into context
-            this.latencyConst = Long.parseLong(props.getProperty("general.latencyConst"));
+            this.avgLatConst = Long.parseLong(props.getProperty("general.avgLatConst"));
             this.recTimeConst = Long.parseLong(props.getProperty("general.recTimeConst"));
             this.optInterval = Long.parseLong(props.getProperty("general.optInterval"));
             this.minUpTime = Integer.parseInt(props.getProperty("general.minUpTime"));
