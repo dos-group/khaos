@@ -26,17 +26,17 @@ public interface FlinkRest {
 
     @GET("v1/jobs/{jobId}/plan/")
     Call<Vertices> getVertices(
-            @Path("jobId") String jobId
+        @Path("jobId") String jobId
     );
 
     @GET("v1/jobs/{jobId}/checkpoints/")
     Call<Checkpoints> getCheckpoints(
-            @Path("jobId") String jobId
+        @Path("jobId") String jobId
     );
 
     @GET("v1/jobs/{jobId}")
     Call<Uptime> getUptime(
-            @Path("jobId") String jobId
+        @Path("jobId") String jobId
     );
 
 }

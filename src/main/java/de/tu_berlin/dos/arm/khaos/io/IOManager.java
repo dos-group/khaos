@@ -183,7 +183,7 @@ public class IOManager {
      ******************************************************************************/
 
     private final ReplayCounter replayCounter;
-    private final int minFailureInterval;
+    private final int minInterval;
     private final int averagingWindow;
     private final int numFailures;
     private final Properties consumerProps;
@@ -193,10 +193,10 @@ public class IOManager {
      * CONSTRUCTOR(S)
      ******************************************************************************/
 
-    public IOManager(int minFailureInterval, int averagingWindow, int numFailures, String brokerList) {
+    public IOManager(int minInterval, int averagingWindow, int numFailures, String brokerList) {
 
         this.replayCounter = new ReplayCounter();
-        this.minFailureInterval = minFailureInterval;
+        this.minInterval = minInterval;
         this.averagingWindow = averagingWindow;
         this.numFailures = numFailures;
 
@@ -336,7 +336,7 @@ public class IOManager {
         // find list of the max and minimum points
         List<Tuple3<Integer, Long, Integer>> min = new ArrayList<>();
         List<Tuple3<Integer, Long, Integer>> max = new ArrayList<>();
-        for (int i = this.minFailureInterval; i < workload.size() - this.minFailureInterval; i++) {
+        for (int i = this.minInterval; i < workload.size() - this.minInterval; i++) {
             int sum = 0;
             for (int j = i - this.averagingWindow + 1; j <= i; j++) {
                 sum += workload.get(j)._3();
@@ -367,7 +367,7 @@ public class IOManager {
         Stream.iterate(minVal, i -> i + step).limit(this.numFailures - 1).forEach(i -> intersects.putIfAbsent(i, new ArrayList<>()));
         intersects.put(maxVal, max);
         // find all points of intersection in workload
-        for (int i = this.minFailureInterval; i < workload.size() - this.minFailureInterval; i++) {
+        for (int i = this.minInterval; i < workload.size() - this.minInterval; i++) {
 
             int sum = 0;
             for (int j = i - this.averagingWindow + 1; j <= i; j++) {
@@ -408,7 +408,7 @@ public class IOManager {
 
                 for (int j = i+1; j < scenario.size(); j++) {
 
-                    if (Math.abs(scenario.get(i)._1() - scenario.get(j)._1()) < this.minFailureInterval) {
+                    if (Math.abs(scenario.get(i)._1() - scenario.get(j)._1()) < this.minInterval) {
 
                         valid = false;
                         break;

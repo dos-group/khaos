@@ -110,6 +110,7 @@ public enum Context { get;
     public final int numOfConfigs;
     public final int minConfigVal;
     public final int maxConfigVal;
+    public final int minInterval;
     public final int numFailures;
     public final int timeLimit;
     public final String k8sNamespace;
@@ -155,6 +156,7 @@ public enum Context { get;
             this.numOfConfigs = Integer.parseInt(props.getProperty("experiments.numOfConfigs"));
             this.minConfigVal = Integer.parseInt(props.getProperty("experiments.minConfigVal"));
             this.maxConfigVal = Integer.parseInt(props.getProperty("experiments.maxConfigVal"));
+            this.minInterval = Integer.parseInt(props.getProperty("experiments.minInterval"));
             this.numFailures = Integer.parseInt(props.getProperty("experiments.numFailures"));
             this.timeLimit = Integer.parseInt(props.getProperty("database.timeLimit"));
             this.k8sNamespace = props.getProperty("k8s.namespace");
@@ -192,7 +194,7 @@ public enum Context { get;
             });
 
             // create global context objects
-            this.IOManager = new IOManager(this.minUpTime, this.averagingWindow, this.numFailures, this.brokerList);
+            this.IOManager = new IOManager(this.minInterval, this.averagingWindow, this.numFailures, this.brokerList);
             this.clientsManager = new ClientsManager(this.promUrl, this.flinkUrl, this.jarId, this.parallelism, this.k8sNamespace, this.averagingWindow);
 
             // create multiple regression models

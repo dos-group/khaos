@@ -97,6 +97,11 @@ public class ClientsManager {
         this.k8sClient.execCommandOnPod(podName, this.k8sNamespace, "sh", "-c", "kill 1");
     }
 
+    public long getUptime(String jobId) throws Exception {
+
+        return this.flink.getUptime(jobId);
+    }
+
     public TimeSeries getLatency(String jobId, String sinkId, long startTs, long stopTs) throws Exception {
 
         String query =

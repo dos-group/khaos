@@ -7,6 +7,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 import java.io.IOException;
+import java.util.Objects;
 
 public class FlinkClient {
 
@@ -51,6 +52,7 @@ public class FlinkClient {
 
     public long getUptime(String jobId) throws IOException {
 
-        return System.currentTimeMillis() - this.service.getUptime(jobId).execute().body().timestamps.lastRestart;
+        long timestamp = Objects.requireNonNull(this.service.getUptime(jobId).execute().body()).timestamps.lastRestart;
+        return (System.currentTimeMillis() - timestamp) / 1000;
     }
 }

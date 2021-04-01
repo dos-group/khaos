@@ -313,7 +313,13 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
             while (true) {
 
                 try {
-                    stopWatch.start();
+
+                    long uptime = context.clientsManager.getUptime(context.jobId);
+                    if (uptime < context.minUpTime) {
+
+                        Thread.sleep((context.minUpTime - uptime) * 1000);
+                        continue;
+                    }
 
                     long stopTs = Instant.now().getEpochSecond();
                     long startTs = stopTs - context.averagingWindow;
@@ -343,6 +349,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                     }
 
                     // wait until next interval is reached
+                    stopWatch.start();
                     long current = stopWatch.getTime(TimeUnit.SECONDS);
                     while (current < context.optInterval) {
 
