@@ -1,9 +1,6 @@
 package de.tu_berlin.dos.arm.khaos.clients.flink;
 
-import de.tu_berlin.dos.arm.khaos.clients.flink.responses.Checkpoints;
-import de.tu_berlin.dos.arm.khaos.clients.flink.responses.Job;
-import de.tu_berlin.dos.arm.khaos.clients.flink.responses.TaskManagers;
-import de.tu_berlin.dos.arm.khaos.clients.flink.responses.Vertices;
+import de.tu_berlin.dos.arm.khaos.clients.flink.responses.*;
 import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.Retrofit;
@@ -50,5 +47,10 @@ public class FlinkClient {
     public Checkpoints getCheckpoints(String jobId) throws IOException {
 
         return this.service.getCheckpoints(jobId).execute().body();
+    }
+
+    public long getUptime(String jobId) throws IOException {
+
+        return System.currentTimeMillis() - this.service.getUptime(jobId).execute().body().timestamps.lastRestart;
     }
 }
