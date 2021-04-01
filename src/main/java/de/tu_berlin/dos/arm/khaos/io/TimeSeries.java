@@ -7,7 +7,15 @@ import java.util.*;
 
 public class TimeSeries {
 
+    /******************************************************************************
+     * STATIC VARIABLES
+     ******************************************************************************/
+
     public static final Logger LOG = Logger.getLogger(TimeSeries.class);
+
+    /******************************************************************************
+     * CLASS BEHAVIOURS
+     ******************************************************************************/
 
     public static TimeSeries create(long startTimestamp, long endTimestamp) {
 
@@ -67,13 +75,25 @@ public class TimeSeries {
         fw.close();
     }
 
+    /******************************************************************************
+     * INSTANCE STATE
+     ******************************************************************************/
+
     public final LinkedList<Observation> observations;
+
+    /******************************************************************************
+     * CONSTRUCTOR(S)
+     ******************************************************************************/
 
     private TimeSeries(LinkedList<Observation> observations) {
 
         Collections.sort(observations);
         this.observations = observations;
     }
+
+    /******************************************************************************
+     * INSTANCE BEHAVIOUR
+     ******************************************************************************/
 
     public int size() {
 

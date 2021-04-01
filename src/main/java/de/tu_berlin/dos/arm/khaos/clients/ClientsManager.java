@@ -23,8 +23,6 @@ public class ClientsManager {
     private static final String LATENCY = "flink_taskmanager_job_latency_source_id_operator_id_operator_subtask_index_latency";
     private static final String THROUGHPUT = "flink_taskmanager_job_task_operator_KafkaConsumer_records_consumed_rate";
     private static final String CONSUMER_LAG = "flink_taskmanager_job_task_operator_KafkaConsumer_records_lag_max";
-    private static final int STEP_SIZE = 1;
-    private static final int TIMEOUT = 120;
 
     /******************************************************************************
      * INSTANCE STATE
@@ -89,7 +87,8 @@ public class ClientsManager {
 
     public long getLastCheckpoint(String jobId) throws Exception {
 
-        return this.flink.getCheckpoints(jobId).latest.completed.latestAckTimestamp;
+        long lastCkp = this.flink.getCheckpoints(jobId).latest.completed.latestAckTimestamp;
+        return (long) Math.ceil(lastCkp / 1000.0);
     }
 
     public void injectFailure(String jobId, String operatorId) throws Exception {

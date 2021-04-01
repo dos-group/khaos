@@ -182,7 +182,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
                         AnomalyDetector detector = new AnomalyDetector(Arrays.asList(thrTs, lagTs));
                         detector.fit(current._2(), 1000);
-                        double recTime = detector.measure(current._2(), 600);
+                        double recTime = detector.measure(current._2());
                         context.IOManager.updateMetrics(job.getConfig(), current._2(), recTime);
                         latch.countDown();
                     });
@@ -327,25 +327,25 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                     double recTime = context.availability.predict(Arrays.asList());
 
                     // evaluate metrics based on constraints
-                    if (context.constraintPerformance < avgLat && recTime < context.constraintAvailability) {
+                    if (context.latencyConst < avgLat && recTime < context.recTimeConst) {
 
                         // TODO perform optimization step for performance
 
                     }
-                    else if (context.constraintAvailability < recTime && avgLat < context.constraintPerformance) {
+                    else if (context.recTimeConst < recTime && avgLat < context.latencyConst) {
 
                         // TODO perform optimization step for availability
 
                     }
-                    else if (context.constraintAvailability < recTime && context.constraintPerformance < avgLat) {
+                    else if (context.recTimeConst < recTime && context.latencyConst < avgLat) {
 
                         LOG.error(String.format("Unable to optimize, %s < %f and %d < %f",
-                            context.constraintPerformance, avgLat, context.constraintAvailability, recTime));
+                            context.latencyConst, avgLat, context.recTimeConst, recTime));
                     }
 
                     // wait until next interval is reached
                     long current = stopWatch.getTime(TimeUnit.SECONDS);
-                    while (current < context.constraintInterval) {
+                    while (current < context.optInterval) {
 
                         current = stopWatch.getTime(TimeUnit.SECONDS);
                         Thread.sleep(100);

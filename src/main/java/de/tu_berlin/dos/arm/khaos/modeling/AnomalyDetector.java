@@ -61,7 +61,7 @@ public class AnomalyDetector {
     }
 
     // TODO add timeout
-    public double measure(long injectionTimestamp, int timeout) {
+    public double measure(long injectionTimestamp) {
 
         if (!this.trained) throw new IllegalStateException("Train the Anomaly Detector first");
 

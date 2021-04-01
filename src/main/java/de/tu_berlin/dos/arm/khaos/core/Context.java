@@ -102,23 +102,21 @@ public enum Context { get;
      * INSTANCE STATE
      ******************************************************************************/
 
-    public final long constraintInterval;
-    public final long constraintPerformance;
-    public final long constraintAvailability;
-    public final long constraintWarmupTime;
+    public final long latencyConst;
+    public final long recTimeConst;
+    public final long optInterval;
+    public final int minUpTime;
+    public final int averagingWindow;
+    public final int numOfConfigs;
+    public final int minConfigVal;
+    public final int maxConfigVal;
+    public final int numFailures;
+    public final int timeLimit;
+    public final String k8sNamespace;
     public final String brokerList;
     public final String consumerTopic;
     public final String producerTopic;
     public final int partitions;
-    public final int timeLimit;
-    public final String originalFilePath;
-    public final String tempSortDir;
-    public final String sortedFilePath;
-    public final String tsLabel;
-    public final int minFailureInterval;
-    public final int averagingWindow;
-    public final int numFailures;
-    public final String k8sNamespace;
     public final String backupFolder;
     public final String flinkUrl;
     public final String jarId;
@@ -126,11 +124,7 @@ public enum Context { get;
     public final String jobId;
     public final int parallelism;
     public final String sinkRegex;
-    public final int numOfConfigs;
-    public final int minConfigVal;
-    public final int maxConfigVal;
     public final String promUrl;
-    public final String topicMsgPerSec;
 
     public final StreamingJob targetJob;
     public final List<StreamingJob> experiments;
@@ -153,23 +147,21 @@ public enum Context { get;
             Properties props = FileReader.GET.read("iot.properties", Properties.class);
 
             // load properties into context
-            this.constraintPerformance = Long.parseLong(props.getProperty("constraint.performance"));
-            this.constraintAvailability = Long.parseLong(props.getProperty("constraint.availability"));
-            this.constraintInterval = Long.parseLong(props.getProperty("constraint.interval"));
-            this.constraintWarmupTime = Long.parseLong(props.getProperty("constraint.warmupTime"));
+            this.latencyConst = Long.parseLong(props.getProperty("general.latencyConst"));
+            this.recTimeConst = Long.parseLong(props.getProperty("general.recTimeConst"));
+            this.optInterval = Long.parseLong(props.getProperty("general.optInterval"));
+            this.minUpTime = Integer.parseInt(props.getProperty("general.minUpTime"));
+            this.averagingWindow = Integer.parseInt(props.getProperty("general.averagingWindow"));
+            this.numOfConfigs = Integer.parseInt(props.getProperty("experiments.numOfConfigs"));
+            this.minConfigVal = Integer.parseInt(props.getProperty("experiments.minConfigVal"));
+            this.maxConfigVal = Integer.parseInt(props.getProperty("experiments.maxConfigVal"));
+            this.numFailures = Integer.parseInt(props.getProperty("experiments.numFailures"));
+            this.timeLimit = Integer.parseInt(props.getProperty("database.timeLimit"));
+            this.k8sNamespace = props.getProperty("k8s.namespace");
             this.brokerList = props.getProperty("kafka.brokerList");
             this.consumerTopic = props.getProperty("kafka.consumerTopic");
             this.producerTopic = props.getProperty("kafka.producerTopic");
             this.partitions = Integer.parseInt(props.getProperty("kafka.partitions"));
-            this.timeLimit = Integer.parseInt(props.getProperty("database.timeLimit"));
-            this.originalFilePath = props.getProperty("dataset.originalFilePath");
-            this.tempSortDir = props.getProperty("dataset.tempSortDir");
-            this.sortedFilePath = props.getProperty("dataset.sortedFilePath");
-            this.tsLabel = props.getProperty("dataset.tsLabel");
-            this.minFailureInterval = Integer.parseInt(props.getProperty("analysis.minFailureInterval"));
-            this.averagingWindow = Integer.parseInt(props.getProperty("analysis.averagingWindow"));
-            this.numFailures = Integer.parseInt(props.getProperty("analysis.numFailures"));
-            this.k8sNamespace = props.getProperty("k8s.namespace");
             this.backupFolder = props.getProperty("flink.backupFolder");
             this.flinkUrl = props.getProperty("flink.jobManagerUrl");
             this.jarId = props.getProperty("flink.jarid");
@@ -177,11 +169,7 @@ public enum Context { get;
             this.jobId = props.getProperty("flink.jobId");
             this.parallelism = Integer.parseInt(props.getProperty("flink.parallelism"));
             this.sinkRegex = props.getProperty("flink.sinkRegex");
-            this.numOfConfigs = Integer.parseInt(props.getProperty("experiments.numOfConfigs"));
-            this.minConfigVal = Integer.parseInt(props.getProperty("experiments.minConfigVal"));
-            this.maxConfigVal = Integer.parseInt(props.getProperty("experiments.maxConfigVal"));
             this.promUrl = props.getProperty("prometheus.url");
-            this.topicMsgPerSec = props.getProperty("metrics.topicMsgPerSec");
 
             // set global experiment variables
             StreamingJob.brokerList = this.brokerList;
@@ -204,7 +192,7 @@ public enum Context { get;
             });
 
             // create global context objects
-            this.IOManager = new IOManager(this.minFailureInterval, this.averagingWindow, this.numFailures, this.brokerList);
+            this.IOManager = new IOManager(this.minUpTime, this.averagingWindow, this.numFailures, this.brokerList);
             this.clientsManager = new ClientsManager(this.promUrl, this.flinkUrl, this.jarId, this.parallelism, this.k8sNamespace, this.averagingWindow);
 
             // create multiple regression models
