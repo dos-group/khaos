@@ -1,9 +1,6 @@
 package de.tu_berlin.dos.arm.khaos.clients.flink;
 
-import de.tu_berlin.dos.arm.khaos.clients.flink.responses.Checkpoints;
-import de.tu_berlin.dos.arm.khaos.clients.flink.responses.Job;
-import de.tu_berlin.dos.arm.khaos.clients.flink.responses.TaskManagers;
-import de.tu_berlin.dos.arm.khaos.clients.flink.responses.Vertices;
+import de.tu_berlin.dos.arm.khaos.clients.flink.responses.*;
 import retrofit2.Call;
 import retrofit2.http.*;
 
@@ -34,6 +31,11 @@ public interface FlinkRest {
 
     @GET("v1/jobs/{jobId}/checkpoints/")
     Call<Checkpoints> getCheckpoints(
+            @Path("jobId") String jobId
+    );
+
+    @GET("v1/jobs/{jobId}")
+    Call<Uptime> getUptime(
             @Path("jobId") String jobId
     );
 
