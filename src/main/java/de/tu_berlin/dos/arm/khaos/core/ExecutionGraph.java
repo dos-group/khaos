@@ -9,6 +9,7 @@ import de.tu_berlin.dos.arm.khaos.utils.SequenceFSM;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.log4j.Logger;
+import scala.Tuple2;
 import scala.Tuple3;
 import scala.Tuple6;
 import smile.data.DataFrame;
@@ -31,8 +32,10 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
             /*for (Tuple6<Double, Long, Double, Double, Long, Double> current : context.IOManager.fetchMetrics()) {
                 LOG.info(current);
             }*/
-
-            return RECORD;
+            //long uptime = context.clientsManager.getUptime("41533650e59956f775552929506464b0");
+            //LOG.info(uptime);
+            context.clientsManager.injectFailure("f4660cbb35f072fc6e97a9610a6e9ddc", "46f8730428df9ecd6d7318a02bdc405e");
+            return STOP;
         }
     },
     RECORD {
@@ -48,7 +51,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                 LOG.info(current._1() + " " + current._2() + " " + current._3());
             }
 
-            return DEPLOY;
+            return REPLAY;
         }
     },
     DEPLOY {
@@ -111,7 +114,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
 
             // start generator
             CountDownLatch latch = new CountDownLatch(2);
-            BlockingQueue<List<String>> queue = new ArrayBlockingQueue<>(60);
+            BlockingQueue<List<Tuple2<Long, String>>> queue = new ArrayBlockingQueue<>(60);
             AtomicBoolean isDone = new AtomicBoolean(false);
             // start reading from file into queue and then into kafka
             CompletableFuture
@@ -121,7 +124,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                     latch.countDown();
                 });
             CompletableFuture
-                .runAsync(context.IOManager.queueToKafka(queue, StreamingJob.consumerTopic, isDone))
+                .runAsync(context.IOManager.queueToKafka(queue, context.consumerTopic/*StreamingJob.consumerTopic*/, isDone))
                 .thenRun(latch::countDown);
             // wait till full workload has been replayed
             try {
@@ -135,7 +138,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
             StreamingJob.stopTs = Instant.now().getEpochSecond();
             LOG.info(context.experiments);
 
-            return DELETE;
+            return STOP;
         }
     },
     DELETE {
@@ -344,7 +347,8 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                     }
                     else if (context.recTimeConst < recTime && context.avgLatConst < avgLat) {
 
-                        LOG.error(String.format("Unable to optimize, %s < %f and %d < %f",
+                        LOG.warn(String.format(
+                            "Unable to optimize, %s < %f and %d < %f",
                             context.avgLatConst, avgLat, context.recTimeConst, recTime));
                     }
 

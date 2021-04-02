@@ -40,9 +40,9 @@ public class IOManager {
     public static class DatabaseToQueue implements Runnable {
 
         public final List<Tuple3<Integer, Long, Integer>> workload;
-        private final BlockingQueue<List<String>> queue;
+        private final BlockingQueue<List<Tuple2<Long, String>>> queue;
 
-        public DatabaseToQueue(List<Tuple3<Integer, Long, Integer>> workload, BlockingQueue<List<String>> queue) {
+        public DatabaseToQueue(List<Tuple3<Integer, Long, Integer>> workload, BlockingQueue<List<Tuple2<Long, String>>> queue) {
 
             this.workload = workload;
             this.queue = queue;
@@ -52,11 +52,13 @@ public class IOManager {
         public void run() {
 
             LOG.info("Starting replay events from database to queue");
-            for (Tuple3<Integer, Long, Integer> current : this.workload) {
+            for (Tuple3<Integer, Long, Integer> current : this.workload.subList(63461, this.workload.size() - 1)) {
 
-                List<String> events = new ArrayList<>();
+                List<Tuple2<Long, String>> events = new ArrayList<>();
                 String selectValue = "SELECT body FROM events WHERE timestamp = " + current._2() + ";";
-                IOManager.executeQuery(selectValue, (rs) -> events.add(rs.getString("body")));
+                IOManager.executeQuery(selectValue, (rs) -> {
+                    events.add(new Tuple2<>(current._2(), rs.getString("body")));
+                });
                 try {
                     queue.put(events);
                 }
@@ -73,14 +75,14 @@ public class IOManager {
 
         private static final Logger LOG = Logger.getLogger(QueueToKafka.class);
 
-        private final BlockingQueue<List<String>> queue;
+        private final BlockingQueue<List<Tuple2<Long, String>>> queue;
         private final ReplayCounter replayCounter;
         private final String producerTopic;
         private final KafkaProducer<String, String> kafkaProducer;
         private final AtomicBoolean isDone;
 
         public QueueToKafka(
-                BlockingQueue<List<String>> queue, ReplayCounter replayCounter,
+                BlockingQueue<List<Tuple2<Long, String>>> queue, ReplayCounter replayCounter,
                 Properties producerProps, String producerTopic, AtomicBoolean isDone) {
 
             this.queue = queue;
@@ -106,8 +108,10 @@ public class IOManager {
                     int current = (int) STOPWATCH.getTime(TimeUnit.SECONDS);
                     CompletableFuture.runAsync(() -> {
                         try {
-                            List<String> events = queue.take();
-                            events.forEach(e -> kafkaProducer.send(new ProducerRecord<>(producerTopic, e)));
+                            List<Tuple2<Long, String>> events = queue.take();
+                            events.forEach(e -> {
+                                kafkaProducer.send(new ProducerRecord<>(producerTopic, null, e._1, null, e._2));
+                            });
                         }
                         catch (InterruptedException ex) {
                             LOG.error(ex);
@@ -561,12 +565,12 @@ public class IOManager {
         this.replayCounter.register(listener);
     }
 
-    public DatabaseToQueue databaseToQueue(BlockingQueue<List<String>> queue) {
+    public DatabaseToQueue databaseToQueue(BlockingQueue<List<Tuple2<Long, String>>> queue) {
 
         return new DatabaseToQueue(this.getWorkload(), queue);
     }
 
-    public QueueToKafka queueToKafka(BlockingQueue<List<String>> queue, String topic, AtomicBoolean isDone) {
+    public QueueToKafka queueToKafka(BlockingQueue<List<Tuple2<Long, String>>> queue, String topic, AtomicBoolean isDone) {
 
         return new QueueToKafka(queue, this.replayCounter, this.producerProps, topic, isDone);
     }

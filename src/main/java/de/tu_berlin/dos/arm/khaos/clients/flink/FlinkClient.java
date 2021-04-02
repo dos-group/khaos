@@ -1,6 +1,7 @@
 package de.tu_berlin.dos.arm.khaos.clients.flink;
 
 import de.tu_berlin.dos.arm.khaos.clients.flink.responses.*;
+import okhttp3.OkHttpClient;
 import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.Retrofit;
@@ -8,6 +9,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 import java.io.IOException;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 public class FlinkClient {
 
@@ -17,11 +19,18 @@ public class FlinkClient {
     public FlinkClient(String baseUrl) {
 
         this.baseUrl = "http://" + baseUrl + "/";
+        OkHttpClient okHttpClient = new OkHttpClient.Builder()
+            .connectTimeout(1, TimeUnit.MINUTES)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(15, TimeUnit.SECONDS)
+            .build();
         Retrofit retrofit =
             new Retrofit.Builder()
                 .baseUrl(this.baseUrl)
+                .client(okHttpClient)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
+
         this.service = retrofit.create(FlinkRest.class);
     }
 
