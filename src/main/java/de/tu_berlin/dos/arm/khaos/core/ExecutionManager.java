@@ -29,11 +29,6 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
         public ExecutionManager runStage(Context context) throws Exception {
 
-            /*for (Tuple6<Double, Long, Double, Double, Long, Double> current : context.IOManager.fetchMetrics()) {
-                LOG.info(current);
-            }*/
-            //long uptime = context.clientsManager.getUptime("41533650e59956f775552929506464b0");
-            //LOG.info(uptime);
             return RECORD;
         }
     },
@@ -44,12 +39,10 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
             // saves events from kafka consumer topic to database for a user defined time
             //context.IOManager.recordKafkaToDatabase(context.consumerTopic, context.timeLimit, 100000);
             //context.IOManager.extractWorkload();
-            //LOG.info(context.IOManager.getWorkload().size());
             //context.IOManager.extractFailureScenario(0.1f);
             for (Tuple3<Integer, Long, Integer> current : context.IOManager.getFailureScenario()) {
                 LOG.info(current._1() + " " + current._2() + " " + current._3());
             }
-
             return DEPLOY;
         }
     },
