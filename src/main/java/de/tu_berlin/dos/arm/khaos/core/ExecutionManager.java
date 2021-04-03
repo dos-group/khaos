@@ -112,28 +112,12 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
             // start reading from file into queue and then into kafka
             CompletableFuture
                 .runAsync(context.IOManager.databaseToQueue(queue))
-                .thenRun(() -> {
-                    isDone.set(true);
-                    //latch.countDown();
-                });
+                .thenRun(() -> isDone.set(true));
             // wait till queue has items in it
             while (queue.isEmpty()) Thread.sleep(100);
-            /*CompletableFuture
-                .runAsync(context.IOManager.queueToKafka(queue, StreamingJob.consumerTopic, isDone))
-                .thenRun(latch::countDown);*/
             context.IOManager.queueToKafka(queue, StreamingJob.consumerTopic, isDone).run();
-
-            // wait till full workload has been replayed
-            //try {
-                //latch.await();
-            //}
-            //catch (InterruptedException e) {
-
-                //e.printStackTrace();
-            //}
             // record end time of experiment
             StreamingJob.stopTs = Instant.now().getEpochSecond();
-            LOG.info(context.experiments);
 
             return DELETE;
         }
