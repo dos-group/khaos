@@ -23,24 +23,23 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
+public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
     START {
 
-        public ExecutionGraph runStage(Context context) throws Exception {
+        public ExecutionManager runStage(Context context) throws Exception {
 
             /*for (Tuple6<Double, Long, Double, Double, Long, Double> current : context.IOManager.fetchMetrics()) {
                 LOG.info(current);
             }*/
             //long uptime = context.clientsManager.getUptime("41533650e59956f775552929506464b0");
             //LOG.info(uptime);
-            context.clientsManager.injectFailure("f4660cbb35f072fc6e97a9610a6e9ddc", "46f8730428df9ecd6d7318a02bdc405e");
-            return STOP;
+            return RECORD;
         }
     },
     RECORD {
 
-        public ExecutionGraph runStage(Context context) {
+        public ExecutionManager runStage(Context context) {
 
             // saves events from kafka consumer topic to database for a user defined time
             //context.IOManager.recordKafkaToDatabase(context.consumerTopic, context.timeLimit, 100000);
@@ -51,12 +50,12 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                 LOG.info(current._1() + " " + current._2() + " " + current._3());
             }
 
-            return REPLAY;
+            return DEPLOY;
         }
     },
     DEPLOY {
 
-        public ExecutionGraph runStage(Context context) throws Exception {
+        public ExecutionManager runStage(Context context) throws Exception {
 
             // deploy multiple experiments
             for (StreamingJob job : context.experiments) {
@@ -71,7 +70,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
     },
     REGISTER {
 
-        public ExecutionGraph runStage(Context context) {
+        public ExecutionManager runStage(Context context) {
 
             context.IOManager.initMetrics();
 
@@ -84,7 +83,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                     for (StreamingJob job : context.experiments) {
 
                         try {
-
+                            LOG.info("Starting inject failure into job " + job.getConfig());
                             long stopTs = Instant.now().getEpochSecond();
                             long startTs = stopTs - context.averagingWindow;
                             double avgThr = context.clientsManager.getThroughput(job.getJobId(), startTs, stopTs).average();
@@ -93,6 +92,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
                             long chkLast = context.clientsManager.getLastCheckpoint(job.getJobId());
 
                             context.IOManager.addMetrics(job.getConfig(), stopTs, avgThr, avgLat, chkLast);
+                            LOG.info("Finishing inject failure into job " + job.getConfig());
                         }
                         catch (Exception e) {
 
@@ -107,43 +107,47 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
     },
     REPLAY {
 
-        public ExecutionGraph runStage(Context context) {
+        public ExecutionManager runStage(Context context) throws Exception {
 
             // record start time of experiment
             StreamingJob.startTs = Instant.now().getEpochSecond();
 
             // start generator
-            CountDownLatch latch = new CountDownLatch(2);
-            BlockingQueue<List<Tuple2<Long, String>>> queue = new ArrayBlockingQueue<>(60);
+            //CountDownLatch latch = new CountDownLatch(2);
+            BlockingQueue<List<String>> queue = new ArrayBlockingQueue<>(60);
             AtomicBoolean isDone = new AtomicBoolean(false);
             // start reading from file into queue and then into kafka
             CompletableFuture
                 .runAsync(context.IOManager.databaseToQueue(queue))
                 .thenRun(() -> {
                     isDone.set(true);
-                    latch.countDown();
+                    //latch.countDown();
                 });
-            CompletableFuture
-                .runAsync(context.IOManager.queueToKafka(queue, context.consumerTopic/*StreamingJob.consumerTopic*/, isDone))
-                .thenRun(latch::countDown);
-            // wait till full workload has been replayed
-            try {
-                latch.await();
-            }
-            catch (InterruptedException e) {
+            // wait till queue has items in it
+            while (queue.isEmpty()) Thread.sleep(100);
+            /*CompletableFuture
+                .runAsync(context.IOManager.queueToKafka(queue, StreamingJob.consumerTopic, isDone))
+                .thenRun(latch::countDown);*/
+            context.IOManager.queueToKafka(queue, StreamingJob.consumerTopic, isDone).run();
 
-                e.printStackTrace();
-            }
+            // wait till full workload has been replayed
+            //try {
+                //latch.await();
+            //}
+            //catch (InterruptedException e) {
+
+                //e.printStackTrace();
+            //}
             // record end time of experiment
             StreamingJob.stopTs = Instant.now().getEpochSecond();
             LOG.info(context.experiments);
 
-            return STOP;
+            return DELETE;
         }
     },
     DELETE {
 
-        public ExecutionGraph runStage(Context context) throws Exception {
+        public ExecutionManager runStage(Context context) throws Exception {
 
             context.IOManager.initChkSums();
 
@@ -168,7 +172,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
     },
     MEASURE {
 
-        public ExecutionGraph runStage(Context context) throws Exception {
+        public ExecutionManager runStage(Context context) throws Exception {
 
             int numOfCores = Runtime.getRuntime().availableProcessors();
             final ExecutorService service = Executors.newFixedThreadPool(numOfCores);
@@ -199,7 +203,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
     },
     MODEL {
 
-        public ExecutionGraph runStage(Context context) {
+        public ExecutionManager runStage(Context context) {
 
             // get values from experiments and fit models
             //List<Double> durHats = new ArrayList<>();
@@ -308,7 +312,7 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
     },
     OPTIMIZE {
 
-        public ExecutionGraph runStage(Context context) throws Exception {
+        public ExecutionManager runStage(Context context) throws Exception {
 
             context.targetJob.setSinkId(context.clientsManager.getSinkOperatorId(context.jobId, context.sinkRegex));
 
@@ -373,17 +377,17 @@ public enum ExecutionGraph implements SequenceFSM<Context, ExecutionGraph> {
     },
     STOP {
 
-        public ExecutionGraph runStage(Context context) {
+        public ExecutionManager runStage(Context context) {
 
             return this;
         }
     };
 
-    private static final Logger LOG = Logger.getLogger(ExecutionGraph.class);
+    private static final Logger LOG = Logger.getLogger(ExecutionManager.class);
 
     public static void start() throws Exception {
 
         LOG.info("START");
-        ExecutionGraph.START.run(ExecutionGraph.class, Context.get);
+        ExecutionManager.START.run(ExecutionManager.class, Context.get);
     }
 }

@@ -175,8 +175,9 @@ public enum Context { get;
 
             // set global experiment variables
             StreamingJob.brokerList = this.brokerList;
-            StreamingJob.consumerTopic = this.consumerTopic + "-" + RandomStringUtils.random(10, true, true);
-            StreamingJob.producerTopic = this.producerTopic + "-" + RandomStringUtils.random(10, true, true);
+            String uniqueString = RandomStringUtils.random(10, true, true);
+            StreamingJob.consumerTopic = this.consumerTopic + "-" + uniqueString;
+            StreamingJob.producerTopic = this.producerTopic + "-" + uniqueString;
             StreamingJob.partitions = this.partitions;
 
             // create object for target job and store list of operator ids

@@ -39,10 +39,12 @@ public class IOManager {
 
     public static class DatabaseToQueue implements Runnable {
 
-        public final List<Tuple3<Integer, Long, Integer>> workload;
-        private final BlockingQueue<List<Tuple2<Long, String>>> queue;
+        private static final Logger LOG = Logger.getLogger(DatabaseToQueue.class);
 
-        public DatabaseToQueue(List<Tuple3<Integer, Long, Integer>> workload, BlockingQueue<List<Tuple2<Long, String>>> queue) {
+        private final List<Tuple3<Integer, Long, Integer>> workload;
+        private final BlockingQueue<List<String>> queue;
+
+        public DatabaseToQueue(List<Tuple3<Integer, Long, Integer>> workload, BlockingQueue<List<String>> queue) {
 
             this.workload = workload;
             this.queue = queue;
@@ -52,12 +54,13 @@ public class IOManager {
         public void run() {
 
             LOG.info("Starting replay events from database to queue");
-            for (Tuple3<Integer, Long, Integer> current : this.workload.subList(63461, this.workload.size() - 1)) {
+            // .subList(63461, this.workload.size() - 1)
+            for (Tuple3<Integer, Long, Integer> current : this.workload) {
 
-                List<Tuple2<Long, String>> events = new ArrayList<>();
+                List<String> events = new ArrayList<>();
                 String selectValue = "SELECT body FROM events WHERE timestamp = " + current._2() + ";";
                 IOManager.executeQuery(selectValue, (rs) -> {
-                    events.add(new Tuple2<>(current._2(), rs.getString("body")));
+                    events.add(rs.getString("body"));
                 });
                 try {
                     queue.put(events);
@@ -75,14 +78,14 @@ public class IOManager {
 
         private static final Logger LOG = Logger.getLogger(QueueToKafka.class);
 
-        private final BlockingQueue<List<Tuple2<Long, String>>> queue;
+        private final BlockingQueue<List<String>> queue;
         private final ReplayCounter replayCounter;
         private final String producerTopic;
         private final KafkaProducer<String, String> kafkaProducer;
         private final AtomicBoolean isDone;
 
         public QueueToKafka(
-                BlockingQueue<List<Tuple2<Long, String>>> queue, ReplayCounter replayCounter,
+                BlockingQueue<List<String>> queue, ReplayCounter replayCounter,
                 Properties producerProps, String producerTopic, AtomicBoolean isDone) {
 
             this.queue = queue;
@@ -95,41 +98,30 @@ public class IOManager {
         @Override
         public void run() {
 
-            LOG.info("Starting replay events from queue to kafka");
-            try {
-                // wait till queue has items in it
-                while (queue.isEmpty()) Thread.sleep(100);
-                // initialize and start the stopwatch
-                STOPWATCH.reset();
-                STOPWATCH.start();
-                // execute while file is still being read and queue is not empty
-                while (!isDone.get() && !queue.isEmpty()) {
-                    // get current time
-                    int current = (int) STOPWATCH.getTime(TimeUnit.SECONDS);
-                    CompletableFuture.runAsync(() -> {
-                        try {
-                            List<Tuple2<Long, String>> events = queue.take();
-                            events.forEach(e -> {
-                                kafkaProducer.send(new ProducerRecord<>(producerTopic, null, e._1, null, e._2));
-                            });
-                        }
-                        catch (InterruptedException ex) {
-                            LOG.error(ex);
-                        }
-                    });
-                    // wait until second has passed before continuing next loop
-                    while (current < replayCounter.getCounter()) {
+            LOG.info("Starting replay events from queue to kafka topic " + this.producerTopic);
 
-                        current = (int) STOPWATCH.getTime(TimeUnit.SECONDS);
+            // initialize and start the stopwatch
+            STOPWATCH.reset();
+            STOPWATCH.start();
+            // execute while file is still being read and queue is not empty
+            while (!isDone.get() && !queue.isEmpty()) {
+                // get current time
+                int current = (int) STOPWATCH.getTime(TimeUnit.SECONDS);
+                CompletableFuture.runAsync(() -> {
+                    try {
+                        List<String> events = queue.take();
+                        events.forEach(e -> kafkaProducer.send(new ProducerRecord<>(producerTopic, e)));
                     }
-                    replayCounter.incrementCounter();
-                }
-            }
-            catch (InterruptedException ex) {
+                    catch (Exception ex) { LOG.error(ex); }
+                });
+                // wait until second has passed before continuing next loop
+                while (current < replayCounter.getCounter()) {
 
-                LOG.error(ex);
+                    current = (int) STOPWATCH.getTime(TimeUnit.SECONDS);
+                }
+                replayCounter.incrementCounter();
             }
-            LOG.info("Stopping replay events from database to queue");
+            LOG.info("Starting replay events from queue to kafka topic " + this.producerTopic);
         }
     }
 
@@ -565,12 +557,12 @@ public class IOManager {
         this.replayCounter.register(listener);
     }
 
-    public DatabaseToQueue databaseToQueue(BlockingQueue<List<Tuple2<Long, String>>> queue) {
+    public DatabaseToQueue databaseToQueue(BlockingQueue<List<String>> queue) {
 
         return new DatabaseToQueue(this.getWorkload(), queue);
     }
 
-    public QueueToKafka queueToKafka(BlockingQueue<List<Tuple2<Long, String>>> queue, String topic, AtomicBoolean isDone) {
+    public QueueToKafka queueToKafka(BlockingQueue<List<String>> queue, String topic, AtomicBoolean isDone) {
 
         return new QueueToKafka(queue, this.replayCounter, this.producerProps, topic, isDone);
     }
