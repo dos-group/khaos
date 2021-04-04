@@ -19,17 +19,12 @@ public class ReplayCounter {
         private static final Logger LOG = Logger.getLogger(Listener.class);
         private static final ExecutorService service = Executors.newSingleThreadExecutor();
 
-        private final int second;
-        //private final int avgThr;
-        //private final Consumer<Integer> callback;
+        private final int index;
         private final Runnable callback;
 
-        public Listener(/*Tuple3<Integer, Long, Integer> point*/ int second, /*Consumer<Integer>*/ Runnable callback) {
+        public Listener(int index, Runnable callback) {
 
-            //this.second = point._1();
-            this.second = second;
-            //this.avgThr = point._3();
-            //this.callback = callback;
+            this.index = index;
             this.callback = callback;
         }
 
@@ -38,7 +33,6 @@ public class ReplayCounter {
             service.execute(() -> {
                 try {
 
-                    //this.callback.accept(this.avgThr);
                     this.callback.run();
                 }
                 catch (Throwable t) {
@@ -48,9 +42,9 @@ public class ReplayCounter {
             });
         }
 
-        public int getSecond() {
+        public int getIndex() {
 
-            return this.second;
+            return this.index;
         }
     }
 
@@ -71,18 +65,15 @@ public class ReplayCounter {
      * CONSTRUCTOR(S)
      ******************************************************************************/
 
-    public void register(Listener listener) {
-
-        this.listeners.add(listener);
-    }
+    public ReplayCounter() { }
 
     /******************************************************************************
      * INSTANCE BEHAVIOUR
      ******************************************************************************/
 
-    public void register(List<Listener> listeners) {
+    public void register(Listener listener) {
 
-        this.listeners.addAll(listeners);
+        this.listeners.add(listener);
     }
 
     public int getCounter() {
@@ -90,9 +81,9 @@ public class ReplayCounter {
         return this.counter.get();
     }
 
-    public void resetCounter() {
+    public void resetCounter(int counter) {
 
-        this.counter.set(1);
+        this.counter.set(counter);
     }
 
     public void incrementCounter() {
@@ -100,7 +91,7 @@ public class ReplayCounter {
         int newVal = this.counter.incrementAndGet();
         for (Listener listener : this.listeners) {
 
-            if (newVal == listener.getSecond()) listener.update();
+            if (newVal == listener.getIndex()) listener.update();
         }
 
     }

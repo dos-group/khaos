@@ -41,12 +41,12 @@ public class IOManager {
 
         private static final Logger LOG = Logger.getLogger(DatabaseToQueue.class);
 
-        private final List<Tuple3<Integer, Long, Integer>> workload;
+        private final List<Tuple3<Integer, Long, Integer>> currWorkload;
         private final BlockingQueue<List<String>> queue;
 
-        public DatabaseToQueue(List<Tuple3<Integer, Long, Integer>> workload, BlockingQueue<List<String>> queue) {
+        public DatabaseToQueue(List<Tuple3<Integer, Long, Integer>> currWorkload, BlockingQueue<List<String>> queue) {
 
-            this.workload = workload;
+            this.currWorkload = currWorkload;
             this.queue = queue;
         }
 
@@ -54,14 +54,11 @@ public class IOManager {
         public void run() {
 
             LOG.info("Starting replay events from database to queue");
-            // .subList(63461, this.workload.size() - 1)
-            for (Tuple3<Integer, Long, Integer> current : this.workload) {
+            for (Tuple3<Integer, Long, Integer> current : this.currWorkload) {
 
                 List<String> events = new ArrayList<>();
                 String selectValue = "SELECT body FROM events WHERE timestamp = " + current._2() + ";";
-                IOManager.executeQuery(selectValue, (rs) -> {
-                    events.add(rs.getString("body"));
-                });
+                IOManager.executeQuery(selectValue, (rs) -> events.add(rs.getString("body")));
                 try {
                     queue.put(events);
                 }
@@ -100,13 +97,12 @@ public class IOManager {
 
             LOG.info("Starting replay events from queue to kafka topic " + this.producerTopic);
 
-            // initialize and start the stopwatch
-            STOPWATCH.reset();
-            STOPWATCH.start();
             // execute while file is still being read and queue is not empty
             while (!isDone.get() && !queue.isEmpty()) {
+                // initialize and start the stopwatch
+                STOPWATCH.start();
                 // get current time
-                int current = (int) STOPWATCH.getTime(TimeUnit.SECONDS);
+                long current = STOPWATCH.getTime(TimeUnit.MILLISECONDS);
                 CompletableFuture.runAsync(() -> {
                     try {
                         List<String> events = queue.take();
@@ -115,10 +111,11 @@ public class IOManager {
                     catch (Exception ex) { LOG.error(ex); }
                 });
                 // wait until second has passed before continuing next loop
-                while (current < replayCounter.getCounter()) {
+                while (current < 1000) {
 
-                    current = (int) STOPWATCH.getTime(TimeUnit.SECONDS);
+                    current = STOPWATCH.getTime(TimeUnit.MILLISECONDS);
                 }
+                STOPWATCH.reset();
                 replayCounter.incrementCounter();
             }
             LOG.info("Starting replay events from queue to kafka topic " + this.producerTopic);
@@ -283,7 +280,7 @@ public class IOManager {
         IOManager.executeUpdate("PRAGMA synchronous=normal;");
     }
 
-    public void extractWorkload() {
+    public void extractFullWorkload() {
 
         LOG.info("Starting create workload table");
         String createTable =
@@ -293,7 +290,7 @@ public class IOManager {
             "count INTEGER NOT NULL);";
         IOManager.executeUpdate(createTable);
         IOManager.executeUpdate("DELETE FROM workload;");
-        LOG.info("Finished create workload table");
+        LOG.info("Finished create full workload table");
 
         LOG.info("Starting extract workload");
         String selectEvents =
@@ -306,49 +303,49 @@ public class IOManager {
                 second.getAndAdd(1), rs.getLong("timestamp"), rs.getInt("count"));
             IOManager.executeUpdate(insertValue);
         });
-        LOG.info("Finished extract workload");
+        LOG.info("Finished extract full workload");
     }
 
-    public List<Tuple3<Integer, Long, Integer>> getWorkload() {
+    public List<Tuple3<Integer, Long, Integer>> getFullWorkload() {
 
-        List<Tuple3<Integer, Long, Integer>> workload = new ArrayList<>();
+        List<Tuple3<Integer, Long, Integer>> fullWorkload = new ArrayList<>();
 
         LOG.info("Starting get workload");
         String selectValues =
             "SELECT second, timestamp, count " +
             "FROM workload ORDER BY timestamp ASC";
         IOManager.executeQuery(selectValues, (rs) -> {
-            workload.add(new Tuple3<>(rs.getInt("second"), rs.getLong("timestamp"), rs.getInt("count")));
+            fullWorkload.add(new Tuple3<>(rs.getInt("second"), rs.getLong("timestamp"), rs.getInt("count")));
         });
         LOG.info("Finished get workload");
 
-        return workload;
+        return fullWorkload;
     }
 
     public void extractFailureScenario(float tolerance) {
 
-        List<Tuple3<Integer, Long, Integer>> workload = this.getWorkload();
+        List<Tuple3<Integer, Long, Integer>> fullWorkload = this.getFullWorkload();
 
         // find list of the max and minimum points
         List<Tuple3<Integer, Long, Integer>> min = new ArrayList<>();
         List<Tuple3<Integer, Long, Integer>> max = new ArrayList<>();
-        for (int i = this.minInterval; i < workload.size() - this.minInterval; i++) {
+        for (int i = this.minInterval; i < fullWorkload.size() - this.minInterval; i++) {
             int sum = 0;
             for (int j = i - this.averagingWindow + 1; j <= i; j++) {
-                sum += workload.get(j)._3();
+                sum += fullWorkload.get(j)._3();
             }
             int average = sum / this.averagingWindow;
-            if (min.isEmpty()) min.add(workload.get(i));
-            else if (min.get(0)._3() == average) min.add(workload.get(i));
+            if (min.isEmpty()) min.add(fullWorkload.get(i));
+            else if (min.get(0)._3() == average) min.add(fullWorkload.get(i));
             else if (average < min.get(0)._3()) {
                 min.clear();
-                min.add(workload.get(i));
+                min.add(fullWorkload.get(i));
             }
-            if (max.isEmpty()) max.add(workload.get(i));
-            else if (max.get(0)._3() == average) max.add(workload.get(i));
+            if (max.isEmpty()) max.add(fullWorkload.get(i));
+            else if (max.get(0)._3() == average) max.add(fullWorkload.get(i));
             else if (max.get(0)._3() < average) {
                 max.clear();
-                max.add(workload.get(i));
+                max.add(fullWorkload.get(i));
             }
         }
         // test if max and min were found
@@ -363,16 +360,16 @@ public class IOManager {
         Stream.iterate(minVal, i -> i + step).limit(this.numFailures - 1).forEach(i -> intersects.putIfAbsent(i, new ArrayList<>()));
         intersects.put(maxVal, max);
         // find all points of intersection in workload
-        for (int i = this.minInterval; i < workload.size() - this.minInterval; i++) {
+        for (int i = this.minInterval; i < fullWorkload.size() - this.minInterval; i++) {
 
             int sum = 0;
             for (int j = i - this.averagingWindow + 1; j <= i; j++) {
 
-                sum += workload.get(j)._3();
+                sum += fullWorkload.get(j)._3();
             }
             int average = sum / this.averagingWindow;
             // find range of values which is within user defined tolerance of average
-            int onePercent = (int) ((workload.size() / 100) + 0.5);
+            int onePercent = (int) ((fullWorkload.size() / 100) + 0.5);
             int withTolerance = (int) (onePercent * (tolerance / 2));
             List<Integer> targetRange =
                 IntStream
@@ -384,7 +381,7 @@ public class IOManager {
 
                 if (intersects.containsKey(valueInRange))
 
-                    intersects.get(valueInRange).add(workload.get(i));
+                    intersects.get(valueInRange).add(fullWorkload.get(i));
             }
         }
         // test if enough points were found at each intersect
@@ -478,7 +475,7 @@ public class IOManager {
         IOManager.executeUpdate(insertValue);
     }
 
-    /*public List<Long> fetchMetrics(double config) {
+    public List<Long> fetchTimestamp(double config) {
 
         List<Long> metrics = new ArrayList<>();
         String selectValues = String.format(
@@ -491,7 +488,7 @@ public class IOManager {
             metrics.add(rs.getLong("timestamp"));
         });
         return metrics;
-    }*/
+    }
 
     public List<Tuple6<Double, Long, Double, Double, Long, Double>> fetchMetrics(double config) {
 
@@ -557,13 +554,15 @@ public class IOManager {
         this.replayCounter.register(listener);
     }
 
-    public DatabaseToQueue databaseToQueue(BlockingQueue<List<String>> queue) {
+    public DatabaseToQueue databaseToQueue(int startIndex, int stopIndex, BlockingQueue<List<String>> queue) {
 
-        return new DatabaseToQueue(this.getWorkload(), queue);
+        List<Tuple3<Integer, Long, Integer>> currWorkload = this.getFullWorkload().subList(startIndex, stopIndex);
+        return new DatabaseToQueue(currWorkload, queue);
     }
 
-    public QueueToKafka queueToKafka(BlockingQueue<List<String>> queue, String topic, AtomicBoolean isDone) {
+    public QueueToKafka queueToKafka(int startIndex, BlockingQueue<List<String>> queue, String topic, AtomicBoolean isDone) {
 
+        this.replayCounter.resetCounter(startIndex);
         return new QueueToKafka(queue, this.replayCounter, this.producerProps, topic, isDone);
     }
 }

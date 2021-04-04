@@ -100,22 +100,28 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
     },
     REPLAY {
 
-        public ExecutionManager runStage(Context context) throws Exception {
+        public ExecutionManager runStage(Context context) {
 
             // record start time of experiment
             StreamingJob.startTs = Instant.now().getEpochSecond();
 
-            // start generator
-            //CountDownLatch latch = new CountDownLatch(2);
             BlockingQueue<List<String>> queue = new ArrayBlockingQueue<>(60);
-            AtomicBoolean isDone = new AtomicBoolean(false);
-            // start reading from file into queue and then into kafka
-            CompletableFuture
-                .runAsync(context.IOManager.databaseToQueue(queue))
-                .thenRun(() -> isDone.set(true));
-            // wait till queue has items in it
-            while (queue.isEmpty()) Thread.sleep(100);
-            context.IOManager.queueToKafka(queue, StreamingJob.consumerTopic, isDone).run();
+            context.IOManager.getFailureScenario().forEach(point -> {
+
+                // select range before and after failure point based on minInterval but smaller
+                int startIndex = point._1() - context.minInterval * 2/3;
+                int stopIndex = point._1() + context.minInterval * 2/3;
+
+                AtomicBoolean isDone = new AtomicBoolean(false);
+                CompletableFuture
+                    .runAsync(context.IOManager.databaseToQueue(startIndex, stopIndex, queue))
+                    .thenRun(() -> isDone.set(true));
+                // wait till queue has items in it
+                try { while (queue.isEmpty()) Thread.sleep(100); }
+                catch(InterruptedException ex) { LOG.error(ex); }
+                //
+                context.IOManager.queueToKafka(startIndex, queue, StreamingJob.consumerTopic, isDone).run();
+            });
             // record end time of experiment
             StreamingJob.stopTs = Instant.now().getEpochSecond();
 
