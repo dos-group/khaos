@@ -8,17 +8,21 @@ import de.tu_berlin.dos.arm.khaos.modeling.AnomalyDetector;
 import de.tu_berlin.dos.arm.khaos.utils.SequenceFSM;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.log4j.Category;
 import org.apache.log4j.Logger;
 import scala.Tuple2;
 import scala.Tuple3;
 import scala.Tuple6;
+import scala.Tuple7;
 import smile.data.DataFrame;
 import smile.data.formula.Formula;
 import smile.regression.LinearModel;
 import smile.regression.OLS;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -38,8 +42,8 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
             // saves events from kafka consumer topic to database for a user defined time
             //context.IOManager.recordKafkaToDatabase(context.consumerTopic, context.timeLimit, 100000);
-            //context.IOManager.extractWorkload();
-            //context.IOManager.extractFailureScenario(0.1f);
+            //context.IOManager.extractFullWorkload();
+            context.IOManager.extractFailureScenario(0.1f);
             for (Tuple3<Integer, Long, Integer> current : context.IOManager.getFailureScenario()) {
                 LOG.info(current._1() + " " + current._2() + " " + current._3());
             }
@@ -53,6 +57,7 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
             // deploy multiple experiments
             for (StreamingJob job : context.experiments) {
 
+                LOG.info(job.getConfig());
                 // start job and set JobId, Operator IDs, and Sink Operator
                 job.setJobId(context.clientsManager.startJob(job.getProgramArgs()));
                 job.setOperatorIds(context.clientsManager.getOperatorIds(job.getJobId()));
@@ -65,7 +70,7 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
         public ExecutionManager runStage(Context context) {
 
-            context.IOManager.initMetrics();
+            context.IOManager.initMetrics(context.experimentId, false);
 
             // register points for failure injection with counter manager
             context.IOManager.getFailureScenario().forEach(point -> {
@@ -84,7 +89,10 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                             context.clientsManager.injectFailure(job.getJobId(), job.getSinkId());
                             long chkLast = context.clientsManager.getLastCheckpoint(job.getJobId());
 
-                            context.IOManager.addMetrics(job.getConfig(), stopTs, avgThr, avgLat, chkLast);
+                            context.IOManager.addMetrics(context.experimentId, job.getConfig(), stopTs, avgThr, avgLat, chkLast);
+                            for (Tuple7<Integer, Double, Long, Double, Double, Long, Double> current : context.IOManager.fetchMetrics(context.experimentId, job.getConfig())) {
+                                LOG.info(current);
+                            }
                             LOG.info("Finishing inject failure into job " + job.getConfig());
                         }
                         catch (Exception e) {
@@ -166,14 +174,14 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                 
                 TimeSeries thrTs = context.clientsManager.getThroughput(job.getJobId(), StreamingJob.startTs, StreamingJob.stopTs);
                 TimeSeries lagTs = context.clientsManager.getConsumerLag(job.getJobId(), StreamingJob.startTs, StreamingJob.stopTs);
-                for (Tuple6<Double, Long, Double, Double, Long, Double> current : context.IOManager.fetchMetrics(job.getConfig())) {
+                for (Tuple7<Integer, Double, Long, Double, Double, Long, Double> current : context.IOManager.fetchMetrics(context.experimentId, job.getConfig())) {
 
                     service.submit(() -> {
 
                         AnomalyDetector detector = new AnomalyDetector(Arrays.asList(thrTs, lagTs));
-                        detector.fit(current._2(), 1000);
-                        double recTime = detector.measure(current._2());
-                        context.IOManager.updateRecTime(job.getConfig(), current._2(), recTime);
+                        detector.fit(current._3(), 1000);
+                        double recTime = detector.measure(current._3());
+                        context.IOManager.updateRecTime(job.getConfig(), current._3(), recTime);
                         latch.countDown();
                     });
                 }

@@ -11,6 +11,7 @@ import org.apache.log4j.Logger;
 import scala.Tuple2;
 import scala.Tuple3;
 import scala.Tuple6;
+import scala.Tuple7;
 
 import java.sql.*;
 import java.time.Duration;
@@ -100,6 +101,7 @@ public class IOManager {
             // execute while file is still being read and queue is not empty
             while (!isDone.get() && !queue.isEmpty()) {
                 // initialize and start the stopwatch
+                STOPWATCH.reset();
                 STOPWATCH.start();
                 // get current time
                 long current = STOPWATCH.getTime(TimeUnit.MILLISECONDS);
@@ -115,7 +117,6 @@ public class IOManager {
 
                     current = STOPWATCH.getTime(TimeUnit.MILLISECONDS);
                 }
-                STOPWATCH.reset();
                 replayCounter.incrementCounter();
             }
             LOG.info("Starting replay events from queue to kafka topic " + this.producerTopic);
@@ -306,6 +307,20 @@ public class IOManager {
         LOG.info("Finished extract full workload");
     }
 
+    public void updateEvents() {
+
+        LOG.info("Starting update events");
+        String selectEvents = "SELECT timestamp FROM events";
+        IOManager.executeQuery(selectEvents, (rs) -> {
+            long tsOld = rs.getLong("timestamp");
+            long tsNew = (( (int) (tsOld / 1000)) + 1) * 1000;
+            LOG.info(tsOld + " " + tsNew);
+            String updateValue = String.format("UPDATE events SET timestamp = %d WHERE timestamp = %d;", tsNew, tsOld);
+            IOManager.executeUpdate(updateValue);
+        });
+        LOG.info("Finished update events");
+    }
+
     public List<Tuple3<Integer, Long, Integer>> getFullWorkload() {
 
         List<Tuple3<Integer, Long, Integer>> fullWorkload = new ArrayList<>();
@@ -450,28 +465,30 @@ public class IOManager {
         return scenario;
     }
 
-    public void initMetrics() {
+    public void initMetrics(int experimentId, boolean removePrevious) {
 
         String createTable =
             "CREATE TABLE IF NOT EXISTS metrics " +
-            "(config REAL NOT NULL, " +
+            "(experimentId INTEGER NOT NULL, " +
             "timestamp INTEGER NOT NULL, " +
             "avgThr REAL NOT NULL, " +
             "avgLat REAL NOT NULL, " +
             "chkLast INTEGER NOT NULL, " +
             "recTime REAL);";
         IOManager.executeUpdate(createTable);
-        IOManager.executeUpdate("DELETE FROM metrics;");
+        if (removePrevious) {
+            IOManager.executeUpdate(String.format("DELETE FROM metrics WHERE experimentId = %d;", experimentId));
+        }
     }
 
-    public void addMetrics(double config, long timestamp, double avgThr, double avgLat, long chkLast) {
+    public void addMetrics(int experimentId, double config, long timestamp, double avgThr, double avgLat, long chkLast) {
 
         String insertValue = String.format(
             "INSERT INTO metrics " +
-            "(config, timestamp, avgThr, avgLat, chkLast) " +
+            "experimentId, config, timestamp, avgThr, avgLat, chkLast) " +
             "VALUES " +
-            "(%f,%d,%f,%f,%d);",
-            config, timestamp, avgThr, avgLat, chkLast);
+            "(%d, %f,%d,%f,%f,%d);",
+            experimentId, config, timestamp, avgThr, avgLat, chkLast);
         IOManager.executeUpdate(insertValue);
     }
 
@@ -490,18 +507,20 @@ public class IOManager {
         return metrics;
     }
 
-    public List<Tuple6<Double, Long, Double, Double, Long, Double>> fetchMetrics(double config) {
+    public List<Tuple7<Integer, Double, Long, Double, Double, Long, Double>> fetchMetrics(int experimentId, double config) {
 
-        List<Tuple6<Double, Long, Double, Double, Long, Double>> metrics = new ArrayList<>();
+        List<Tuple7<Integer, Double, Long, Double, Double, Long, Double>> metrics = new ArrayList<>();
         String selectValues = String.format(
-            "SELECT config, timestamp, avgThr, avgLat, chkLast, recTime " +
+            "SELECT experimentId, config, timestamp, avgThr, avgLat, chkLast, recTime " +
             "FROM metrics " +
-            "WHERE config = %f " +
+            "WHERE experimentId = %d " +
+            "AND config = %f " +
             "ORDER BY timestamp ASC;",
-            config);
+            experimentId, config);
         IOManager.executeQuery(selectValues, (rs) -> {
             metrics.add(
-                new Tuple6<>(
+                new Tuple7<>(
+                    rs.getInt("experimentId"),
                     rs.getDouble("config"),
                     rs.getLong("timestamp"),
                     rs.getDouble("avgThr"),
