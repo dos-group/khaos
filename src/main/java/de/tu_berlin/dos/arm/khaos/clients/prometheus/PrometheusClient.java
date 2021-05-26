@@ -3,6 +3,7 @@ package de.tu_berlin.dos.arm.khaos.clients.prometheus;
 import de.tu_berlin.dos.arm.khaos.clients.prometheus.responses.Matrix;
 import de.tu_berlin.dos.arm.khaos.io.Observation;
 import de.tu_berlin.dos.arm.khaos.io.TimeSeries;
+import org.apache.log4j.Logger;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -12,6 +13,7 @@ import java.util.Objects;
 
 public class PrometheusClient {
 
+    private static final Logger LOG = Logger.getLogger(PrometheusClient.class);
     private static final int LIMIT = 11000;
 
     private final PrometheusRest service;
@@ -29,10 +31,15 @@ public class PrometheusClient {
     public TimeSeries queryRange(String query, long start, long end) throws IOException {
 
         TimeSeries ts = TimeSeries.create(start, end);
-        long current = start;
-        while (current < end) {
 
-            Matrix matrix = this.service.queryRange(query, current, end, 1, 120).execute().body();
+        long current = start;
+        long iterations = (end - start) / LIMIT;
+        for (int i = 0; i <= iterations; i++) {
+
+            long last = current + (end - start) % LIMIT;
+            if (i < iterations) last = current + LIMIT;
+
+            Matrix matrix = this.service.queryRange(query, current, last, 1, 120).execute().body();
             List<List<String>> values = Objects.requireNonNull(matrix).data.result.get(0).values;
             for (List<String> strings : values) {
 

@@ -8,11 +8,10 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.log4j.Logger;
-import scala.Tuple2;
-import scala.Tuple3;
-import scala.Tuple6;
-import scala.Tuple7;
+import scala.*;
 
+import java.lang.Double;
+import java.lang.Long;
 import java.sql.*;
 import java.time.Duration;
 import java.util.*;
@@ -283,7 +282,7 @@ public class IOManager {
 
     public void extractFullWorkload() {
 
-        LOG.info("Starting create workload table");
+        LOG.info("Starting create full workload table");
         String createTable =
             "CREATE TABLE IF NOT EXISTS workload " +
             "(second INTEGER NOT NULL, " +
@@ -293,7 +292,7 @@ public class IOManager {
         IOManager.executeUpdate("DELETE FROM workload;");
         LOG.info("Finished create full workload table");
 
-        LOG.info("Starting extract workload");
+        LOG.info("Starting extract full workload");
         String selectEvents =
             "SELECT timestamp, COUNT(*) AS count " +
             "FROM events GROUP BY timestamp";
@@ -368,11 +367,13 @@ public class IOManager {
         // find values for average throughput where failures should be injected
         int maxVal = max.get(0)._3();
         int minVal = min.get(0)._3();
-        int step = (int) (((maxVal - minVal) * 1.0 / (this.numFailures - 1)) + 0.5);
+        // test for only 1 failure to be injected, min of 2 is required, i.e. max and min
+        //int numFailures = (this.numFailures > 0) ? this.numFailures - 1 : 1;
+        int step = (int) (((maxVal - minVal) * 1.0 / numFailures) + 0.5);
         // create map of for all points of intersection
         Map<Integer, List<Tuple3<Integer, Long, Integer>>> intersects = new TreeMap<>();
         intersects.put(minVal, min);
-        Stream.iterate(minVal, i -> i + step).limit(this.numFailures - 1).forEach(i -> intersects.putIfAbsent(i, new ArrayList<>()));
+        Stream.iterate(minVal, i -> i + step).limit(numFailures).forEach(i -> intersects.putIfAbsent(i, new ArrayList<>()));
         intersects.put(maxVal, max);
         // find all points of intersection in workload
         for (int i = this.minInterval; i < fullWorkload.size() - this.minInterval; i++) {
@@ -467,9 +468,14 @@ public class IOManager {
 
     public void initMetrics(int experimentId, boolean removePrevious) {
 
+        // TODO remove!
+        //IOManager.executeUpdate("DROP TABLE IF EXISTS metrics;");
+
         String createTable =
             "CREATE TABLE IF NOT EXISTS metrics " +
             "(experimentId INTEGER NOT NULL, " +
+            "jobId TEXT NOT NULL, " +
+            "config INTEGER NOT NULL, " +
             "timestamp INTEGER NOT NULL, " +
             "avgThr REAL NOT NULL, " +
             "avgLat REAL NOT NULL, " +
@@ -477,18 +483,19 @@ public class IOManager {
             "recTime REAL);";
         IOManager.executeUpdate(createTable);
         if (removePrevious) {
+
             IOManager.executeUpdate(String.format("DELETE FROM metrics WHERE experimentId = %d;", experimentId));
         }
     }
 
-    public void addMetrics(int experimentId, double config, long timestamp, double avgThr, double avgLat, long chkLast) {
+    public void addMetrics(int experimentId, String jobId, double config, long timestamp, double avgThr, double avgLat, long chkLast) {
 
         String insertValue = String.format(
             "INSERT INTO metrics " +
-            "experimentId, config, timestamp, avgThr, avgLat, chkLast) " +
+            "(experimentId, jobId, config, timestamp, avgThr, avgLat, chkLast) " +
             "VALUES " +
-            "(%d, %f,%d,%f,%f,%d);",
-            experimentId, config, timestamp, avgThr, avgLat, chkLast);
+            "(%d, '%s', %f, %d, %f, %f, %d);",
+            experimentId, jobId, config, timestamp, avgThr, avgLat, chkLast);
         IOManager.executeUpdate(insertValue);
     }
 
@@ -507,20 +514,23 @@ public class IOManager {
         return metrics;
     }
 
-    public List<Tuple7<Integer, Double, Long, Double, Double, Long, Double>> fetchMetrics(int experimentId, double config) {
+    //public List<Tuple8<Integer, String, Double, Long, Double, Double, Long, Double>> fetchMetrics(int experimentId, double config) {
+    public List<Tuple8<Integer, String, Double, Long, Double, Double, Long, Double>> fetchMetrics(int experimentId, String jobId) {
 
-        List<Tuple7<Integer, Double, Long, Double, Double, Long, Double>> metrics = new ArrayList<>();
+        List<Tuple8<Integer, String, Double, Long, Double, Double, Long, Double>> metrics = new ArrayList<>();
         String selectValues = String.format(
-            "SELECT experimentId, config, timestamp, avgThr, avgLat, chkLast, recTime " +
+            "SELECT experimentId, jobId, config, timestamp, avgThr, avgLat, chkLast, recTime " +
             "FROM metrics " +
             "WHERE experimentId = %d " +
-            "AND config = %f " +
+            "AND jobId = '%s' " +
             "ORDER BY timestamp ASC;",
-            experimentId, config);
+            //experimentId, config);
+            experimentId, jobId);
         IOManager.executeQuery(selectValues, (rs) -> {
             metrics.add(
-                new Tuple7<>(
+                new Tuple8<>(
                     rs.getInt("experimentId"),
+                    rs.getString("jobId"),
                     rs.getDouble("config"),
                     rs.getLong("timestamp"),
                     rs.getDouble("avgThr"),
@@ -542,30 +552,68 @@ public class IOManager {
         IOManager.executeUpdate(updateValue);
     }
 
-    public void initChkSums() {
+    public void initJobs(int experimentId, boolean removePrevious) {
 
+        // TODO remove
+        //IOManager.executeUpdate("DROP TABLE IF EXISTS jobs;");
         String createTable =
-            "CREATE TABLE IF NOT EXISTS chk_sums " +
-            "(config REAL NOT NULL, " +
+            "CREATE TABLE IF NOT EXISTS jobs " +
+            "(experimentId INTEGER NOT NULL, " +
+            "jobId TEXT NOT NULL, " +
+            "config REAL NOT NULL, " +
             "minDuration INTEGER NOT NULL, " +
             "avgDuration INTEGER NOT NULL, " +
             "maxDuration INTEGER NOT NULL, " +
             "minSize INTEGER NOT NULL, " +
             "avgSize INTEGER NOT NULL, " +
-            "maxSize INTEGER NOT NULL);";
+            "maxSize INTEGER NOT NULL, " +
+            "startTs INTEGER NOT NULL, " +
+            "stopTs INTEGER NOT NULL);";
         IOManager.executeUpdate(createTable);
-        IOManager.executeUpdate("DELETE FROM chk_sums;");
+        if (removePrevious) {
+
+            IOManager.executeUpdate(String.format("DELETE FROM jobs WHERE experimentId = %d;", experimentId));
+        }
     }
 
-    public void addChkSum(double config, long minDuration, long avgDuration, long maxDuration, long minSize, long avgSize, long maxSize) {
+    public void addJob(
+            int experimentId, String jobId, double config, long minDuration, long avgDuration,
+            long maxDuration, long minSize, long avgSize, long maxSize, long startTs, long stopTs) {
 
         String insertValue = String.format(
-            "INSERT INTO chk_sums " +
-            "(config, minDuration, avgDuration, maxDuration, minSize, avgSize, maxSize) " +
+            "INSERT INTO jobs " +
+            "(experimentId, jobId, config, minDuration, avgDuration, maxDuration, minSize, avgSize, maxSize, startTs, stopTs) " +
             "VALUES " +
-            "(%f,%d,%d,%d,%d,%d,%d);",
-            config, minDuration, avgDuration, maxDuration, minSize, avgSize, maxSize);
+            "(%d, '%s', %f, %d, %d, %d, %d, %d, %d, %d, %d);",
+            experimentId, jobId, config, minDuration, avgDuration, maxDuration, minSize, avgSize, maxSize, startTs, stopTs);
         IOManager.executeUpdate(insertValue);
+    }
+
+    public List<Tuple11<Integer, String, Double, Long, Long, Long, Long, Long, Long, Long, Long>> fetchJobs(int experimentId) {
+
+        List<Tuple11<Integer, String, Double, Long, Long, Long, Long, Long, Long, Long, Long>> jobs = new ArrayList<>();
+        String selectValues = String.format(
+            "SELECT experimentId, jobId, config, minDuration, avgDuration, maxDuration, minSize, avgSize, maxSize, startTs, stopTs " +
+            "FROM jobs " +
+            "WHERE experimentId = %d " +
+            "ORDER BY config ASC;",
+            experimentId);
+        IOManager.executeQuery(selectValues, (rs) -> {
+            jobs.add(
+                new Tuple11<>(
+                    rs.getInt("experimentId"),
+                    rs.getString("jobId"),
+                    rs.getDouble("config"),
+                    rs.getLong("minDuration"),
+                    rs.getLong("avgDuration"),
+                    rs.getLong("maxDuration"),
+                    rs.getLong("minSize"),
+                    rs.getLong("avgSize"),
+                    rs.getLong("maxSize"),
+                    rs.getLong("startTs"),
+                    rs.getLong("stopTs")));
+        });
+        return jobs;
     }
 
     public void registerListener(Listener listener) {

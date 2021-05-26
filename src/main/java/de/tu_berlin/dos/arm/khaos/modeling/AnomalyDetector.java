@@ -9,6 +9,7 @@ import iftm.anomalydetection.automl.identityfunctions.CompleteHistoryThresholdBr
 import iftm.anomalydetection.automl.identityfunctions.ThresholdBreedingPart;
 import org.apache.log4j.Logger;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class AnomalyDetector {

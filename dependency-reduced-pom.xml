@@ -52,14 +52,5 @@
       </plugin>
     </plugins>
   </build>
-  <dependencies>
-    <dependency>
-      <groupId>IFTM</groupId>
-      <artifactId>IFTM-anomalydetection-models</artifactId>
-      <version>0.0.1</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/libs/IFTM-anomalydetection-models-0.0.1.jar</systemPath>
-    </dependency>
-  </dependencies>
 </project>
 

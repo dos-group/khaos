@@ -10,15 +10,14 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.log4j.Category;
 import org.apache.log4j.Logger;
-import scala.Tuple2;
-import scala.Tuple3;
-import scala.Tuple6;
-import scala.Tuple7;
+import scala.*;
 import smile.data.DataFrame;
 import smile.data.formula.Formula;
 import smile.regression.LinearModel;
 import smile.regression.OLS;
 
+import java.lang.Double;
+import java.lang.Long;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,12 +25,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
     START {
 
-        public ExecutionManager runStage(Context context) throws Exception {
+        public ExecutionManager runStage(Context context) {
 
             return RECORD;
         }
@@ -70,7 +70,7 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
         public ExecutionManager runStage(Context context) {
 
-            context.IOManager.initMetrics(context.experimentId, false);
+            context.IOManager.initMetrics(context.experimentId, true);
 
             // register points for failure injection with counter manager
             context.IOManager.getFailureScenario().forEach(point -> {
@@ -89,8 +89,8 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                             context.clientsManager.injectFailure(job.getJobId(), job.getSinkId());
                             long chkLast = context.clientsManager.getLastCheckpoint(job.getJobId());
 
-                            context.IOManager.addMetrics(context.experimentId, job.getConfig(), stopTs, avgThr, avgLat, chkLast);
-                            for (Tuple7<Integer, Double, Long, Double, Double, Long, Double> current : context.IOManager.fetchMetrics(context.experimentId, job.getConfig())) {
+                            context.IOManager.addMetrics(context.experimentId, job.getJobId(), job.getConfig(), stopTs, avgThr, avgLat, chkLast);
+                            for (Tuple8<Integer, String, Double, Long, Double, Double, Long, Double> current : context.IOManager.fetchMetrics(context.experimentId, job.getJobId())) {
                                 LOG.info(current);
                             }
                             LOG.info("Finishing inject failure into job " + job.getConfig());
@@ -140,20 +140,24 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
         public ExecutionManager runStage(Context context) throws Exception {
 
-            context.IOManager.initChkSums();
+            context.IOManager.initJobs(context.experimentId, true);
 
             for (StreamingJob job : context.experiments) {
 
                 // save checkpoint metrics
                 Checkpoints checkpoints = context.clientsManager.flink.getCheckpoints(job.getJobId());
-                context.IOManager.addChkSum(
+                context.IOManager.addJob(
+                    context.experimentId,
+                    job.getJobId(),
                     job.getConfig(),
                     checkpoints.summary.endToEndDuration.min,
                     checkpoints.summary.endToEndDuration.avg,
                     checkpoints.summary.endToEndDuration.max,
                     checkpoints.summary.stateSize.min,
                     checkpoints.summary.stateSize.avg,
-                    checkpoints.summary.stateSize.max);
+                    checkpoints.summary.stateSize.max,
+                    StreamingJob.startTs,
+                    StreamingJob.stopTs);
 
                 // Stop experimental job
                 context.clientsManager.flink.stopJob(job.getJobId());
@@ -167,21 +171,28 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
             int numOfCores = Runtime.getRuntime().availableProcessors();
             final ExecutorService service = Executors.newFixedThreadPool(numOfCores);
-            final CountDownLatch latch = new CountDownLatch(context.numOfConfigs * context.numFailures);
+            int total = context.numOfConfigs * context.numFailures;
+            AtomicInteger counter = new AtomicInteger(0);
+            final CountDownLatch latch = new CountDownLatch(total);
 
             LOG.info("Starting measure recovery times");
-            for (StreamingJob job : context.experiments) {
-                
-                TimeSeries thrTs = context.clientsManager.getThroughput(job.getJobId(), StreamingJob.startTs, StreamingJob.stopTs);
-                TimeSeries lagTs = context.clientsManager.getConsumerLag(job.getJobId(), StreamingJob.startTs, StreamingJob.stopTs);
-                for (Tuple7<Integer, Double, Long, Double, Double, Long, Double> current : context.IOManager.fetchMetrics(context.experimentId, job.getConfig())) {
+            for (Tuple11<Integer, String, Double, Long, Long, Long, Long, Long, Long, Long, Long> jobs : context.IOManager.fetchJobs(context.experimentId)) {
+
+                TimeSeries thrTs = context.clientsManager.getThroughput(jobs._2(), jobs._10(), jobs._11());
+                TimeSeries lagTs = context.clientsManager.getConsumerLag(jobs._2(), jobs._10(), jobs._11());
+
+                for (Tuple8<Integer, String, Double, Long, Double, Double, Long, Double> current : context.IOManager.fetchMetrics(context.experimentId, jobs._2())) {
 
                     service.submit(() -> {
 
                         AnomalyDetector detector = new AnomalyDetector(Arrays.asList(thrTs, lagTs));
-                        detector.fit(current._3(), 1000);
-                        double recTime = detector.measure(current._3());
-                        context.IOManager.updateRecTime(job.getConfig(), current._3(), recTime);
+                        detector.fit(current._4(), 1000);
+                        double recTime = detector.measure(current._4());
+
+                        LOG.info(recTime);
+                        context.IOManager.updateRecTime(current._3(), current._4(), recTime);
+                        LOG.info(current);
+                        LOG.info(counter.incrementAndGet() + "/" + total + " completed");
                         latch.countDown();
                     });
                 }
