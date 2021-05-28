@@ -469,17 +469,15 @@ public class IOManager {
     public void initMetrics(int experimentId, boolean removePrevious) {
 
         // TODO remove!
-        //IOManager.executeUpdate("DROP TABLE IF EXISTS metrics;");
+        IOManager.executeUpdate("DROP TABLE IF EXISTS metrics;");
 
         String createTable =
             "CREATE TABLE IF NOT EXISTS metrics " +
             "(experimentId INTEGER NOT NULL, " +
             "jobId TEXT NOT NULL, " +
-            "config INTEGER NOT NULL, " +
             "timestamp INTEGER NOT NULL, " +
             "avgThr REAL NOT NULL, " +
             "avgLat REAL NOT NULL, " +
-            "chkLast INTEGER NOT NULL, " +
             "recTime REAL);";
         IOManager.executeUpdate(createTable);
         if (removePrevious) {
@@ -488,74 +486,55 @@ public class IOManager {
         }
     }
 
-    public void addMetrics(int experimentId, String jobId, double config, long timestamp, double avgThr, double avgLat, long chkLast) {
+    public void addMetrics(int experimentId, String jobId, long timestamp, double avgThr, double avgLat) {
 
         String insertValue = String.format(
             "INSERT INTO metrics " +
-            "(experimentId, jobId, config, timestamp, avgThr, avgLat, chkLast) " +
+            "(experimentId, jobId, timestamp, avgThr, avgLat) " +
             "VALUES " +
-            "(%d, '%s', %f, %d, %f, %f, %d);",
-            experimentId, jobId, config, timestamp, avgThr, avgLat, chkLast);
+            "(%d, '%s', %d, %f, %f);",
+            experimentId, jobId, timestamp, avgThr, avgLat);
         IOManager.executeUpdate(insertValue);
     }
 
-    public List<Long> fetchTimestamp(double config) {
+    public List<Tuple6<Integer, String, Long, Double, Double, Double>> fetchMetrics(int experimentId, String jobId) {
 
-        List<Long> metrics = new ArrayList<>();
+        List<Tuple6<Integer, String, Long, Double, Double, Double>> metrics = new ArrayList<>();
         String selectValues = String.format(
-            "SELECT timestamp " +
-            "FROM metrics " +
-            "WHERE config = %f " +
-            "ORDER BY timestamp ASC;",
-            config);
-        IOManager.executeQuery(selectValues, (rs) -> {
-            metrics.add(rs.getLong("timestamp"));
-        });
-        return metrics;
-    }
-
-    //public List<Tuple8<Integer, String, Double, Long, Double, Double, Long, Double>> fetchMetrics(int experimentId, double config) {
-    public List<Tuple8<Integer, String, Double, Long, Double, Double, Long, Double>> fetchMetrics(int experimentId, String jobId) {
-
-        List<Tuple8<Integer, String, Double, Long, Double, Double, Long, Double>> metrics = new ArrayList<>();
-        String selectValues = String.format(
-            "SELECT experimentId, jobId, config, timestamp, avgThr, avgLat, chkLast, recTime " +
+            "SELECT experimentId, jobId, timestamp, avgThr, avgLat, recTime " +
             "FROM metrics " +
             "WHERE experimentId = %d " +
             "AND jobId = '%s' " +
             "ORDER BY timestamp ASC;",
-            //experimentId, config);
             experimentId, jobId);
         IOManager.executeQuery(selectValues, (rs) -> {
             metrics.add(
-                new Tuple8<>(
+                new Tuple6<>(
                     rs.getInt("experimentId"),
                     rs.getString("jobId"),
-                    rs.getDouble("config"),
                     rs.getLong("timestamp"),
                     rs.getDouble("avgThr"),
                     rs.getDouble("avgLat"),
-                    rs.getLong("chkLast"),
                     rs.getDouble("recTime")));
         });
         return metrics;
     }
 
-    public void updateRecTime(double config, long timestamp, double recTime) {
+    public void updateRecTime(String jobId, long timestamp, double recTime) {
 
         String updateValue = String.format(
             "UPDATE metrics " +
             "SET recTime = %f " +
-            "WHERE config = %f " +
+            "WHERE jobId = %f " +
             "AND timestamp = %d;",
-            recTime, config, timestamp);
+            recTime, jobId, timestamp);
         IOManager.executeUpdate(updateValue);
     }
 
     public void initJobs(int experimentId, boolean removePrevious) {
 
         // TODO remove
-        //IOManager.executeUpdate("DROP TABLE IF EXISTS jobs;");
+        IOManager.executeUpdate("DROP TABLE IF EXISTS jobs;");
         String createTable =
             "CREATE TABLE IF NOT EXISTS jobs " +
             "(experimentId INTEGER NOT NULL, " +

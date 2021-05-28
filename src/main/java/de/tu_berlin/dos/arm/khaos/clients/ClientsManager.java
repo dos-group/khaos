@@ -85,6 +85,12 @@ public class ClientsManager {
         throw new IllegalStateException("Unable to find sink operator for job with ID " + jobId);
     }
 
+    public long getLatestTs(String jobId) throws Exception {
+
+        long now = this.flink.getLatestTs(jobId).now;
+        return (long) Math.ceil(now / 1000.0);
+    }
+
     public long getLastCheckpoint(String jobId) throws Exception {
 
         long lastCkp = this.flink.getCheckpoints(jobId).latest.completed.latestAckTimestamp;

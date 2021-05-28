@@ -54,6 +54,11 @@ public class FlinkClient {
         return this.service.getVertices(jobId).execute().body();
     }
 
+    public LatestTs getLatestTs(String jobId) throws IOException {
+
+        return this.service.getLatestTs(jobId).execute().body();
+    }
+
     public Checkpoints getCheckpoints(String jobId) throws IOException {
 
         return this.service.getCheckpoints(jobId).execute().body();

@@ -8,33 +8,31 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.log4j.Logger;
 
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Stream;
 
-public enum Context { get;
+public enum Context implements AutoCloseable { get;
 
     /******************************************************************************
      * STATIC INNER CLASSES
      ******************************************************************************/
 
-    public static class StreamingJob {
+    public static class Job {
 
-        public static String brokerList;
-        public static String consumerTopic;
-        public static String producerTopic;
-        public static int partitions;
-        public static long startTs;
-        public static long stopTs;
-
+        public final Experiment experiment;
         public final String jobName;
+        public final int config;
 
         private String jobId;
-        private int config;
         private List<String> operatorIds;
         private String sinkId;
 
-        public StreamingJob(String jobName) {
+        public Job(Experiment experiment, String jobName, int config) {
 
+            this.experiment = experiment;
             this.jobName = jobName;
+            this.config = config;
         }
 
         public String getJobId() {
@@ -45,16 +43,6 @@ public enum Context { get;
         public void setJobId(String jobId) {
 
             this.jobId = jobId;
-        }
-
-        public double getConfig() {
-
-            return config;
-        }
-
-        public void setConfig(int config) {
-
-            this.config = config;
         }
 
         public void setOperatorIds(List<String> operatorIds) {
@@ -74,21 +62,90 @@ public enum Context { get;
 
         public String getProgramArgs() {
 
-            return String.join(",", this.jobName, brokerList, consumerTopic, producerTopic, partitions + "", (int) this.config + "");
+            return String.join(",",
+                this.jobName,
+                experiment.brokerList,
+                experiment.consumerTopic,
+                experiment.producerTopic,
+                experiment.partitions + "",
+                this.config + "");
         }
 
         @Override
         public String toString() {
 
-            return "Experiment{" +
-                    "startTs=" + StreamingJob.startTs +
-                    ", stopTs=" + StreamingJob.stopTs +
-                    ", jobName='" + jobName + '\'' +
+            return "Job{" +
+                    "jobName='" + jobName + '\'' +
                     ", config=" + config +
                     ", jobId='" + jobId + '\'' +
                     ", operatorIds=" + operatorIds +
                     ", sinkId='" + sinkId + '\'' +
                     '}';
+        }
+    }
+
+    public static class Experiment {
+
+        public final int experimentId;
+        public final String brokerList;
+        public final String consumerTopic;
+        public final String producerTopic;
+        public final int partitions;
+        public final List<Job> jobs;
+
+        private long startTs;
+        private long stopTs;
+
+        public Experiment(
+                int experimentId, String brokerList, String consumerTopic, String producerTopic,
+                int partitions, int minConfigVal, int maxConfigVal, int numOfConfigs) {
+
+            String uniqueStr = RandomStringUtils.random(10, true, true);
+            this.experimentId = experimentId;
+            this.brokerList = brokerList;
+            this.consumerTopic = consumerTopic + "-" + uniqueStr;
+            this.producerTopic = producerTopic + "-" + uniqueStr;
+            this.partitions = partitions;
+
+            this.jobs = new ArrayList<>();
+
+            jobs.add(new Job(this, "profile-" + 10000, 10000));
+            jobs.add(new Job(this, "profile-" + 22222, 22222));
+            jobs.add(new Job(this, "profile-" + 34444, 34444));
+            jobs.add(new Job(this, "profile-" + 46666, 46666));
+            jobs.add(new Job(this, "profile-" + 58888, 58888));
+            //jobs.add(new Job(this, jobName + "profile-" + 71110, 71110));
+            //jobs.add(new Job(this, jobName + "profile-" + 83332, 83332));
+            //jobs.add(new Job(this, jobName + "profile-" + 95554, 95554));
+            //jobs.add(new Job(this, jobName + "profile-" + 107776, 107776));
+            //jobs.add(new Job(this, jobName + "profile-" + 119998, 119998));
+
+            /*int step = (int) (((maxConfigVal - minConfigVal) * 1.0 / (numOfConfigs - 1)) + 0.5);
+            Stream.iterate(minConfigVal, i -> i + step).limit(numOfConfigs).forEach(config -> {
+                String uniqueJobName = jobName + "-" + RandomStringUtils.random(10, true, true);
+                Job current = new Job(this, "profile-" + config, config);
+                this.jobs.add(current);
+            });*/
+        }
+
+        public long getStartTs() {
+
+            return startTs;
+        }
+
+        public void setStartTs(long startTs) {
+
+            this.startTs = startTs;
+        }
+
+        public long getStopTs() {
+
+            return stopTs;
+        }
+
+        public void setStopTs(long stopTs) {
+
+            this.stopTs = stopTs;
         }
     }
 
@@ -113,6 +170,7 @@ public enum Context { get;
     public final int maxConfigVal;
     public final int minInterval;
     public final int numFailures;
+    public final int chkTolerance;
     public final int timeLimit;
     public final String k8sNamespace;
     public final String brokerList;
@@ -128,9 +186,10 @@ public enum Context { get;
     public final String sinkRegex;
     public final String promUrl;
 
-    public final StreamingJob targetJob;
-    public final List<StreamingJob> experiments;
+    public final Experiment experiment;
+    //public final Job targetJob;
 
+    public final ScheduledExecutorService executor;
     public final IOManager IOManager;
     public final ClientsManager clientsManager;
 
@@ -160,6 +219,7 @@ public enum Context { get;
             this.maxConfigVal = Integer.parseInt(props.getProperty("experiment.maxConfigVal"));
             this.minInterval = Integer.parseInt(props.getProperty("experiment.minInterval"));
             this.numFailures = Integer.parseInt(props.getProperty("experiment.numFailures"));
+            this.chkTolerance = Integer.parseInt(props.getProperty("experiment.chkTolerance"));
             this.timeLimit = Integer.parseInt(props.getProperty("database.timeLimit"));
             this.k8sNamespace = props.getProperty("k8s.namespace");
             this.brokerList = props.getProperty("kafka.brokerList");
@@ -175,28 +235,41 @@ public enum Context { get;
             this.sinkRegex = props.getProperty("flink.sinkRegex");
             this.promUrl = props.getProperty("prometheus.url");
 
-            // set global experiment variables
-            StreamingJob.brokerList = this.brokerList;
+            // set experiment variables
             String uniqueString = RandomStringUtils.random(10, true, true);
-            StreamingJob.consumerTopic = this.consumerTopic + "-" + uniqueString;
-            StreamingJob.producerTopic = this.producerTopic + "-" + uniqueString;
-            StreamingJob.partitions = this.partitions;
+            this.experiment = new Experiment(
+                this.experimentId,
+                this.brokerList,
+                this.consumerTopic,
+                this.producerTopic,
+                this.partitions,
+                this.minConfigVal,
+                this.maxConfigVal,
+                this.numOfConfigs
+            );
 
             // create object for target job and store list of operator ids
-            this.targetJob = new StreamingJob(this.jobName);
-            this.targetJob.setJobId(this.jobId);
+            //this.targetJob = new Job(experiment, this.jobName);
+            //this.targetJob.setJobId(this.jobId);
+
+            /*Job.brokerList = this.brokerList;
+            String uniqueString = RandomStringUtils.random(10, true, true);
+            Job.consumerTopic = this.consumerTopic + "-" + uniqueString;
+            Job.producerTopic = this.producerTopic + "-" + uniqueString;
+            Job.partitions = this.partitions;*/
 
             // instantiate experiments list
-            this.experiments = new ArrayList<>();
+            /*this.experiments = new ArrayList<>();
             int step = (int) (((this.maxConfigVal - this.minConfigVal) * 1.0 / (this.numOfConfigs - 1)) + 0.5);
             Stream.iterate(this.minConfigVal, i -> i + step).limit(this.numOfConfigs).forEach(config -> {
                 String uniqueJobName = this.targetJob.jobName + "-" + RandomStringUtils.random(10, true, true);
-                StreamingJob current = new StreamingJob(uniqueJobName);
+                Job current = new Job(uniqueJobName);
                 current.setConfig(config);
                 this.experiments.add(current);
-            });
+            });*/
 
             // create global context objects
+            this.executor = Executors.newSingleThreadScheduledExecutor();
             this.IOManager = new IOManager(this.minInterval, this.averagingWindow, this.numFailures, this.brokerList);
             this.clientsManager = new ClientsManager(this.promUrl, this.flinkUrl, this.jarId, this.parallelism, this.k8sNamespace, this.averagingWindow);
 
@@ -208,5 +281,11 @@ public enum Context { get;
 
             throw new IllegalStateException(e.fillInStackTrace());
         }
+    }
+
+    @Override
+    public void close() throws Exception {
+
+        this.executor.shutdown();
     }
 }

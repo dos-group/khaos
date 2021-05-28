@@ -1,37 +1,30 @@
 package de.tu_berlin.dos.arm.khaos.core;
 
 import de.tu_berlin.dos.arm.khaos.clients.flink.responses.Checkpoints;
-import de.tu_berlin.dos.arm.khaos.core.Context.StreamingJob;
+import de.tu_berlin.dos.arm.khaos.core.Context.Job;
 import de.tu_berlin.dos.arm.khaos.io.ReplayCounter.Listener;
 import de.tu_berlin.dos.arm.khaos.io.TimeSeries;
 import de.tu_berlin.dos.arm.khaos.modeling.AnomalyDetector;
 import de.tu_berlin.dos.arm.khaos.utils.SequenceFSM;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.time.StopWatch;
-import org.apache.log4j.Category;
 import org.apache.log4j.Logger;
 import scala.*;
-import smile.data.DataFrame;
-import smile.data.formula.Formula;
-import smile.regression.LinearModel;
-import smile.regression.OLS;
 
 import java.lang.Double;
 import java.lang.Long;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
     START {
 
-        public ExecutionManager runStage(Context context) {
+        public ExecutionManager runStage(Context context) throws Exception {
 
             return RECORD;
         }
@@ -54,21 +47,22 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
         public ExecutionManager runStage(Context context) throws Exception {
 
-            // deploy multiple experiments
-            for (StreamingJob job : context.experiments) {
+            // deploy parallel profiling jobs
+            for (Job job : context.experiment.jobs) {
 
-                LOG.info(job.getConfig());
-                // start job and set JobId, Operator IDs, and Sink Operator
                 job.setJobId(context.clientsManager.startJob(job.getProgramArgs()));
                 job.setOperatorIds(context.clientsManager.getOperatorIds(job.getJobId()));
                 job.setSinkId(context.clientsManager.getSinkOperatorId(job.getJobId(), context.sinkRegex));
+                LOG.info(job.toString());
             }
+
+
             return REGISTER;
         }
     },
     REGISTER {
 
-        public ExecutionManager runStage(Context context) {
+        public ExecutionManager runStage(Context context) throws Exception {
 
             context.IOManager.initMetrics(context.experimentId, true);
 
@@ -77,23 +71,38 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
                 context.IOManager.registerListener(new Listener(point._1(), () -> {
 
-                    // inject failure in all experiments
-                    for (StreamingJob job : context.experiments) {
+                    for (Job job : context.experiment.jobs) {
 
                         try {
-                            LOG.info("Starting inject failure into job " + job.getConfig());
-                            long stopTs = Instant.now().getEpochSecond();
-                            long startTs = stopTs - context.averagingWindow;
-                            double avgThr = context.clientsManager.getThroughput(job.getJobId(), startTs, stopTs).average();
-                            double avgLat = context.clientsManager.getLatency(job.getJobId(), job.getSinkId(), startTs, stopTs).average();
-                            context.clientsManager.injectFailure(job.getJobId(), job.getSinkId());
-                            long chkLast = context.clientsManager.getLastCheckpoint(job.getJobId());
+                            // wait until close to the end of checkpoint interval and then inject failure
+                            while (true) {
 
-                            context.IOManager.addMetrics(context.experimentId, job.getJobId(), job.getConfig(), stopTs, avgThr, avgLat, chkLast);
-                            for (Tuple8<Integer, String, Double, Long, Double, Double, Long, Double> current : context.IOManager.fetchMetrics(context.experimentId, job.getJobId())) {
-                                LOG.info(current);
+                                long currTs = context.clientsManager.getLatestTs(job.getJobId());
+                                long chkLast = context.clientsManager.getLastCheckpoint(job.getJobId());
+                                // find time to point which is 3 seconds from when next checkpoint starts
+                                long target = (job.config / 1000) - (currTs - chkLast) - context.chkTolerance;
+                                if (target > 0) {
+                                    context.executor.schedule(() -> {
+                                        try {
+                                            context.clientsManager.injectFailure(job.getJobId(), job.getSinkId());
+                                            long startTs = currTs - context.averagingWindow;
+                                            double avgThr = context.clientsManager.getThroughput(job.getJobId(), startTs, currTs).average();
+                                            double avgLat = context.clientsManager.getLatency(job.getJobId(), job.getSinkId(), startTs, currTs).average();
+                                            context.IOManager.addMetrics(context.experimentId, job.getJobId(), currTs, avgThr, avgLat);
+                                            for (Tuple6<Integer, String, Long, Double, Double, Double> current : context.IOManager.fetchMetrics(context.experimentId, job.getJobId())) {
+
+                                                LOG.info(current);
+                                            }
+                                            LOG.info("Finishing inject failure into job " + job.getJobId());
+                                        }
+                                        catch (Exception e) {
+                                            LOG.error("Failed to inject failure with message " + e.getMessage());
+                                        }
+                                    }, target, TimeUnit.SECONDS);
+                                    break;
+                                }
+                                new CountDownLatch(1).await(100, TimeUnit.MILLISECONDS);
                             }
-                            LOG.info("Finishing inject failure into job " + job.getConfig());
                         }
                         catch (Exception e) {
 
@@ -102,7 +111,6 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                     }
                 }));
             });
-
             return REPLAY;
         }
     },
@@ -111,7 +119,7 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
         public ExecutionManager runStage(Context context) {
 
             // record start time of experiment
-            StreamingJob.startTs = Instant.now().getEpochSecond();
+            context.experiment.setStartTs(Instant.now().getEpochSecond());
 
             BlockingQueue<List<String>> queue = new ArrayBlockingQueue<>(60);
             context.IOManager.getFailureScenario().forEach(point -> {
@@ -128,10 +136,10 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                 try { while (queue.isEmpty()) Thread.sleep(100); }
                 catch(InterruptedException ex) { LOG.error(ex); }
                 //
-                context.IOManager.queueToKafka(startIndex, queue, StreamingJob.consumerTopic, isDone).run();
+                context.IOManager.queueToKafka(startIndex, queue, context.experiment.consumerTopic, isDone).run();
             });
             // record end time of experiment
-            StreamingJob.stopTs = Instant.now().getEpochSecond();
+            context.experiment.setStopTs(Instant.now().getEpochSecond());
 
             return DELETE;
         }
@@ -142,22 +150,22 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
             context.IOManager.initJobs(context.experimentId, true);
 
-            for (StreamingJob job : context.experiments) {
+            for (Job job : context.experiment.jobs) {
 
                 // save checkpoint metrics
                 Checkpoints checkpoints = context.clientsManager.flink.getCheckpoints(job.getJobId());
                 context.IOManager.addJob(
                     context.experimentId,
                     job.getJobId(),
-                    job.getConfig(),
+                    job.config,
                     checkpoints.summary.endToEndDuration.min,
                     checkpoints.summary.endToEndDuration.avg,
                     checkpoints.summary.endToEndDuration.max,
                     checkpoints.summary.stateSize.min,
                     checkpoints.summary.stateSize.avg,
                     checkpoints.summary.stateSize.max,
-                    StreamingJob.startTs,
-                    StreamingJob.stopTs);
+                    context.experiment.getStartTs(),
+                    context.experiment.getStopTs());
 
                 // Stop experimental job
                 context.clientsManager.flink.stopJob(job.getJobId());
@@ -181,16 +189,16 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                 TimeSeries thrTs = context.clientsManager.getThroughput(jobs._2(), jobs._10(), jobs._11());
                 TimeSeries lagTs = context.clientsManager.getConsumerLag(jobs._2(), jobs._10(), jobs._11());
 
-                for (Tuple8<Integer, String, Double, Long, Double, Double, Long, Double> current : context.IOManager.fetchMetrics(context.experimentId, jobs._2())) {
+                for (Tuple6<Integer, String, Long, Double, Double, Double> current : context.IOManager.fetchMetrics(context.experimentId, jobs._2())) {
 
                     service.submit(() -> {
 
                         AnomalyDetector detector = new AnomalyDetector(Arrays.asList(thrTs, lagTs));
-                        detector.fit(current._4(), 1000);
-                        double recTime = detector.measure(current._4());
+                        detector.fit(current._3(), 1000);
+                        double recTime = detector.measure(current._3());
 
                         LOG.info(recTime);
-                        context.IOManager.updateRecTime(current._3(), current._4(), recTime);
+                        context.IOManager.updateRecTime(current._2(), current._3(), recTime);
                         LOG.info(current);
                         LOG.info(counter.incrementAndGet() + "/" + total + " completed");
                         latch.countDown();
@@ -244,7 +252,7 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                 }
             }*/
 
-            List<List<Double>> confThr_apache = Arrays.asList(
+            /*List<List<Double>> confThr_apache = Arrays.asList(
                 Arrays.asList(1000D, 486D), Arrays.asList(1000D, 24148D), Arrays.asList(1000D, 32276D), Arrays.asList(1000D, 12676D), Arrays.asList(1000D, 18647D), Arrays.asList(1000D, 39559D), Arrays.asList(1000D, 45640D), Arrays.asList(1000D, 52404D), Arrays.asList(1000D, 28241D), Arrays.asList(1000D, 6440D),
                 Arrays.asList(14222D, 486D), Arrays.asList(14222D, 24148D), Arrays.asList(14222D, 32276D), Arrays.asList(14222D, 12676D), Arrays.asList(14222D, 18647D), Arrays.asList(14222D, 39559D), Arrays.asList(14222D, 45640D), Arrays.asList(14222D, 52404D), Arrays.asList(14222D, 28241D), Arrays.asList(14222D, 6440D),
                 Arrays.asList(27444D, 486D), Arrays.asList(27444D, 24148D), Arrays.asList(27444D, 32276D), Arrays.asList(27444D, 12676D), Arrays.asList(27444D, 18647D), Arrays.asList(27444D, 39559D), Arrays.asList(27444D, 45640D), Arrays.asList(27444D, 52404D), Arrays.asList(27444D, 28241D), Arrays.asList(27444D, 6440D),
@@ -307,16 +315,16 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
             LOG.info(context.performance.calculateRSquared());
             LOG.info(Arrays.toString(context.performance.calculatePValues().toArray()));
             //LOG.info(context.availability.calculateRSquared());
-            //LOG.info(Arrays.toString(context.availability.calculatePValues().toArray()));
+            //LOG.info(Arrays.toString(context.availability.calculatePValues().toArray()));*/
 
-            return OPTIMIZE;
+            return STOP;
         }
     },
     OPTIMIZE {
 
         public ExecutionManager runStage(Context context) throws Exception {
 
-            context.targetJob.setSinkId(context.clientsManager.getSinkOperatorId(context.jobId, context.sinkRegex));
+            /*context.targetJob.setSinkId(context.clientsManager.getSinkOperatorId(context.jobId, context.sinkRegex));
 
             final StopWatch stopWatch = new StopWatch();
             while (true) {
@@ -373,14 +381,15 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                     LOG.error(e.fillInStackTrace());
                     break;
                 }
-            }
+            }*/
             return STOP;
         }
     },
     STOP {
 
-        public ExecutionManager runStage(Context context) {
+        public ExecutionManager runStage(Context context) throws Exception {
 
+            context.close();
             return this;
         }
     };

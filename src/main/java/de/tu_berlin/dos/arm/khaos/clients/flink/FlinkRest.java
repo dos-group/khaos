@@ -29,6 +29,11 @@ public interface FlinkRest {
         @Path("jobId") String jobId
     );
 
+    @GET("v1/jobs/{jobId}/")
+    Call<LatestTs> getLatestTs(
+            @Path("jobId") String jobId
+    );
+
     @GET("v1/jobs/{jobId}/checkpoints/")
     Call<Checkpoints> getCheckpoints(
         @Path("jobId") String jobId
