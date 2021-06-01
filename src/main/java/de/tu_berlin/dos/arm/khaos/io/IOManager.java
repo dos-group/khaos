@@ -369,11 +369,11 @@ public class IOManager {
         int minVal = min.get(0)._3();
         // test for only 1 failure to be injected, min of 2 is required, i.e. max and min
         //int numFailures = (this.numFailures > 0) ? this.numFailures - 1 : 1;
-        int step = (int) (((maxVal - minVal) * 1.0 / numFailures) + 0.5);
+        int step = (int) (((maxVal - minVal) * 1.0 / (this.numFailures -1)) + 0.5);
         // create map of for all points of intersection
         Map<Integer, List<Tuple3<Integer, Long, Integer>>> intersects = new TreeMap<>();
         intersects.put(minVal, min);
-        Stream.iterate(minVal, i -> i + step).limit(numFailures).forEach(i -> intersects.putIfAbsent(i, new ArrayList<>()));
+        Stream.iterate(minVal, i -> i + step).limit(this.numFailures - 1).forEach(i -> intersects.putIfAbsent(i, new ArrayList<>()));
         intersects.put(maxVal, max);
         // find all points of intersection in workload
         for (int i = this.minInterval; i < fullWorkload.size() - this.minInterval; i++) {
@@ -469,7 +469,7 @@ public class IOManager {
     public void initMetrics(int experimentId, boolean removePrevious) {
 
         // TODO remove!
-        IOManager.executeUpdate("DROP TABLE IF EXISTS metrics;");
+        //IOManager.executeUpdate("DROP TABLE IF EXISTS metrics;");
 
         String createTable =
             "CREATE TABLE IF NOT EXISTS metrics " +
@@ -534,7 +534,7 @@ public class IOManager {
     public void initJobs(int experimentId, boolean removePrevious) {
 
         // TODO remove
-        IOManager.executeUpdate("DROP TABLE IF EXISTS jobs;");
+        //IOManager.executeUpdate("DROP TABLE IF EXISTS jobs;");
         String createTable =
             "CREATE TABLE IF NOT EXISTS jobs " +
             "(experimentId INTEGER NOT NULL, " +

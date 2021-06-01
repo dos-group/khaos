@@ -53,7 +53,6 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                 job.setJobId(context.clientsManager.startJob(job.getProgramArgs()));
                 job.setOperatorIds(context.clientsManager.getOperatorIds(job.getJobId()));
                 job.setSinkId(context.clientsManager.getSinkOperatorId(job.getJobId(), context.sinkRegex));
-                LOG.info(job.toString());
             }
 
 
@@ -96,7 +95,7 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                                             LOG.info("Finishing inject failure into job " + job.getJobId());
                                         }
                                         catch (Exception e) {
-                                            LOG.error("Failed to inject failure with message " + e.getMessage());
+                                            LOG.error("Failed to inject scheduled failure with message " + e.fillInStackTrace());
                                         }
                                     }, target, TimeUnit.SECONDS);
                                     break;
@@ -106,7 +105,7 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                         }
                         catch (Exception e) {
 
-                            LOG.error(e.fillInStackTrace());
+                            LOG.error("Failed to inject failure with message " + e.fillInStackTrace());
                         }
                     }
                 }));
@@ -184,12 +183,12 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
             final CountDownLatch latch = new CountDownLatch(total);
 
             LOG.info("Starting measure recovery times");
-            for (Tuple11<Integer, String, Double, Long, Long, Long, Long, Long, Long, Long, Long> jobs : context.IOManager.fetchJobs(context.experimentId)) {
+            for (Tuple11<Integer, String, Double, Long, Long, Long, Long, Long, Long, Long, Long> job : context.IOManager.fetchJobs(context.experimentId)) {
 
-                TimeSeries thrTs = context.clientsManager.getThroughput(jobs._2(), jobs._10(), jobs._11());
-                TimeSeries lagTs = context.clientsManager.getConsumerLag(jobs._2(), jobs._10(), jobs._11());
+                TimeSeries thrTs = context.clientsManager.getThroughput(job._2(), job._10(), job._11());
+                TimeSeries lagTs = context.clientsManager.getConsumerLag(job._2(), job._10(), job._11());
 
-                for (Tuple6<Integer, String, Long, Double, Double, Double> current : context.IOManager.fetchMetrics(context.experimentId, jobs._2())) {
+                for (Tuple6<Integer, String, Long, Double, Double, Double> current : context.IOManager.fetchMetrics(context.experimentId, job._2())) {
 
                     service.submit(() -> {
 
@@ -197,7 +196,7 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                         detector.fit(current._3(), 1000);
                         double recTime = detector.measure(current._3());
 
-                        LOG.info(recTime);
+                        LOG.info(current._2() + " " + current._3() + " " + recTime);
                         context.IOManager.updateRecTime(current._2(), current._3(), recTime);
                         LOG.info(current);
                         LOG.info(counter.incrementAndGet() + "/" + total + " completed");

@@ -108,24 +108,11 @@ public enum Context implements AutoCloseable { get;
             this.partitions = partitions;
 
             this.jobs = new ArrayList<>();
-
-            jobs.add(new Job(this, "profile-" + 10000, 10000));
-            jobs.add(new Job(this, "profile-" + 22222, 22222));
-            jobs.add(new Job(this, "profile-" + 34444, 34444));
-            jobs.add(new Job(this, "profile-" + 46666, 46666));
-            jobs.add(new Job(this, "profile-" + 58888, 58888));
-            //jobs.add(new Job(this, jobName + "profile-" + 71110, 71110));
-            //jobs.add(new Job(this, jobName + "profile-" + 83332, 83332));
-            //jobs.add(new Job(this, jobName + "profile-" + 95554, 95554));
-            //jobs.add(new Job(this, jobName + "profile-" + 107776, 107776));
-            //jobs.add(new Job(this, jobName + "profile-" + 119998, 119998));
-
-            /*int step = (int) (((maxConfigVal - minConfigVal) * 1.0 / (numOfConfigs - 1)) + 0.5);
+            int step = (int) (((maxConfigVal - minConfigVal) * 1.0 / (numOfConfigs - 1)) + 0.5);
             Stream.iterate(minConfigVal, i -> i + step).limit(numOfConfigs).forEach(config -> {
-                String uniqueJobName = jobName + "-" + RandomStringUtils.random(10, true, true);
                 Job current = new Job(this, "profile-" + config, config);
                 this.jobs.add(current);
-            });*/
+            });
         }
 
         public long getStartTs() {
