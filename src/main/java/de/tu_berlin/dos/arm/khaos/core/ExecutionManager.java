@@ -34,8 +34,11 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
         public ExecutionManager runStage(Context context) {
 
             // saves events from kafka consumer topic to database for a user defined time
-            //context.IOManager.recordKafkaToDatabase(context.consumerTopic, context.timeLimit, 100000);
-            //context.IOManager.extractFullWorkload();
+            if (context.doRecord) {
+
+                context.IOManager.recordKafkaToDatabase(context.consumerTopic, context.timeLimit, 10000);
+                context.IOManager.extractFullWorkload();
+            }
             context.IOManager.extractFailureScenario(0.1f);
             for (Tuple3<Integer, Long, Integer> current : context.IOManager.getFailureScenario()) {
                 LOG.info(current._1() + " " + current._2() + " " + current._3());
@@ -54,7 +57,6 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                 job.setOperatorIds(context.clientsManager.getOperatorIds(job.getJobId()));
                 job.setSinkId(context.clientsManager.getSinkOperatorId(job.getJobId(), context.sinkRegex));
             }
-
 
             return REGISTER;
         }
@@ -95,6 +97,7 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                                             LOG.info("Finishing inject failure into job " + job.getJobId());
                                         }
                                         catch (Exception e) {
+
                                             LOG.error("Failed to inject scheduled failure with message " + e.fillInStackTrace());
                                         }
                                     }, target, TimeUnit.SECONDS);
@@ -132,7 +135,7 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                     .runAsync(context.IOManager.databaseToQueue(startIndex, stopIndex, queue))
                     .thenRun(() -> isDone.set(true));
                 // wait till queue has items in it
-                try { while (queue.isEmpty()) Thread.sleep(100); }
+                try { while (queue.isEmpty()) new CountDownLatch(1).await(100, TimeUnit.MILLISECONDS); }
                 catch(InterruptedException ex) { LOG.error(ex); }
                 //
                 context.IOManager.queueToKafka(startIndex, queue, context.experiment.consumerTopic, isDone).run();

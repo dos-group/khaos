@@ -158,6 +158,7 @@ public enum Context implements AutoCloseable { get;
     public final int minInterval;
     public final int numFailures;
     public final int chkTolerance;
+    public final boolean doRecord;
     public final int timeLimit;
     public final String k8sNamespace;
     public final String brokerList;
@@ -207,6 +208,7 @@ public enum Context implements AutoCloseable { get;
             this.minInterval = Integer.parseInt(props.getProperty("experiment.minInterval"));
             this.numFailures = Integer.parseInt(props.getProperty("experiment.numFailures"));
             this.chkTolerance = Integer.parseInt(props.getProperty("experiment.chkTolerance"));
+            this.doRecord = Boolean.parseBoolean(props.getProperty("database.doRecord"));
             this.timeLimit = Integer.parseInt(props.getProperty("database.timeLimit"));
             this.k8sNamespace = props.getProperty("k8s.namespace");
             this.brokerList = props.getProperty("kafka.brokerList");
@@ -238,22 +240,6 @@ public enum Context implements AutoCloseable { get;
             // create object for target job and store list of operator ids
             //this.targetJob = new Job(experiment, this.jobName);
             //this.targetJob.setJobId(this.jobId);
-
-            /*Job.brokerList = this.brokerList;
-            String uniqueString = RandomStringUtils.random(10, true, true);
-            Job.consumerTopic = this.consumerTopic + "-" + uniqueString;
-            Job.producerTopic = this.producerTopic + "-" + uniqueString;
-            Job.partitions = this.partitions;*/
-
-            // instantiate experiments list
-            /*this.experiments = new ArrayList<>();
-            int step = (int) (((this.maxConfigVal - this.minConfigVal) * 1.0 / (this.numOfConfigs - 1)) + 0.5);
-            Stream.iterate(this.minConfigVal, i -> i + step).limit(this.numOfConfigs).forEach(config -> {
-                String uniqueJobName = this.targetJob.jobName + "-" + RandomStringUtils.random(10, true, true);
-                Job current = new Job(uniqueJobName);
-                current.setConfig(config);
-                this.experiments.add(current);
-            });*/
 
             // create global context objects
             this.executor = Executors.newSingleThreadScheduledExecutor();
