@@ -525,7 +525,7 @@ public class IOManager {
         String updateValue = String.format(
             "UPDATE metrics " +
             "SET recTime = %f " +
-            "WHERE jobId = %f " +
+            "WHERE jobId = '%s' " +
             "AND timestamp = %d;",
             recTime, jobId, timestamp);
         IOManager.executeUpdate(updateValue);
