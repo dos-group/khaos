@@ -2,6 +2,7 @@ package de.tu_berlin.dos.arm.khaos.core;
 
 import de.tu_berlin.dos.arm.khaos.clients.ClientsManager;
 import de.tu_berlin.dos.arm.khaos.io.IOManager;
+import de.tu_berlin.dos.arm.khaos.modeling.ForecastModel;
 import de.tu_berlin.dos.arm.khaos.modeling.RegressionModel;
 import de.tu_berlin.dos.arm.khaos.utils.FileReader;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -193,6 +194,8 @@ public enum Context implements AutoCloseable { get;
     public final IOManager IOManager;
     public final ClientsManager clientsManager;
 
+    public ForecastModel forecast;
+
     public RegressionModel performance;
     public RegressionModel availability;
 
@@ -272,6 +275,15 @@ public enum Context implements AutoCloseable { get;
             this.executor = Executors.newSingleThreadScheduledExecutor();
             this.IOManager = new IOManager(this.minInterval, this.averagingWindow, this.numFailures, this.brokerList);
             this.clientsManager = new ClientsManager(this.promUrl, this.flinkUrl, this.jarId, this.parallelism, this.k8sNamespace, this.averagingWindow);
+
+            // create forecast model
+            this.forecast = new ForecastModel(
+                    Integer.parseInt(props.getProperty("arima.coefficient.p")),
+                    Integer.parseInt(props.getProperty("arima.coefficient.d")),
+                    Integer.parseInt(props.getProperty("arima.coefficient.q")),
+                    Boolean.parseBoolean(props.getProperty("arima.coefficient.constant")),
+                    props.getProperty("arima.strategy")
+            );
 
             // create multiple regression models
             this.performance = new RegressionModel();
