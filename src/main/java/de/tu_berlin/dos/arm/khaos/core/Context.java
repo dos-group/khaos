@@ -9,6 +9,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.log4j.Logger;
 
 import java.util.*;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Stream;
@@ -109,24 +110,11 @@ public enum Context implements AutoCloseable { get;
             this.partitions = partitions;
 
             this.jobs = new ArrayList<>();
-
-            jobs.add(new Job(this, "profile-" + 10000, 10000));
-            jobs.add(new Job(this, "profile-" + 22222, 22222));
-            jobs.add(new Job(this, "profile-" + 34444, 34444));
-            jobs.add(new Job(this, "profile-" + 46666, 46666));
-            jobs.add(new Job(this, "profile-" + 58888, 58888));
-            //jobs.add(new Job(this, jobName + "profile-" + 71110, 71110));
-            //jobs.add(new Job(this, jobName + "profile-" + 83332, 83332));
-            //jobs.add(new Job(this, jobName + "profile-" + 95554, 95554));
-            //jobs.add(new Job(this, jobName + "profile-" + 107776, 107776));
-            //jobs.add(new Job(this, jobName + "profile-" + 119998, 119998));
-
-            /*int step = (int) (((maxConfigVal - minConfigVal) * 1.0 / (numOfConfigs - 1)) + 0.5);
+            int step = (int) (((maxConfigVal - minConfigVal) * 1.0 / (numOfConfigs - 1)) + 0.5);
             Stream.iterate(minConfigVal, i -> i + step).limit(numOfConfigs).forEach(config -> {
-                String uniqueJobName = jobName + "-" + RandomStringUtils.random(10, true, true);
                 Job current = new Job(this, "profile-" + config, config);
                 this.jobs.add(current);
-            });*/
+            });
         }
 
         public long getStartTs() {
@@ -148,6 +136,11 @@ public enum Context implements AutoCloseable { get;
 
             this.stopTs = stopTs;
         }
+    }
+
+    public enum ExecutorType {
+
+        NEW_SINGLE_THREAD_SCHEDULED_EXECUTOR;
     }
 
     /******************************************************************************
@@ -172,6 +165,7 @@ public enum Context implements AutoCloseable { get;
     public final int minInterval;
     public final int numFailures;
     public final int chkTolerance;
+    public final boolean doRecord;
     public final int timeLimit;
     public final String k8sNamespace;
     public final String brokerList;
@@ -188,8 +182,9 @@ public enum Context implements AutoCloseable { get;
     public final String promUrl;
 
     public final Experiment experiment;
-    //public final Job targetJob;
+    public final Job targetJob;
 
+    public final Map<ExecutorType, ExecutorService> executors = new HashMap<>();
     public final ScheduledExecutorService executor;
     public final IOManager IOManager;
     public final ClientsManager clientsManager;
@@ -223,6 +218,7 @@ public enum Context implements AutoCloseable { get;
             this.minInterval = Integer.parseInt(props.getProperty("experiment.minInterval"));
             this.numFailures = Integer.parseInt(props.getProperty("experiment.numFailures"));
             this.chkTolerance = Integer.parseInt(props.getProperty("experiment.chkTolerance"));
+            this.doRecord = Boolean.parseBoolean(props.getProperty("database.doRecord"));
             this.timeLimit = Integer.parseInt(props.getProperty("database.timeLimit"));
             this.k8sNamespace = props.getProperty("k8s.namespace");
             this.brokerList = props.getProperty("kafka.brokerList");
@@ -252,26 +248,11 @@ public enum Context implements AutoCloseable { get;
             );
 
             // create object for target job and store list of operator ids
-            //this.targetJob = new Job(experiment, this.jobName);
-            //this.targetJob.setJobId(this.jobId);
-
-            /*Job.brokerList = this.brokerList;
-            String uniqueString = RandomStringUtils.random(10, true, true);
-            Job.consumerTopic = this.consumerTopic + "-" + uniqueString;
-            Job.producerTopic = this.producerTopic + "-" + uniqueString;
-            Job.partitions = this.partitions;*/
-
-            // instantiate experiments list
-            /*this.experiments = new ArrayList<>();
-            int step = (int) (((this.maxConfigVal - this.minConfigVal) * 1.0 / (this.numOfConfigs - 1)) + 0.5);
-            Stream.iterate(this.minConfigVal, i -> i + step).limit(this.numOfConfigs).forEach(config -> {
-                String uniqueJobName = this.targetJob.jobName + "-" + RandomStringUtils.random(10, true, true);
-                Job current = new Job(uniqueJobName);
-                current.setConfig(config);
-                this.experiments.add(current);
-            });*/
+            this.targetJob = new Job(experiment, this.jobName, 30000);
+            this.targetJob.setJobId(this.jobId);
 
             // create global context objects
+            this.executors.put(ExecutorType.NEW_SINGLE_THREAD_SCHEDULED_EXECUTOR, Executors.newSingleThreadScheduledExecutor());
             this.executor = Executors.newSingleThreadScheduledExecutor();
             this.IOManager = new IOManager(this.minInterval, this.averagingWindow, this.numFailures, this.brokerList);
             this.clientsManager = new ClientsManager(this.promUrl, this.flinkUrl, this.jarId, this.parallelism, this.k8sNamespace, this.averagingWindow);
@@ -298,6 +279,10 @@ public enum Context implements AutoCloseable { get;
     @Override
     public void close() throws Exception {
 
+        for (ExecutorService executor : this.executors.values()) {
+
+            executor.shutdown();
+        }
         this.executor.shutdown();
     }
 }

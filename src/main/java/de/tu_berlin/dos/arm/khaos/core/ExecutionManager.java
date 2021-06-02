@@ -7,12 +7,14 @@ import de.tu_berlin.dos.arm.khaos.io.TimeSeries;
 import de.tu_berlin.dos.arm.khaos.modeling.AnomalyDetector;
 import de.tu_berlin.dos.arm.khaos.utils.SequenceFSM;
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.kafka.common.metrics.stats.Count;
 import org.apache.log4j.Logger;
 import scala.*;
 
 import java.lang.Double;
 import java.lang.Long;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.*;
@@ -26,7 +28,106 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
         public ExecutionManager runStage(Context context) throws Exception {
 
-            return RECORD;
+            /*List<Tuple3<String, Long, Double>> measurements = new ArrayList<>();
+            measurements.add(new Tuple3<>("05a6a73937ed69c42639bcfbb4242803", 1622576335L, 115.0));
+            measurements.add(new Tuple3<>("05a6a73937ed69c42639bcfbb4242803", 1622583535L, 90.0));
+            measurements.add(new Tuple3<>("05a6a73937ed69c42639bcfbb4242803", 1622588339L, 174.0));
+            measurements.add(new Tuple3<>("05a6a73937ed69c42639bcfbb4242803", 1622581135L, 87.0));
+            measurements.add(new Tuple3<>("05a6a73937ed69c42639bcfbb4242803", 1622578735L, 111.0));
+            measurements.add(new Tuple3<>("05a6a73937ed69c42639bcfbb4242803", 1622585939L, 87.0));
+            measurements.add(new Tuple3<>("05a6a73937ed69c42639bcfbb4242803", 1622590736L, 176.0));
+            measurements.add(new Tuple3<>("05a6a73937ed69c42639bcfbb4242803", 1622573995L, 86.0));
+            measurements.add(new Tuple3<>("405b43a7e90a0e954c89422a03471960", 1622578735L, 185.0));
+            measurements.add(new Tuple3<>("05a6a73937ed69c42639bcfbb4242803", 1622595539L, 79.0));
+            measurements.add(new Tuple3<>("405b43a7e90a0e954c89422a03471960", 1622585939L, 105.0));
+            measurements.add(new Tuple3<>("405b43a7e90a0e954c89422a03471960", 1622573995L, 92.0));
+            measurements.add(new Tuple3<>("405b43a7e90a0e954c89422a03471960", 1622581135L, 72.0));
+            measurements.add(new Tuple3<>("405b43a7e90a0e954c89422a03471960", 1622583535L, 92.0));
+            measurements.add(new Tuple3<>("405b43a7e90a0e954c89422a03471960", 1622576335L, 109.0));
+            measurements.add(new Tuple3<>("405b43a7e90a0e954c89422a03471960", 1622593142L, 179.0));
+            measurements.add(new Tuple3<>("405b43a7e90a0e954c89422a03471960", 1622590736L, 328.0));
+            measurements.add(new Tuple3<>("405b43a7e90a0e954c89422a03471960", 1622588342L, 101.0));
+            measurements.add(new Tuple3<>("0cc37675faf71c15ccc7079a8e68d27c", 1622581135L, 124.0));
+            measurements.add(new Tuple3<>("0cc37675faf71c15ccc7079a8e68d27c", 1622576335L, 103.0));
+            measurements.add(new Tuple3<>("0cc37675faf71c15ccc7079a8e68d27c", 1622573998L, 81.0));
+            measurements.add(new Tuple3<>("405b43a7e90a0e954c89422a03471960", 1622595539L, 79.0));
+            measurements.add(new Tuple3<>("0cc37675faf71c15ccc7079a8e68d27c", 1622578735L, 142.0));
+            measurements.add(new Tuple3<>("0cc37675faf71c15ccc7079a8e68d27c", 1622583535L, 83.0));
+            measurements.add(new Tuple3<>("0cc37675faf71c15ccc7079a8e68d27c", 1622585942L, 112.0));
+            measurements.add(new Tuple3<>("0cc37675faf71c15ccc7079a8e68d27c", 1622588342L, 139.0));
+            measurements.add(new Tuple3<>("0cc37675faf71c15ccc7079a8e68d27c", 1622590736L, 192.0));
+            measurements.add(new Tuple3<>("0cc37675faf71c15ccc7079a8e68d27c", 1622593142L, 163.0));
+            measurements.add(new Tuple3<>("9f5e4f6141af0dcc112157e5d4467926", 1622576335L, 143.0));
+            measurements.add(new Tuple3<>("0cc37675faf71c15ccc7079a8e68d27c", 1622595539L, 80.0));
+            measurements.add(new Tuple3<>("9f5e4f6141af0dcc112157e5d4467926", 1622578735L, 212.0));
+            measurements.add(new Tuple3<>("9f5e4f6141af0dcc112157e5d4467926", 1622573998L, 81.0));
+            measurements.add(new Tuple3<>("9f5e4f6141af0dcc112157e5d4467926", 1622585942L, 173.0));
+            measurements.add(new Tuple3<>("9f5e4f6141af0dcc112157e5d4467926", 1622581135L, 111.0));
+            measurements.add(new Tuple3<>("9f5e4f6141af0dcc112157e5d4467926", 1622588342L, 130.0));
+            measurements.add(new Tuple3<>("9f5e4f6141af0dcc112157e5d4467926", 1622583535L, 81.0));
+            measurements.add(new Tuple3<>("9f5e4f6141af0dcc112157e5d4467926", 1622590736L, 275.0));
+            measurements.add(new Tuple3<>("9f5e4f6141af0dcc112157e5d4467926", 1622593142L, 193.0));
+            measurements.add(new Tuple3<>("d193814ebe28570434c0620ed3424c5c", 1622573998L, 81.0));
+            measurements.add(new Tuple3<>("9f5e4f6141af0dcc112157e5d4467926", 1622595539L, 84.0));
+            measurements.add(new Tuple3<>("d193814ebe28570434c0620ed3424c5c", 1622576335L, 141.0));
+            measurements.add(new Tuple3<>("d193814ebe28570434c0620ed3424c5c", 1622583535L, 73.0));
+            measurements.add(new Tuple3<>("d193814ebe28570434c0620ed3424c5c", 1622581135L, 94.0));
+            measurements.add(new Tuple3<>("d193814ebe28570434c0620ed3424c5c", 1622578735L, 213.0));
+            measurements.add(new Tuple3<>("d193814ebe28570434c0620ed3424c5c", 1622585942L, 104.0));
+            measurements.add(new Tuple3<>("d193814ebe28570434c0620ed3424c5c", 1622588342L, 134.0));
+            measurements.add(new Tuple3<>("d193814ebe28570434c0620ed3424c5c", 1622590736L, 257.0));
+            measurements.add(new Tuple3<>("d193814ebe28570434c0620ed3424c5c", 1622593142L, 236.0));
+            measurements.add(new Tuple3<>("b4accf66383bbcefdd3a30bd954092d4", 1622573998L, 73.0));
+            measurements.add(new Tuple3<>("d193814ebe28570434c0620ed3424c5c", 1622595545L, 80.0));
+            measurements.add(new Tuple3<>("b4accf66383bbcefdd3a30bd954092d4", 1622576335L, 142.0));
+            measurements.add(new Tuple3<>("b4accf66383bbcefdd3a30bd954092d4", 1622581135L, 111.0));
+            measurements.add(new Tuple3<>("b4accf66383bbcefdd3a30bd954092d4", 1622578735L, 189.0));
+            measurements.add(new Tuple3<>("b4accf66383bbcefdd3a30bd954092d4", 1622583535L, 1.0));
+            measurements.add(new Tuple3<>("b4accf66383bbcefdd3a30bd954092d4", 1622585942L, 135.0));
+            measurements.add(new Tuple3<>("b4accf66383bbcefdd3a30bd954092d4", 1622588342L, 217.0));
+            measurements.add(new Tuple3<>("b4accf66383bbcefdd3a30bd954092d4", 1622593142L, 350.0));
+            measurements.add(new Tuple3<>("b4accf66383bbcefdd3a30bd954092d4", 1622590736L, 326.0));
+            measurements.add(new Tuple3<>("b4accf66383bbcefdd3a30bd954092d4", 1622595545L, 78.0));
+            measurements.add(new Tuple3<>("efe0a0816242a9fc8d30fe05ca15d2b3", 1622576338L, 173.0));
+            measurements.add(new Tuple3<>("efe0a0816242a9fc8d30fe05ca15d2b3", 1622581135L, 109.0));
+            measurements.add(new Tuple3<>("efe0a0816242a9fc8d30fe05ca15d2b3", 1622573998L, 82.0));
+            measurements.add(new Tuple3<>("efe0a0816242a9fc8d30fe05ca15d2b3", 1622578735L, 192.0));
+            measurements.add(new Tuple3<>("efe0a0816242a9fc8d30fe05ca15d2b3", 1622583535L, 111.0));
+            measurements.add(new Tuple3<>("efe0a0816242a9fc8d30fe05ca15d2b3", 1622585942L, 142.0));
+            measurements.add(new Tuple3<>("efe0a0816242a9fc8d30fe05ca15d2b3", 1622595545L, 79.0));
+            measurements.add(new Tuple3<>("efe0a0816242a9fc8d30fe05ca15d2b3", 1622588342L, 209.0));
+            measurements.add(new Tuple3<>("efe0a0816242a9fc8d30fe05ca15d2b3", 1622593142L, 259.0));
+            measurements.add(new Tuple3<>("efe0a0816242a9fc8d30fe05ca15d2b3", 1622590739L, 1.0));
+            measurements.add(new Tuple3<>("ea78685473184a2d2bafbb2fac96b804", 1622573998L, 80.0));
+            measurements.add(new Tuple3<>("ea78685473184a2d2bafbb2fac96b804", 1622578735L, 223.0));
+            measurements.add(new Tuple3<>("ea78685473184a2d2bafbb2fac96b804", 1622576338L, 179.0));
+            measurements.add(new Tuple3<>("ea78685473184a2d2bafbb2fac96b804", 1622581135L, 112.0));
+            measurements.add(new Tuple3<>("ea78685473184a2d2bafbb2fac96b804", 1622590739L, 454.0));
+            measurements.add(new Tuple3<>("ea78685473184a2d2bafbb2fac96b804", 1622585942L, 149.0));
+            measurements.add(new Tuple3<>("ea78685473184a2d2bafbb2fac96b804", 1622583535L, 106.0));
+            measurements.add(new Tuple3<>("ea78685473184a2d2bafbb2fac96b804", 1622588345L, 207.0));
+            measurements.add(new Tuple3<>("ea78685473184a2d2bafbb2fac96b804", 1622593142L, 298.0));
+            measurements.add(new Tuple3<>("ea78685473184a2d2bafbb2fac96b804", 1622595545L, 81.0));
+
+            for (Tuple3<String, Long, Double> measurement : measurements) {
+
+                LOG.info(measurement);
+                LOG.info(context.IOManager.fetchMetrics(1, measurement._1()));
+                context.IOManager.updateRecTime(measurement._1(), measurement._2(), measurement._3());
+                LOG.info(context.IOManager.fetchMetrics(1, measurement._1()));
+            }*/
+
+            for (Tuple11<Integer, String, Double, Long, Long, Long, Long, Long, Long, Long, Long> job : context.IOManager.fetchJobs(2)) {
+
+                LOG.info(job);
+
+                for (Tuple6<Integer, String, Long, Double, Double, Double> current : context.IOManager.fetchMetrics(2, job._2())) {
+
+                    LOG.info(current);
+                }
+            }
+
+            return OPTIMIZE;
         }
     },
     RECORD {
@@ -34,8 +135,11 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
         public ExecutionManager runStage(Context context) {
 
             // saves events from kafka consumer topic to database for a user defined time
-            //context.IOManager.recordKafkaToDatabase(context.consumerTopic, context.timeLimit, 100000);
-            //context.IOManager.extractFullWorkload();
+            if (context.doRecord) {
+
+                context.IOManager.recordKafkaToDatabase(context.consumerTopic, context.timeLimit, 10000);
+                context.IOManager.extractFullWorkload();
+            }
             context.IOManager.extractFailureScenario(0.1f);
             for (Tuple3<Integer, Long, Integer> current : context.IOManager.getFailureScenario()) {
                 LOG.info(current._1() + " " + current._2() + " " + current._3());
@@ -53,9 +157,7 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                 job.setJobId(context.clientsManager.startJob(job.getProgramArgs()));
                 job.setOperatorIds(context.clientsManager.getOperatorIds(job.getJobId()));
                 job.setSinkId(context.clientsManager.getSinkOperatorId(job.getJobId(), context.sinkRegex));
-                LOG.info(job.toString());
             }
-
 
             return REGISTER;
         }
@@ -96,7 +198,8 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                                             LOG.info("Finishing inject failure into job " + job.getJobId());
                                         }
                                         catch (Exception e) {
-                                            LOG.error("Failed to inject failure with message " + e.getMessage());
+
+                                            LOG.error("Failed to inject scheduled failure with message " + e.fillInStackTrace());
                                         }
                                     }, target, TimeUnit.SECONDS);
                                     break;
@@ -106,7 +209,7 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                         }
                         catch (Exception e) {
 
-                            LOG.error(e.fillInStackTrace());
+                            LOG.error("Failed to inject failure with message " + e.fillInStackTrace());
                         }
                     }
                 }));
@@ -133,7 +236,7 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                     .runAsync(context.IOManager.databaseToQueue(startIndex, stopIndex, queue))
                     .thenRun(() -> isDone.set(true));
                 // wait till queue has items in it
-                try { while (queue.isEmpty()) Thread.sleep(100); }
+                try { while (queue.isEmpty()) new CountDownLatch(1).await(100, TimeUnit.MILLISECONDS); }
                 catch(InterruptedException ex) { LOG.error(ex); }
                 //
                 context.IOManager.queueToKafka(startIndex, queue, context.experiment.consumerTopic, isDone).run();
@@ -178,34 +281,34 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
         public ExecutionManager runStage(Context context) throws Exception {
 
             int numOfCores = Runtime.getRuntime().availableProcessors();
-            final ExecutorService service = Executors.newFixedThreadPool(numOfCores);
+            final ExecutorService executor = Executors.newFixedThreadPool(numOfCores);
             int total = context.numOfConfigs * context.numFailures;
             AtomicInteger counter = new AtomicInteger(0);
             final CountDownLatch latch = new CountDownLatch(total);
 
             LOG.info("Starting measure recovery times");
-            for (Tuple11<Integer, String, Double, Long, Long, Long, Long, Long, Long, Long, Long> jobs : context.IOManager.fetchJobs(context.experimentId)) {
+            for (Tuple11<Integer, String, Double, Long, Long, Long, Long, Long, Long, Long, Long> job : context.IOManager.fetchJobs(context.experimentId)) {
 
-                TimeSeries thrTs = context.clientsManager.getThroughput(jobs._2(), jobs._10(), jobs._11());
-                TimeSeries lagTs = context.clientsManager.getConsumerLag(jobs._2(), jobs._10(), jobs._11());
+                TimeSeries thrTs = context.clientsManager.getThroughput(job._2(), job._10(), job._11());
+                TimeSeries lagTs = context.clientsManager.getConsumerLag(job._2(), job._10(), job._11());
 
-                for (Tuple6<Integer, String, Long, Double, Double, Double> current : context.IOManager.fetchMetrics(context.experimentId, jobs._2())) {
+                for (Tuple6<Integer, String, Long, Double, Double, Double> current : context.IOManager.fetchMetrics(context.experimentId, job._2())) {
 
-                    service.submit(() -> {
+                    executor.submit(() -> {
 
                         AnomalyDetector detector = new AnomalyDetector(Arrays.asList(thrTs, lagTs));
                         detector.fit(current._3(), 1000);
                         double recTime = detector.measure(current._3());
 
-                        LOG.info(recTime);
+                        LOG.info(current._2() + " " + current._3() + " " + recTime);
                         context.IOManager.updateRecTime(current._2(), current._3(), recTime);
-                        LOG.info(current);
                         LOG.info(counter.incrementAndGet() + "/" + total + " completed");
                         latch.countDown();
                     });
                 }
             }
             latch.await();
+            executor.shutdown();
             LOG.info("Finished measure recovery times");
 
             return STOP;
@@ -324,7 +427,7 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
         public ExecutionManager runStage(Context context) throws Exception {
 
-            /*context.targetJob.setSinkId(context.clientsManager.getSinkOperatorId(context.jobId, context.sinkRegex));
+            context.targetJob.setSinkId(context.clientsManager.getSinkOperatorId(context.jobId, context.sinkRegex));
 
             final StopWatch stopWatch = new StopWatch();
             while (true) {
@@ -349,21 +452,26 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                     double recTime = context.availability.predict(Arrays.asList());
 
                     // evaluate metrics based on constraints
-                    if (context.avgLatConst < avgLat && recTime < context.recTimeConst) {
+                    if (context.avgLatConst < avgLat ||  context.recTimeConst < recTime) {
 
                         // TODO perform optimization step for performance
-
-                    }
-                    else if (context.recTimeConst < recTime && avgLat < context.avgLatConst) {
-
-                        // TODO perform optimization step for availability
-
+                        // Test if there is a major violation
+                        // if yes, then find new config and do the change now
+                        // else
+                        // perform TSF, get values and determine if we need to do change now, or wait till next iteration
+                        // do we change now?
+                        // if yes, then find new config and do the change now
+                        // if no, then do nothing
                     }
                     else if (context.recTimeConst < recTime && context.avgLatConst < avgLat) {
 
                         LOG.warn(String.format(
                             "Unable to optimize, %s < %f and %d < %f",
                             context.avgLatConst, avgLat, context.recTimeConst, recTime));
+                    }
+                    else {
+
+                        LOG.info("No violation");
                     }
 
                     // wait until next interval is reached
@@ -372,7 +480,7 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                     while (current < context.optInterval) {
 
                         current = stopWatch.getTime(TimeUnit.SECONDS);
-                        Thread.sleep(100);
+                        new CountDownLatch(1).await(100, TimeUnit.MILLISECONDS);
                     }
                     stopWatch.reset();
                 }
@@ -381,7 +489,7 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                     LOG.error(e.fillInStackTrace());
                     break;
                 }
-            }*/
+            }
             return STOP;
         }
     },
