@@ -32,11 +32,16 @@ public class ForecastModel {
         return this.model.fcst(steps);
     }
 
-    public static void main(String[] args){
-        ForecastModel model = new ForecastModel(2,2,2, false, "CSSML");
-
-        double[] history = {1.0, 2.0 ,1.0 ,3.0 };
-        double[] forecast = model.fit(history).predict(10);
-        System.out.println(Arrays.toString(forecast));
+    public static double computeDifferences(double lastThr, double[] predThrs){
+        double mySum = 0;
+        for (int i = 1; i < predThrs.length; i++) {
+            if(i == 1){
+                mySum += predThrs[i] - lastThr;
+            }
+            else{
+                mySum += predThrs[i] - predThrs[i-1];
+            }
+        }
+        return mySum;
     }
 }

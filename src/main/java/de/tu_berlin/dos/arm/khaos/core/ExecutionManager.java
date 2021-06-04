@@ -5,22 +5,21 @@ import de.tu_berlin.dos.arm.khaos.core.Context.Job;
 import de.tu_berlin.dos.arm.khaos.io.ReplayCounter.Listener;
 import de.tu_berlin.dos.arm.khaos.io.TimeSeries;
 import de.tu_berlin.dos.arm.khaos.modeling.AnomalyDetector;
+import de.tu_berlin.dos.arm.khaos.modeling.ForecastModel;
+import de.tu_berlin.dos.arm.khaos.modeling.Optimization;
 import de.tu_berlin.dos.arm.khaos.utils.SequenceFSM;
 import org.apache.commons.lang3.time.StopWatch;
-import org.apache.kafka.common.metrics.stats.Count;
 import org.apache.log4j.Logger;
 import scala.*;
 
 import java.lang.Double;
 import java.lang.Long;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Stream;
 
 public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
@@ -434,6 +433,9 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
                 try {
 
+                    // default
+                    int optMultiplier = 1;
+
                     long uptime = context.clientsManager.getUptime(context.jobId);
                     if (uptime < context.minUpTime) {
 
@@ -446,22 +448,46 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
                     // read current metrics
                     long chkLast = context.clientsManager.getLastCheckpoint(context.targetJob.getJobId());
+
                     double avgLat = context.clientsManager.getLatency(context.jobId, context.targetJob.getSinkId(), startTs, stopTs).average();
                     double avgThr = context.clientsManager.getThroughput(context.jobId, startTs, stopTs).average();
-                    // TODO retrieve values from availability models
-                    double recTime = context.availability.predict(Arrays.asList());
+                    // TODO retrieve current checkpoint interval from flink
+                    double currentCheckpointInterval = 10.0;
+                    double recTime = context.availability.predict(Arrays.asList(currentCheckpointInterval, avgThr));
+
+                    // TODO read checkpoint intervals from configuration?
+                    double[] checkpointIntervals = new double[]{1.0, 2.0, 3.0};
+
+                    // TODO how far do we want to look back?
+                    int windowMultiplier = 5;
 
                     // evaluate metrics based on constraints
-                    if (context.avgLatConst < avgLat ||  context.recTimeConst < recTime) {
+                    if ((context.avgLatConst < avgLat  && context.recTimeConst >= recTime) ||
+                            (context.avgLatConst >= avgLat  && context.recTimeConst < recTime)) {
 
-                        // TODO perform optimization step for performance
-                        // Test if there is a major violation
-                        // if yes, then find new config and do the change now
-                        // else
-                        // perform TSF, get values and determine if we need to do change now, or wait till next iteration
-                        // do we change now?
-                        // if yes, then find new config and do the change now
-                        // if no, then do nothing
+                        // resample to have less but meaningful data points
+                        TimeSeries resampledPrevThr = context.clientsManager.
+                                getThroughput(context.jobId, stopTs - (windowMultiplier * context.averagingWindow), stopTs)
+                                .resample(60, java.util.Optional.empty());
+                        double lastThr = resampledPrevThr.getLast().value;
+                        // simple estimate of how throughput will evolve
+                        double[] predThrs = context.forecast
+                                .fit(resampledPrevThr.values())
+                                .predict((int) Math.ceil(context.optInterval / 60));
+                        // derive recommendation: is throughput evolving rapidly?
+                        double sumOffPointwiseDifferences = ForecastModel.computeDifferences(lastThr, predThrs);
+                        boolean isUrgent = sumOffPointwiseDifferences < -0.1 * lastThr;
+
+                        if((context.avgLatConst * context.maxViolation) < avgLat ||
+                                (context.recTimeConst * context.maxViolation) < recTime || isUrgent){
+                            // perform optimization, get best new checkpoint interval
+                            double checkpointInterval = Optimization
+                                    .getOptimalCheckpointInterval(context, avgThr, checkpointIntervals);
+                            // TODO do something with the calculated new checkpoint interval
+                            // we need to increase the multiplier, as we will have to wait longer
+                            optMultiplier = 2;
+                        }
+
                     }
                     else if (context.recTimeConst < recTime && context.avgLatConst < avgLat) {
 
@@ -477,7 +503,7 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                     // wait until next interval is reached
                     stopWatch.start();
                     long current = stopWatch.getTime(TimeUnit.SECONDS);
-                    while (current < context.optInterval) {
+                    while (current < context.optInterval * optMultiplier) {
 
                         current = stopWatch.getTime(TimeUnit.SECONDS);
                         new CountDownLatch(1).await(100, TimeUnit.MILLISECONDS);

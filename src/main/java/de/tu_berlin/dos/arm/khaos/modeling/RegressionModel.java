@@ -19,7 +19,7 @@ public class RegressionModel extends OLSMultipleLinearRegression {
         this.regression = new OLSMultipleLinearRegression();
     }
 
-    public void fit(List<Double> y, List<List<Double>> x) {
+    public RegressionModel fit(List<Double> y, List<List<Double>> x) {
 
         //regression.setNoIntercept(true);
         double[] y_arr = ArrayUtils.toPrimitive(y.toArray(new Double[0]));
@@ -30,6 +30,8 @@ public class RegressionModel extends OLSMultipleLinearRegression {
         }
         this.regression.newSampleData(y_arr, x_arr);
         this.parameters = this.regression.estimateRegressionParameters();
+
+        return this;
     }
 
     public double calculateRSquared() {

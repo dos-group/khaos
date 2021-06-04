@@ -153,6 +153,10 @@ public class TimeSeries {
         return this.observations.stream().mapToDouble(v -> v.value).toArray();
     }
 
+    public Observation getLast() {
+        return this.observations.getLast();
+    }
+
     public double average() {
 
         double sum = 0;
