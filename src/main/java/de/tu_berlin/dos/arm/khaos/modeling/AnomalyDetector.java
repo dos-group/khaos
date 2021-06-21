@@ -15,7 +15,7 @@ import java.util.List;
 public class AnomalyDetector {
 
     private static final Logger LOG = Logger.getLogger(AnomalyDetector.class);
-    private static final int TOLERANCE = 10;
+    private static final int TOLERANCE = 15;
 
     private final AutoMLAnomalyDetection detector;
     private final List<TimeSeries> dataset;

@@ -110,11 +110,17 @@ public enum Context implements AutoCloseable { get;
             this.partitions = partitions;
 
             this.jobs = new ArrayList<>();
-            int step = (int) (((maxConfigVal - minConfigVal) * 1.0 / (numOfConfigs - 1)) + 0.5);
+            /*int step = (int) (((maxConfigVal - minConfigVal) * 1.0 / (numOfConfigs - 1)) + 0.5);
             Stream.iterate(minConfigVal, i -> i + step).limit(numOfConfigs).forEach(config -> {
                 Job current = new Job(this, "profile-" + config, config);
                 this.jobs.add(current);
-            });
+            });*/
+            // TODO remove!
+            this.jobs.add(new Job(this, "profile-" + 10000, 10000));
+            this.jobs.add(new Job(this, "profile-" + 30000, 30000));
+            this.jobs.add(new Job(this, "profile-" + 60000, 60000));
+            this.jobs.add(new Job(this, "profile-" + 90000, 90000));
+            this.jobs.add(new Job(this, "profile-" + 120000, 120000));
         }
 
         public long getStartTs() {
@@ -157,6 +163,7 @@ public enum Context implements AutoCloseable { get;
     public final long recTimeConst;
     public final long optInterval;
     public final int minUpTime;
+    public final boolean doReplayAll;
     public final int averagingWindow;
     public final float maxViolation;
     public final int experimentId;
@@ -211,6 +218,7 @@ public enum Context implements AutoCloseable { get;
             this.recTimeConst = Long.parseLong(props.getProperty("general.recTimeConst"));
             this.optInterval = Long.parseLong(props.getProperty("general.optInterval"));
             this.minUpTime = Integer.parseInt(props.getProperty("general.minUpTime"));
+            this.doReplayAll = Boolean.parseBoolean(props.getProperty("general.doReplayAll"));
             this.averagingWindow = Integer.parseInt(props.getProperty("general.averagingWindow"));
             this.maxViolation = Float.parseFloat(props.getProperty("general.maxViolation"));
             this.experimentId = Integer.parseInt(props.getProperty("experiment.id"));

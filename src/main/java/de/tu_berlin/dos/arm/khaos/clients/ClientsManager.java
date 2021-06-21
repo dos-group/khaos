@@ -20,6 +20,7 @@ public class ClientsManager {
      ******************************************************************************/
 
     private static final Logger LOG = Logger.getLogger(ClientsManager.class);
+    private static final String MSG_IN_SEC = "kafka_server_brokertopicmetrics_messagesin_total";
     private static final String LATENCY = "flink_taskmanager_job_latency_source_id_operator_id_operator_subtask_index_latency";
     private static final String THROUGHPUT = "flink_taskmanager_job_task_operator_KafkaConsumer_records_consumed_rate";
     private static final String CONSUMER_LAG = "flink_taskmanager_job_task_operator_KafkaConsumer_records_lag_max";
@@ -106,6 +107,15 @@ public class ClientsManager {
     public long getUptime(String jobId) throws Exception {
 
         return this.flink.getUptime(jobId);
+    }
+
+    public TimeSeries getMsgInSec(String topic, int windowSize, long startTs, long stopTs) throws Exception {
+
+        String query =
+            String.format(
+                "sum(rate(%s{topic=\"%s\"}[%ds]))",
+                MSG_IN_SEC, topic, windowSize);
+        return this.prom.queryRange(query, startTs, stopTs);
     }
 
     public TimeSeries getLatency(String jobId, String sinkId, long startTs, long stopTs) throws Exception {

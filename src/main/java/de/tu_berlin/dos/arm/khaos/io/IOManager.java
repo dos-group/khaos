@@ -282,6 +282,8 @@ public class IOManager {
 
     public void extractFullWorkload() {
 
+        // todo remove
+        //IOManager.executeUpdate("DROP TABLE IF EXISTS workload;");
         LOG.info("Starting create full workload table");
         String createTable =
             "CREATE TABLE IF NOT EXISTS workload " +
@@ -338,7 +340,13 @@ public class IOManager {
 
     public void extractFailureScenario(float tolerance) {
 
+        LOG.info("Starting extract failure scenario");
+
+        // fetch workload, determine number of events per percentage point, and search tolerance
         List<Tuple3<Integer, Long, Integer>> fullWorkload = this.getFullWorkload();
+        LOG.info(fullWorkload.size());
+        int onePercent = (int) ((fullWorkload.size() / 100) + 0.5);
+        int withTolerance = (int) (onePercent * (tolerance / 2));
 
         // find list of the max and minimum points
         List<Tuple3<Integer, Long, Integer>> min = new ArrayList<>();
@@ -349,19 +357,26 @@ public class IOManager {
                 sum += fullWorkload.get(j)._3();
             }
             int average = sum / this.averagingWindow;
-            if (min.isEmpty()) min.add(fullWorkload.get(i));
-            else if (min.get(0)._3() == average) min.add(fullWorkload.get(i));
-            else if (average < min.get(0)._3()) {
-                min.clear();
-                min.add(fullWorkload.get(i));
-            }
-            if (max.isEmpty()) max.add(fullWorkload.get(i));
-            else if (max.get(0)._3() == average) max.add(fullWorkload.get(i));
-            else if (max.get(0)._3() < average) {
-                max.clear();
-                max.add(fullWorkload.get(i));
+            Tuple3<Integer, Long, Integer> current = fullWorkload.get(i);
+            // filter outliers based on distance to the average
+            if (Math.abs(current._3() - average) <= withTolerance) {
+
+                if (min.isEmpty()) min.add(current);
+                else if (min.get(0)._3() == average) min.add(fullWorkload.get(i));
+                else if (average < min.get(0)._3()) {
+                    min.clear();
+                    min.add(current);
+                }
+                if (max.isEmpty()) max.add(current);
+                else if (max.get(0)._3() == average) max.add(current);
+                else if (max.get(0)._3() < average) {
+                    max.clear();
+                    max.add(current);
+                }
             }
         }
+        LOG.info(min);
+        LOG.info(max);
         // test if max and min were found
         if (min.size() == 0 || max.size() == 0) throw new IllegalStateException("Unable to find Max and/or Min intersects");
         // find values for average throughput where failures should be injected
@@ -375,6 +390,7 @@ public class IOManager {
         intersects.put(minVal, min);
         Stream.iterate(minVal, i -> i + step).limit(this.numFailures - 1).forEach(i -> intersects.putIfAbsent(i, new ArrayList<>()));
         intersects.put(maxVal, max);
+        LOG.info(intersects);
         // find all points of intersection in workload
         for (int i = this.minInterval; i < fullWorkload.size() - this.minInterval; i++) {
 
@@ -385,8 +401,6 @@ public class IOManager {
             }
             int average = sum / this.averagingWindow;
             // find range of values which is within user defined tolerance of average
-            int onePercent = (int) ((fullWorkload.size() / 100) + 0.5);
-            int withTolerance = (int) (onePercent * (tolerance / 2));
             List<Integer> targetRange =
                 IntStream
                     .rangeClosed(average - withTolerance , average + withTolerance)
@@ -402,7 +416,7 @@ public class IOManager {
         }
         // test if enough points were found at each intersect
         intersects.forEach((k,v) -> {
-            LOG.info(k + " " + v.size());
+
             if (v.size() == 0) throw new IllegalStateException("Unable to find intersect for " + k);
         });
         // randomly select combination of intersects where at least one full set exists
@@ -444,6 +458,7 @@ public class IOManager {
                 }
                 IOManager.executeUpdate(insertValue.append(";").toString());
                 STOPWATCH.stop();
+                LOG.info("Finished extract failiure scenario");
                 return;
             }
             if (STOPWATCH.getTime(TimeUnit.SECONDS) > 120)
@@ -505,7 +520,7 @@ public class IOManager {
             "FROM metrics " +
             "WHERE experimentId = %d " +
             "AND jobId = '%s' " +
-            "ORDER BY timestamp ASC;",
+            "ORDER BY avgThr ASC;",
             experimentId, jobId);
         IOManager.executeQuery(selectValues, (rs) -> {
             metrics.add(

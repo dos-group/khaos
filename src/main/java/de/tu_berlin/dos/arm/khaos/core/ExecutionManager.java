@@ -8,18 +8,28 @@ import de.tu_berlin.dos.arm.khaos.modeling.AnomalyDetector;
 import de.tu_berlin.dos.arm.khaos.modeling.ForecastModel;
 import de.tu_berlin.dos.arm.khaos.modeling.Optimization;
 import de.tu_berlin.dos.arm.khaos.utils.SequenceFSM;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.log4j.Logger;
 import scala.*;
+import smile.data.DataFrame;
+import smile.data.Tuple;
+import smile.data.formula.Formula;
+import smile.data.type.DataTypes;
+import smile.data.type.StructField;
+import smile.data.type.StructType;
+import smile.regression.LinearModel;
+import smile.regression.OLS;
+import smile.regression.SVR;
 
 import java.lang.Double;
 import java.lang.Long;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
@@ -27,106 +37,23 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
         public ExecutionManager runStage(Context context) throws Exception {
 
-            /*List<Tuple3<String, Long, Double>> measurements = new ArrayList<>();
-            measurements.add(new Tuple3<>("05a6a73937ed69c42639bcfbb4242803", 1622576335L, 115.0));
-            measurements.add(new Tuple3<>("05a6a73937ed69c42639bcfbb4242803", 1622583535L, 90.0));
-            measurements.add(new Tuple3<>("05a6a73937ed69c42639bcfbb4242803", 1622588339L, 174.0));
-            measurements.add(new Tuple3<>("05a6a73937ed69c42639bcfbb4242803", 1622581135L, 87.0));
-            measurements.add(new Tuple3<>("05a6a73937ed69c42639bcfbb4242803", 1622578735L, 111.0));
-            measurements.add(new Tuple3<>("05a6a73937ed69c42639bcfbb4242803", 1622585939L, 87.0));
-            measurements.add(new Tuple3<>("05a6a73937ed69c42639bcfbb4242803", 1622590736L, 176.0));
-            measurements.add(new Tuple3<>("05a6a73937ed69c42639bcfbb4242803", 1622573995L, 86.0));
-            measurements.add(new Tuple3<>("405b43a7e90a0e954c89422a03471960", 1622578735L, 185.0));
-            measurements.add(new Tuple3<>("05a6a73937ed69c42639bcfbb4242803", 1622595539L, 79.0));
-            measurements.add(new Tuple3<>("405b43a7e90a0e954c89422a03471960", 1622585939L, 105.0));
-            measurements.add(new Tuple3<>("405b43a7e90a0e954c89422a03471960", 1622573995L, 92.0));
-            measurements.add(new Tuple3<>("405b43a7e90a0e954c89422a03471960", 1622581135L, 72.0));
-            measurements.add(new Tuple3<>("405b43a7e90a0e954c89422a03471960", 1622583535L, 92.0));
-            measurements.add(new Tuple3<>("405b43a7e90a0e954c89422a03471960", 1622576335L, 109.0));
-            measurements.add(new Tuple3<>("405b43a7e90a0e954c89422a03471960", 1622593142L, 179.0));
-            measurements.add(new Tuple3<>("405b43a7e90a0e954c89422a03471960", 1622590736L, 328.0));
-            measurements.add(new Tuple3<>("405b43a7e90a0e954c89422a03471960", 1622588342L, 101.0));
-            measurements.add(new Tuple3<>("0cc37675faf71c15ccc7079a8e68d27c", 1622581135L, 124.0));
-            measurements.add(new Tuple3<>("0cc37675faf71c15ccc7079a8e68d27c", 1622576335L, 103.0));
-            measurements.add(new Tuple3<>("0cc37675faf71c15ccc7079a8e68d27c", 1622573998L, 81.0));
-            measurements.add(new Tuple3<>("405b43a7e90a0e954c89422a03471960", 1622595539L, 79.0));
-            measurements.add(new Tuple3<>("0cc37675faf71c15ccc7079a8e68d27c", 1622578735L, 142.0));
-            measurements.add(new Tuple3<>("0cc37675faf71c15ccc7079a8e68d27c", 1622583535L, 83.0));
-            measurements.add(new Tuple3<>("0cc37675faf71c15ccc7079a8e68d27c", 1622585942L, 112.0));
-            measurements.add(new Tuple3<>("0cc37675faf71c15ccc7079a8e68d27c", 1622588342L, 139.0));
-            measurements.add(new Tuple3<>("0cc37675faf71c15ccc7079a8e68d27c", 1622590736L, 192.0));
-            measurements.add(new Tuple3<>("0cc37675faf71c15ccc7079a8e68d27c", 1622593142L, 163.0));
-            measurements.add(new Tuple3<>("9f5e4f6141af0dcc112157e5d4467926", 1622576335L, 143.0));
-            measurements.add(new Tuple3<>("0cc37675faf71c15ccc7079a8e68d27c", 1622595539L, 80.0));
-            measurements.add(new Tuple3<>("9f5e4f6141af0dcc112157e5d4467926", 1622578735L, 212.0));
-            measurements.add(new Tuple3<>("9f5e4f6141af0dcc112157e5d4467926", 1622573998L, 81.0));
-            measurements.add(new Tuple3<>("9f5e4f6141af0dcc112157e5d4467926", 1622585942L, 173.0));
-            measurements.add(new Tuple3<>("9f5e4f6141af0dcc112157e5d4467926", 1622581135L, 111.0));
-            measurements.add(new Tuple3<>("9f5e4f6141af0dcc112157e5d4467926", 1622588342L, 130.0));
-            measurements.add(new Tuple3<>("9f5e4f6141af0dcc112157e5d4467926", 1622583535L, 81.0));
-            measurements.add(new Tuple3<>("9f5e4f6141af0dcc112157e5d4467926", 1622590736L, 275.0));
-            measurements.add(new Tuple3<>("9f5e4f6141af0dcc112157e5d4467926", 1622593142L, 193.0));
-            measurements.add(new Tuple3<>("d193814ebe28570434c0620ed3424c5c", 1622573998L, 81.0));
-            measurements.add(new Tuple3<>("9f5e4f6141af0dcc112157e5d4467926", 1622595539L, 84.0));
-            measurements.add(new Tuple3<>("d193814ebe28570434c0620ed3424c5c", 1622576335L, 141.0));
-            measurements.add(new Tuple3<>("d193814ebe28570434c0620ed3424c5c", 1622583535L, 73.0));
-            measurements.add(new Tuple3<>("d193814ebe28570434c0620ed3424c5c", 1622581135L, 94.0));
-            measurements.add(new Tuple3<>("d193814ebe28570434c0620ed3424c5c", 1622578735L, 213.0));
-            measurements.add(new Tuple3<>("d193814ebe28570434c0620ed3424c5c", 1622585942L, 104.0));
-            measurements.add(new Tuple3<>("d193814ebe28570434c0620ed3424c5c", 1622588342L, 134.0));
-            measurements.add(new Tuple3<>("d193814ebe28570434c0620ed3424c5c", 1622590736L, 257.0));
-            measurements.add(new Tuple3<>("d193814ebe28570434c0620ed3424c5c", 1622593142L, 236.0));
-            measurements.add(new Tuple3<>("b4accf66383bbcefdd3a30bd954092d4", 1622573998L, 73.0));
-            measurements.add(new Tuple3<>("d193814ebe28570434c0620ed3424c5c", 1622595545L, 80.0));
-            measurements.add(new Tuple3<>("b4accf66383bbcefdd3a30bd954092d4", 1622576335L, 142.0));
-            measurements.add(new Tuple3<>("b4accf66383bbcefdd3a30bd954092d4", 1622581135L, 111.0));
-            measurements.add(new Tuple3<>("b4accf66383bbcefdd3a30bd954092d4", 1622578735L, 189.0));
-            measurements.add(new Tuple3<>("b4accf66383bbcefdd3a30bd954092d4", 1622583535L, 1.0));
-            measurements.add(new Tuple3<>("b4accf66383bbcefdd3a30bd954092d4", 1622585942L, 135.0));
-            measurements.add(new Tuple3<>("b4accf66383bbcefdd3a30bd954092d4", 1622588342L, 217.0));
-            measurements.add(new Tuple3<>("b4accf66383bbcefdd3a30bd954092d4", 1622593142L, 350.0));
-            measurements.add(new Tuple3<>("b4accf66383bbcefdd3a30bd954092d4", 1622590736L, 326.0));
-            measurements.add(new Tuple3<>("b4accf66383bbcefdd3a30bd954092d4", 1622595545L, 78.0));
-            measurements.add(new Tuple3<>("efe0a0816242a9fc8d30fe05ca15d2b3", 1622576338L, 173.0));
-            measurements.add(new Tuple3<>("efe0a0816242a9fc8d30fe05ca15d2b3", 1622581135L, 109.0));
-            measurements.add(new Tuple3<>("efe0a0816242a9fc8d30fe05ca15d2b3", 1622573998L, 82.0));
-            measurements.add(new Tuple3<>("efe0a0816242a9fc8d30fe05ca15d2b3", 1622578735L, 192.0));
-            measurements.add(new Tuple3<>("efe0a0816242a9fc8d30fe05ca15d2b3", 1622583535L, 111.0));
-            measurements.add(new Tuple3<>("efe0a0816242a9fc8d30fe05ca15d2b3", 1622585942L, 142.0));
-            measurements.add(new Tuple3<>("efe0a0816242a9fc8d30fe05ca15d2b3", 1622595545L, 79.0));
-            measurements.add(new Tuple3<>("efe0a0816242a9fc8d30fe05ca15d2b3", 1622588342L, 209.0));
-            measurements.add(new Tuple3<>("efe0a0816242a9fc8d30fe05ca15d2b3", 1622593142L, 259.0));
-            measurements.add(new Tuple3<>("efe0a0816242a9fc8d30fe05ca15d2b3", 1622590739L, 1.0));
-            measurements.add(new Tuple3<>("ea78685473184a2d2bafbb2fac96b804", 1622573998L, 80.0));
-            measurements.add(new Tuple3<>("ea78685473184a2d2bafbb2fac96b804", 1622578735L, 223.0));
-            measurements.add(new Tuple3<>("ea78685473184a2d2bafbb2fac96b804", 1622576338L, 179.0));
-            measurements.add(new Tuple3<>("ea78685473184a2d2bafbb2fac96b804", 1622581135L, 112.0));
-            measurements.add(new Tuple3<>("ea78685473184a2d2bafbb2fac96b804", 1622590739L, 454.0));
-            measurements.add(new Tuple3<>("ea78685473184a2d2bafbb2fac96b804", 1622585942L, 149.0));
-            measurements.add(new Tuple3<>("ea78685473184a2d2bafbb2fac96b804", 1622583535L, 106.0));
-            measurements.add(new Tuple3<>("ea78685473184a2d2bafbb2fac96b804", 1622588345L, 207.0));
-            measurements.add(new Tuple3<>("ea78685473184a2d2bafbb2fac96b804", 1622593142L, 298.0));
-            measurements.add(new Tuple3<>("ea78685473184a2d2bafbb2fac96b804", 1622595545L, 81.0));
+            /*for (int i = 1; i <= 5; i++) {
 
-            for (Tuple3<String, Long, Double> measurement : measurements) {
+                for (Tuple11<Integer, String, Double, Long, Long, Long, Long, Long, Long, Long, Long> job : context.IOManager.fetchJobs(i)) {
 
-                LOG.info(measurement);
-                LOG.info(context.IOManager.fetchMetrics(1, measurement._1()));
-                context.IOManager.updateRecTime(measurement._1(), measurement._2(), measurement._3());
-                LOG.info(context.IOManager.fetchMetrics(1, measurement._1()));
-            }*/
+                    LOG.info(job);
 
-            for (Tuple11<Integer, String, Double, Long, Long, Long, Long, Long, Long, Long, Long> job : context.IOManager.fetchJobs(2)) {
+                    for (Tuple6<Integer, String, Long, Double, Double, Double> current : context.IOManager.fetchMetrics(i, job._2())) {
 
-                LOG.info(job);
-
-                for (Tuple6<Integer, String, Long, Double, Double, Double> current : context.IOManager.fetchMetrics(2, job._2())) {
-
-                    LOG.info(current);
+                        LOG.info(current);
+                    }
                 }
-            }
+            }*/
+            long stopTs = Instant.now().getEpochSecond();
+            long startTs = stopTs - context.averagingWindow;
+            LOG.info(context.clientsManager.getMsgInSec("iot-vehicles-events", 10, startTs, stopTs));
 
-            return OPTIMIZE;
+            return STOP;
         }
     },
     RECORD {
@@ -139,8 +66,9 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                 context.IOManager.recordKafkaToDatabase(context.consumerTopic, context.timeLimit, 10000);
                 context.IOManager.extractFullWorkload();
             }
-            context.IOManager.extractFailureScenario(0.1f);
+            context.IOManager.extractFailureScenario(0.2f);
             for (Tuple3<Integer, Long, Integer> current : context.IOManager.getFailureScenario()) {
+
                 LOG.info(current._1() + " " + current._2() + " " + current._3());
             }
             return DEPLOY;
@@ -224,12 +152,11 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
             context.experiment.setStartTs(Instant.now().getEpochSecond());
 
             BlockingQueue<List<String>> queue = new ArrayBlockingQueue<>(60);
-            context.IOManager.getFailureScenario().forEach(point -> {
+            // TODO for baselines, can remove
+            if (context.doReplayAll) {
 
-                // select range before and after failure point based on minInterval but smaller
-                int startIndex = point._1() - context.minInterval * 2/3;
-                int stopIndex = point._1() + context.minInterval * 2/3;
-
+                int startIndex = 0;
+                int stopIndex = context.IOManager.getFullWorkload().size();
                 AtomicBoolean isDone = new AtomicBoolean(false);
                 CompletableFuture
                     .runAsync(context.IOManager.databaseToQueue(startIndex, stopIndex, queue))
@@ -239,7 +166,25 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                 catch(InterruptedException ex) { LOG.error(ex); }
                 //
                 context.IOManager.queueToKafka(startIndex, queue, context.experiment.consumerTopic, isDone).run();
-            });
+            }
+            else {
+
+                context.IOManager.getFailureScenario().forEach(point -> {
+                    // select range before and after failure point based on minInterval but smaller
+                    int startIndex = point._1() - context.minInterval * 2/3;
+                    int stopIndex = point._1() + context.minInterval * 2/3;
+
+                    AtomicBoolean isDone = new AtomicBoolean(false);
+                    CompletableFuture
+                        .runAsync(context.IOManager.databaseToQueue(startIndex, stopIndex, queue))
+                        .thenRun(() -> isDone.set(true));
+                    // wait till queue has items in it
+                    try { while (queue.isEmpty()) new CountDownLatch(1).await(100, TimeUnit.MILLISECONDS); }
+                    catch(InterruptedException ex) { LOG.error(ex); }
+                    //
+                    context.IOManager.queueToKafka(startIndex, queue, context.experiment.consumerTopic, isDone).run();
+                });
+            }
             // record end time of experiment
             context.experiment.setStopTs(Instant.now().getEpochSecond());
 
@@ -317,107 +262,114 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
         public ExecutionManager runStage(Context context) {
 
-            // get values from experiments and fit models
-            //List<Double> durHats = new ArrayList<>();
-            //List<Double> avgLats = new ArrayList<>();
-            //List<Double> configs = new ArrayList<>();
-            //List<Double> avgThrs = new ArrayList<>();
+            Map<Double, List<List<Double>>> perfMap = new TreeMap<>();
+            Map<Double, List<List<Double>>> availMap= new TreeMap<>();
+            for (int i = 1; i <= 5; i++) {
 
-            //1000, metrics=[(1615553475,486,519,509.3961598342439),(1615575579,24148,604,708.3158652473526),(1615580776,32276,1072,657.5180209847384),(1615594541,12676,316,692.6964472266923),(1615607810,18647,1631,746.064014726303),(1615612818,39559,1716,732.4653452115994),(1615615272,45640,1587,728.3063727597462),(1615616397,52404,691,703.7754790347279),(1615626108,28241,361,592.8236067762407),(1615629999,6440,1545,639.908476059619)]
-            //14222, metrics=[(1615553475,486,4063,427.65456889713323),(1615575580,24148,10703,346.991175756106),(1615580776,32276,13367,408.372757515638),(1615594542,12676,3894,372.6481512836444),(1615607811,18647,8710,371.6707021516819),(1615612818,39559,7498,363.11667478441007),(1615615273,45640,1168,435.0748122712702),(1615616398,52404,107,499.51542770030886),(1615626108,28241,5173,405.85926002679867),(1615630000,6440,8721,385.4238575273178)]
-            //27444, metrics=[(1615553475,486,17418,384.0473821392883),(1615575580,24148,174,336.9497724260603),(1615580776,32276,16058,394.78158133370533),(1615594542,12676,12502,338.2852156629594),(1615607811,18647,17136,382.8517433749481),(1615612819,39559,7981,405.1102983341661),(1615615273,45640,23998,406.08197558837077),(1615616398,52404,23281,432.6134357642494),(1615626108,28241,14737,374.16409717445754),(1615630000,6440,22048,358.5546714808062)]
-            //40666, metrics=[(1615553476,486,19190,411.2392020494835),(1615575580,24148,724,350.45593738239074),(1615580777,32276,8148,359.50716291155135),(1615594543,12676,20587,360.03604582219424),(1615607811,18647,30535,370.20797293526783),(1615612819,39559,2937,402.8977791922433),(1615615273,45640,2892,396.6322476713364),(1615616398,52404,13978,424.05018823566627),(1615626109,28241,3207,370.9127494330422),(1615630000,6440,25341,344.95809754026294)]
-            //53888, metrics=[(1615553476,486,30212,358.87059908134995),(1615575583,24148,39763,359.0576610882021),(1615580777,32276,46314,368.6942896035026),(1615594544,12676,50245,343.36733653933504),(1615607812,18647,5128,374.31800208614516),(1615612821,39559,19876,423.7062922379503),(1615615274,45640,39731,422.16004705587494),(1615616400,52404,32760,444.8718024472462),(1615626112,28241,39110,401.51179438492784),(1615630000,6440,451,350.9274523155238)]
-            //67110, metrics=[(1615553477,486,6140,400.3784057008864),(1615575583,24148,66738,328.8327450166113),(1615580777,32276,38560,405.8959715580227),(1615594544,12676,25284,312.8148455952489),(1615607812,18647,5580,360.71102449030576),(1615612822,39559,13399,342.2290069478691),(1615615274,45640,22570,452.62012012773175),(1615616400,52404,40861,475.6847352696416),(1615626114,28241,17353,325.0940814350927),(1615630001,6440,9880,335.40911601627386)]
-            //80332, metrics=[(1615553477,486,16057,379.8206186896543),(1615575584,24148,55389,369.9158851395414),(1615580778,32276,57925,391.17985914870354),(1615594545,12676,38417,362.02574771108027),(1615607813,18647,2929,369.7720098653901),(1615612822,39559,56788,329.85608538757526),(1615615275,45640,32536,444.77686864909936),(1615616401,52404,2439,451.6951215877089),(1615626117,28241,3348,362.1312091611945),(1615630001,6440,21158,362.28810175391925)]
-            //93554, metrics=[(1615553478,486,18772,432.76034089655576),(1615575584,24148,46300,343.0631217069404),(1615580779,32276,56039,361.1931259814291),(1615594546,12676,79606,368.16434810803185),(1615607814,18647,2778,343.4942891573985),(1615612823,39559,8409,395.32580890845617),(1615615275,45640,20697,377.2720323733713),(1615616401,52404,42974,409.8383304431193),(1615626118,28241,19899,385.4324315473487),(1615630003,6440,80578,330.72736731240917)]
-            //106776, metrics=[(1615553479,486,18095,395.9111097975823),(1615575588,24148,103681,347.4166738313694),(1615580780,32276,3533,376.6754793186124),(1615594547,12676,94552,357.7394957684995),(1615607816,18647,46832,371.991839538777),(1615612824,39559,56832,335.6206399404329),(1615615276,45640,64955,366.0552943030069),(1615616403,52404,95077,367.96461856880063),(1615626118,28241,97024,347.1246869160091),(1615630004,6440,14157,370.0214071178753)]
-            //119998, metrics=[(1615553479,486,3803,398.30174382105224),(1615575588,24148,44558,345.90363228123056),(1615580781,32276,104701,349.3624798847591),(1615594548,12676,68195,397.39246173237643),(1615607816,18647,46481,371.2291115795655),(1615612826,39559,109396,394.2255610976108),(1615615276,45640,53534,410.4948511472176),(1615616403,52404,45751,388.5324553936423),(1615626120,28241,34443,362.0225903076983),(1615630005,6440,55563,350.8563963424328)]
+                for (Tuple11<Integer, String, Double, Long, Long, Long, Long, Long, Long, Long, Long> job : context.IOManager.fetchJobs(i)) {
 
-            /*for (StreamingJob streamingJob : context.experiments) {
+                    perfMap.putIfAbsent(job._3(), new ArrayList<>());
+                    availMap.putIfAbsent(job._3(), new ArrayList<>());
 
-                // populate model dataset
-                for (FailureMetrics failureMetrics : streamingJob.failureMetricsList) {
+                    for (Tuple6<Integer, String, Long, Double, Double, Double> current : context.IOManager.fetchMetrics(i, job._2())) {
 
-                    // test checkpoint interval and then normalize the recovery time
-                    if (streamingJob.getConfig() > 5000) {
-
-                        double chkDist = failureMetrics.timestamp - failureMetrics.chkLast;
-                        if (chkDist < 0) chkDist = streamingJob.getConfig();
-                        durHats.add(failureMetrics.getDuration() * (streamingJob.getConfig() / chkDist));
+                        perfMap.get(job._3()).add(Arrays.asList(current._4(), job._3(), current._5()));
+                        availMap.get(job._3()).add(Arrays.asList(current._4(), job._3(), current._6()));
                     }
-                    // dont worry about normalizing for these short checkpoint intervals
-                    else durHats.add(streamingJob.getConfig());
-                    avgLats.add(failureMetrics.avgLat);
-                    configs.add(streamingJob.getConfig());
-                    avgThrs.add(failureMetrics.avgThr);
                 }
-            }*/
-
-            /*List<List<Double>> confThr_apache = Arrays.asList(
-                Arrays.asList(1000D, 486D), Arrays.asList(1000D, 24148D), Arrays.asList(1000D, 32276D), Arrays.asList(1000D, 12676D), Arrays.asList(1000D, 18647D), Arrays.asList(1000D, 39559D), Arrays.asList(1000D, 45640D), Arrays.asList(1000D, 52404D), Arrays.asList(1000D, 28241D), Arrays.asList(1000D, 6440D),
-                Arrays.asList(14222D, 486D), Arrays.asList(14222D, 24148D), Arrays.asList(14222D, 32276D), Arrays.asList(14222D, 12676D), Arrays.asList(14222D, 18647D), Arrays.asList(14222D, 39559D), Arrays.asList(14222D, 45640D), Arrays.asList(14222D, 52404D), Arrays.asList(14222D, 28241D), Arrays.asList(14222D, 6440D),
-                Arrays.asList(27444D, 486D), Arrays.asList(27444D, 24148D), Arrays.asList(27444D, 32276D), Arrays.asList(27444D, 12676D), Arrays.asList(27444D, 18647D), Arrays.asList(27444D, 39559D), Arrays.asList(27444D, 45640D), Arrays.asList(27444D, 52404D), Arrays.asList(27444D, 28241D), Arrays.asList(27444D, 6440D),
-                Arrays.asList(40666D, 486D), Arrays.asList(40666D, 24148D), Arrays.asList(40666D, 32276D), Arrays.asList(40666D, 12676D), Arrays.asList(40666D, 18647D), Arrays.asList(40666D, 39559D), Arrays.asList(40666D, 45640D), Arrays.asList(40666D, 52404D), Arrays.asList(40666D, 28241D), Arrays.asList(40666D, 6440D),
-                Arrays.asList(53888D, 486D), Arrays.asList(53888D, 24148D), Arrays.asList(53888D, 32276D), Arrays.asList(53888D, 12676D), Arrays.asList(53888D, 18647D), Arrays.asList(53888D, 39559D), Arrays.asList(53888D, 45640D), Arrays.asList(53888D, 52404D), Arrays.asList(53888D, 28241D), Arrays.asList(53888D, 6440D),
-                Arrays.asList(67110D, 486D), Arrays.asList(67110D, 24148D), Arrays.asList(67110D, 32276D), Arrays.asList(67110D, 12676D), Arrays.asList(67110D, 18647D), Arrays.asList(67110D, 39559D), Arrays.asList(67110D, 45640D), Arrays.asList(67110D, 52404D), Arrays.asList(67110D, 28241D), Arrays.asList(67110D, 6440D),
-                Arrays.asList(80332D, 486D), Arrays.asList(80332D, 24148D), Arrays.asList(80332D, 32276D), Arrays.asList(80332D, 12676D), Arrays.asList(80332D, 18647D), Arrays.asList(80332D, 39559D), Arrays.asList(80332D, 45640D), Arrays.asList(80332D, 52404D), Arrays.asList(80332D, 28241D), Arrays.asList(80332D, 6440D),
-                Arrays.asList(93554D, 486D), Arrays.asList(93554D, 24148D), Arrays.asList(93554D, 32276D), Arrays.asList(93554D, 12676D), Arrays.asList(93554D, 18647D), Arrays.asList(93554D, 39559D), Arrays.asList(93554D, 45640D), Arrays.asList(93554D, 52404D), Arrays.asList(93554D, 28241D), Arrays.asList(93554D, 6440D),
-                Arrays.asList(106776D, 486D), Arrays.asList(106776D, 24148D), Arrays.asList(106776D, 32276D), Arrays.asList(106776D, 12676D), Arrays.asList(106776D, 18647D), Arrays.asList(106776D, 39559D), Arrays.asList(106776D, 45640D), Arrays.asList(106776D, 52404D), Arrays.asList(106776D, 28241D), Arrays.asList(106776D, 6440D),
-                Arrays.asList(119998D, 486D), Arrays.asList(119998D, 24148D), Arrays.asList(119998D, 32276D), Arrays.asList(119998D, 12676D), Arrays.asList(119998D, 18647D), Arrays.asList(119998D, 39559D), Arrays.asList(119998D, 45640D), Arrays.asList(119998D, 52404D), Arrays.asList(119998D, 28241D), Arrays.asList(119998D, 6440D));
-
-            List<Double> avgLats_apache = Arrays.asList(
-                509D, 708D, 657D, 692D, 746D, 732D, 728D, 703D, 592D, 639D,
-                427D, 346D, 408D, 372D, 371D, 363D, 435D, 499D, 405D, 385D,
-                384D, 336D, 394D, 338D, 382D, 405D, 406D, 432D, 374D, 358D,
-                411D, 350D, 359D, 360D, 370D, 402D, 396D, 424D, 370D, 344D,
-                358D, 359D, 368D, 343D, 374D, 423D, 422D, 444D, 401D, 350D,
-                400D, 328D, 405D, 312D, 360D, 342D, 452D, 475D, 325D, 335D,
-                379D, 369D, 391D, 362D, 369D, 329D, 444D, 451D, 362D, 362D,
-                432D, 343D, 361D, 368D, 343D, 395D, 377D, 409D, 385D, 330D,
-                395D, 347D, 376D, 357D, 371D, 335D, 366D, 367D, 347D, 370D,
-                398D, 345D, 349D, 397D, 371D, 394D, 410D, 388D, 362D, 350D
-            );
-
-            List<List<Double>> x = Arrays.asList(
-                Arrays.asList(509D,1000D, 486D), Arrays.asList(708D,1000D, 24148D), Arrays.asList(657D,1000D, 32276D), Arrays.asList(692D,1000D, 12676D), Arrays.asList(746D,1000D, 18647D), Arrays.asList(732D,1000D, 39559D), Arrays.asList(728D,1000D, 45640D), Arrays.asList(703D,1000D, 52404D), Arrays.asList(592D,1000D, 28241D), Arrays.asList(639D,1000D, 6440D),
-                Arrays.asList(427D,14222D, 486D), Arrays.asList(346D,14222D, 24148D), Arrays.asList(408D,14222D, 32276D), Arrays.asList(372D,14222D, 12676D), Arrays.asList(371D,14222D, 18647D), Arrays.asList(363D,14222D, 39559D), Arrays.asList(435D,14222D, 45640D), Arrays.asList(499D,14222D, 52404D), Arrays.asList(405D,14222D, 28241D), Arrays.asList(385D,14222D, 6440D),
-                Arrays.asList(384D,27444D, 486D), Arrays.asList(336D,27444D, 24148D), Arrays.asList(394D,27444D, 32276D), Arrays.asList(338D,27444D, 12676D), Arrays.asList(382D,27444D, 18647D), Arrays.asList(405D,27444D, 39559D), Arrays.asList(406D,27444D, 45640D), Arrays.asList(432D,27444D, 52404D), Arrays.asList(374D,27444D, 28241D), Arrays.asList(358D,27444D, 6440D),
-                Arrays.asList(411D,40666D, 486D), Arrays.asList(350D,40666D, 24148D), Arrays.asList(359D,40666D, 32276D), Arrays.asList(360D,40666D, 12676D), Arrays.asList(370D,40666D, 18647D), Arrays.asList(402D,40666D, 39559D), Arrays.asList(396D,40666D, 45640D), Arrays.asList(424D,40666D, 52404D), Arrays.asList(370D,40666D, 28241D), Arrays.asList(344D,40666D, 6440D),
-                Arrays.asList(358D,53888D, 486D), Arrays.asList(359D,53888D, 24148D), Arrays.asList(368D,53888D, 32276D), Arrays.asList(343D,53888D, 12676D), Arrays.asList(374D,53888D, 18647D), Arrays.asList(423D,53888D, 39559D), Arrays.asList(422D,53888D, 45640D), Arrays.asList(444D,53888D, 52404D), Arrays.asList(401D,53888D, 28241D), Arrays.asList(350D,53888D, 6440D),
-                Arrays.asList(400D,67110D, 486D), Arrays.asList(328D,67110D, 24148D), Arrays.asList(405D,67110D, 32276D), Arrays.asList(312D,67110D, 12676D), Arrays.asList(360D,67110D, 18647D), Arrays.asList(342D,67110D, 39559D), Arrays.asList(452D,67110D, 45640D), Arrays.asList(475D,67110D, 52404D), Arrays.asList(325D,67110D, 28241D), Arrays.asList(335D,67110D, 6440D),
-                Arrays.asList(379D,80332D, 486D), Arrays.asList(369D,80332D, 24148D), Arrays.asList(391D,80332D, 32276D), Arrays.asList(362D,80332D, 12676D), Arrays.asList(369D,80332D, 18647D), Arrays.asList(342D,80332D, 39559D), Arrays.asList(444D,80332D, 45640D), Arrays.asList(451D,80332D, 52404D), Arrays.asList(362D,80332D, 28241D), Arrays.asList(362D,80332D, 6440D),
-                Arrays.asList(432D,93554D, 486D), Arrays.asList(343D,93554D, 24148D), Arrays.asList(361D,93554D, 32276D), Arrays.asList(368D,93554D, 12676D), Arrays.asList(343D,93554D, 18647D), Arrays.asList(395D,93554D, 39559D), Arrays.asList(377D,93554D, 45640D), Arrays.asList(409D,93554D, 52404D), Arrays.asList(385D,93554D, 28241D), Arrays.asList(330D,93554D, 6440D),
-                Arrays.asList(395D,106776D, 486D), Arrays.asList(347D,106776D, 24148D), Arrays.asList(376D,106776D, 32276D), Arrays.asList(357D,106776D, 12676D), Arrays.asList(371D,106776D, 18647D), Arrays.asList(335D,106776D, 39559D), Arrays.asList(366D,106776D, 45640D), Arrays.asList(367D,106776D, 52404D), Arrays.asList(347D,106776D, 28241D), Arrays.asList(370D,106776D, 6440D),
-                Arrays.asList(398D,119998D, 486D), Arrays.asList(345D,119998D, 24148D), Arrays.asList(349D,119998D, 32276D), Arrays.asList(397D,119998D, 12676D), Arrays.asList(371D,119998D, 18647D), Arrays.asList(394D,119998D, 39559D), Arrays.asList(410D,119998D, 45640D), Arrays.asList(388D,119998D, 52404D), Arrays.asList(362D,119998D, 28241D), Arrays.asList(350D,119998D, 6440D));
-            
-            List<Double> durHats = Arrays.asList();
-
-            double [][] arr_data = new double[x.size()][];
-            for (int i =0; i < x.size(); i++) {
-
-                arr_data[i] = ArrayUtils.toPrimitive(x.get(i).toArray(new Double[0]));
             }
 
-            DataFrame dataDf = DataFrame.of(arr_data, "lat", "conf", "thr");
-            System.out.println(dataDf);
-            LinearModel model = OLS.fit(Formula.lhs("lat"), dataDf);
-            System.out.println(model);
-            System.out.println(Arrays.toString(model.coefficients()));
-            System.out.println(model.predict(new double[]{1D, 50000D, 30000D}));
+            int counter1 = 0, counter2 = 0;
+            double [][] perfArr = new double[context.numOfConfigs * context.numFailures][];
+            double [][] availArr = new double[context.numOfConfigs * context.numFailures - 7][];
+            for (Map.Entry<Double, List<List<Double>>> entry : perfMap.entrySet()) {
 
+                double key = entry.getKey();
+                final int chunkSize = 5;
+
+                final AtomicInteger count = new AtomicInteger(0);
+                List<List<Double>> perfs = entry.getValue();
+                perfs.sort(Comparator.comparing(o -> o.get(0)));
+                final Collection<List<List<Double>>> perfRes =
+                    perfs.stream()
+                        .collect(Collectors.groupingBy(it -> count.getAndIncrement() / chunkSize))
+                        .values();
+
+                count.set(0);
+                List<List<Double>> avails = availMap.get(key);
+                avails.sort(Comparator.comparing(o -> o.get(0)));
+                final Collection<List<List<Double>>> availRes =
+                    avails.stream()
+                        .collect(Collectors.groupingBy(it -> count.getAndIncrement() / chunkSize))
+                        .values();
+
+                Iterator<List<List<Double>>> it1 = perfRes.iterator();
+                Iterator<List<List<Double>>> it2 = availRes.iterator();
+                while (it1.hasNext()) {
+
+                    List<List<Double>> currPerf = it1.next();
+                    perfArr[counter1] = ArrayUtils.toPrimitive(currPerf.get(2).toArray(new Double[0]));
+                    counter1++;
+                    List<List<Double>> currAvail = it2.next();
+                    double[] temp = ArrayUtils.toPrimitive(currAvail.get(2).toArray(new Double[0]));
+                    if (temp[2] > 55) {
+
+                        availArr[counter2] = temp;
+                        counter2++;
+                    }
+                }
+            }
+            for (int i = 0; i < perfArr.length; i++) {
+
+                System.out.println(Arrays.toString(perfArr[i]));
+            }
+            for (int i = 0; i < availArr.length; i++) {
+
+                System.out.println(Arrays.toString(availArr[i]));
+            }
+            //LOG.info(Arrays.deepToString(perfArr));
+            //LOG.info(Arrays.deepToString(availArr));
+
+            /*double [][] perfArr = new double[perfList.size()][];
+            double [][] availArr = new double[availList.size()][];
+            for (int i = 0; i < perfList.size(); i++) {
+
+                perfArr[i] = ArrayUtils.toPrimitive(perfList.get(i).toArray(new Double[0]));
+                availArr[i] = ArrayUtils.toPrimitive(availList.get(i).toArray(new Double[0]));
+            }
+            LOG.info(Arrays.deepToString(perfArr));
+            LOG.info(Arrays.deepToString(availArr));*/
+
+            DataFrame dataDf = DataFrame.of(perfArr, "thr", "conf", "lat");
+            LOG.info(dataDf);
+            LinearModel model = OLS.fit(Formula.lhs("lat"), dataDf);
+            LOG.info(model);
+            LOG.info(Arrays.toString(model.coefficients()));
+
+            double[][] tester = new double[1][];
+            tester[0] = new double[]{15000D, 50000D};
+            DataFrame test = DataFrame.of(tester, "thr", "conf");
+            LOG.info(Arrays.toString(model.predict(test)));
+            LOG.info(model.predict(new double[]{15000D, 50000D, 0D}));
+
+            DataFrame dataDf2 = DataFrame.of(availArr, "recTime", "conf", "thr");
+            LOG.info(dataDf2);
+            LinearModel model2 = OLS.fit(Formula.lhs("recTime"), dataDf2);
+            LOG.info(model2);
+            LOG.info(Arrays.toString(model2.coefficients()));
+            LOG.info(model2.predict(new double[]{0D, 50000D, 15000D}));
 
             // fit models for performance and availability
-            context.performance.fit(avgLats_apache, confThr_apache);
+            //context.performance.fit(avgLats_apache, confThr_apache);
             //context.availability.fit(durHats, Arrays.asList(configs, avgThrs));
-            LOG.info(context.performance.predict(Arrays.asList(50000D, 30000D)));
+            //LOG.info(context.performance.predict(Arrays.asList(50000D, 30000D)));
 
 
             // Log R^2 and P-values for models
-            LOG.info(context.performance.calculateRSquared());
-            LOG.info(Arrays.toString(context.performance.calculatePValues().toArray()));
+            //LOG.info(context.performance.calculateRSquared());
+            //LOG.info(Arrays.toString(context.performance.calculatePValues().toArray()));
             //LOG.info(context.availability.calculateRSquared());
-            //LOG.info(Arrays.toString(context.availability.calculatePValues().toArray()));*/
+            //LOG.info(Arrays.toString(context.availability.calculatePValues().toArray()));
 
             return STOP;
         }
