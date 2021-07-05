@@ -122,6 +122,89 @@ public class IOManager {
         }
     }
 
+    public static class JobMetrics {
+
+        public final Integer experimentId;
+        public final String jobId;
+        public final Double config;
+        public final Long minDuration;
+        public final Long avgDuration;
+        public final Long maxDuration;
+        public final Long minSize;
+        public final Long avgSize;
+        public final Long maxSize;
+        public final Long startTs;
+        public final Long stopTs;
+
+        public JobMetrics(
+                Integer experimentId, String jobId, Double config, Long minDuration, Long avgDuration,
+                Long maxDuration, Long minSize, Long avgSize, Long maxSize, Long startTs, Long stopTs) {
+
+            this.experimentId = experimentId;
+            this.jobId = jobId;
+            this.config = config;
+            this.minDuration = minDuration;
+            this.avgDuration = avgDuration;
+            this.maxDuration = maxDuration;
+            this.minSize = minSize;
+            this.avgSize = avgSize;
+            this.maxSize = maxSize;
+            this.startTs = startTs;
+            this.stopTs = stopTs;
+        }
+
+        @Override
+        public String toString() {
+            return "JobMetrics{" +
+                    "experimentId=" + experimentId +
+                    ", jobId='" + jobId + '\'' +
+                    ", config=" + config +
+                    ", minDuration=" + minDuration +
+                    ", avgDuration=" + avgDuration +
+                    ", maxDuration=" + maxDuration +
+                    ", minSize=" + minSize +
+                    ", avgSize=" + avgSize +
+                    ", maxSize=" + maxSize +
+                    ", startTs=" + startTs +
+                    ", stopTs=" + stopTs +
+                    '}';
+        }
+    }
+
+    public static class FailureMetrics {
+
+        public final Integer experimentId;
+        public final String jobId;
+        public final Long timestamp;
+        public final Double avgThr;
+        public final Double avgLat;
+        public final Double recTime;
+
+        public FailureMetrics(
+                Integer experimentId, String jobId, Long timestamp,
+                Double avgThr, Double avgLat, Double recTime) {
+
+            this.experimentId = experimentId;
+            this.jobId = jobId;
+            this.timestamp = timestamp;
+            this.avgThr = avgThr;
+            this.avgLat = avgLat;
+            this.recTime = recTime;
+        }
+
+        @Override
+        public String toString() {
+            return "FailureMetrics{" +
+                    "experimentId=" + experimentId +
+                    ", jobId='" + jobId + '\'' +
+                    ", timestamp=" + timestamp +
+                    ", avgThr=" + avgThr +
+                    ", avgLat=" + avgLat +
+                    ", recTime=" + recTime +
+                    '}';
+        }
+    }
+
     /******************************************************************************
      * STATIC VARIABLES
      ******************************************************************************/
@@ -426,6 +509,7 @@ public class IOManager {
 
             List<Tuple3<Integer, Long, Integer>> scenario = new ArrayList<>();
             intersects.forEach((k,v) -> scenario.add(v.get(RANDOM.nextInt(v.size()))));
+            LOG.info(Arrays.toString(scenario.toArray()));
             boolean valid = true;
             for (int i = 0; i < scenario.size(); i++) {
 
@@ -481,72 +565,7 @@ public class IOManager {
         return scenario;
     }
 
-    public void initMetrics(int experimentId, boolean removePrevious) {
-
-        // TODO remove!
-        //IOManager.executeUpdate("DROP TABLE IF EXISTS metrics;");
-
-        String createTable =
-            "CREATE TABLE IF NOT EXISTS metrics " +
-            "(experimentId INTEGER NOT NULL, " +
-            "jobId TEXT NOT NULL, " +
-            "timestamp INTEGER NOT NULL, " +
-            "avgThr REAL NOT NULL, " +
-            "avgLat REAL NOT NULL, " +
-            "recTime REAL);";
-        IOManager.executeUpdate(createTable);
-        if (removePrevious) {
-
-            IOManager.executeUpdate(String.format("DELETE FROM metrics WHERE experimentId = %d;", experimentId));
-        }
-    }
-
-    public void addMetrics(int experimentId, String jobId, long timestamp, double avgThr, double avgLat) {
-
-        String insertValue = String.format(
-            "INSERT INTO metrics " +
-            "(experimentId, jobId, timestamp, avgThr, avgLat) " +
-            "VALUES " +
-            "(%d, '%s', %d, %f, %f);",
-            experimentId, jobId, timestamp, avgThr, avgLat);
-        IOManager.executeUpdate(insertValue);
-    }
-
-    public List<Tuple6<Integer, String, Long, Double, Double, Double>> fetchMetrics(int experimentId, String jobId) {
-
-        List<Tuple6<Integer, String, Long, Double, Double, Double>> metrics = new ArrayList<>();
-        String selectValues = String.format(
-            "SELECT experimentId, jobId, timestamp, avgThr, avgLat, recTime " +
-            "FROM metrics " +
-            "WHERE experimentId = %d " +
-            "AND jobId = '%s' " +
-            "ORDER BY avgThr ASC;",
-            experimentId, jobId);
-        IOManager.executeQuery(selectValues, (rs) -> {
-            metrics.add(
-                new Tuple6<>(
-                    rs.getInt("experimentId"),
-                    rs.getString("jobId"),
-                    rs.getLong("timestamp"),
-                    rs.getDouble("avgThr"),
-                    rs.getDouble("avgLat"),
-                    rs.getDouble("recTime")));
-        });
-        return metrics;
-    }
-
-    public void updateRecTime(String jobId, long timestamp, double recTime) {
-
-        String updateValue = String.format(
-            "UPDATE metrics " +
-            "SET recTime = %f " +
-            "WHERE jobId = '%s' " +
-            "AND timestamp = %d;",
-            recTime, jobId, timestamp);
-        IOManager.executeUpdate(updateValue);
-    }
-
-    public void initJobs(int experimentId, boolean removePrevious) {
+    public void initJobMetrics(int experimentId, boolean removePrevious) {
 
         // TODO remove
         //IOManager.executeUpdate("DROP TABLE IF EXISTS jobs;");
@@ -570,31 +589,32 @@ public class IOManager {
         }
     }
 
-    public void addJob(
+    public void addJobMetrics(
             int experimentId, String jobId, double config, long minDuration, long avgDuration,
             long maxDuration, long minSize, long avgSize, long maxSize, long startTs, long stopTs) {
 
         String insertValue = String.format(
             "INSERT INTO jobs " +
-            "(experimentId, jobId, config, minDuration, avgDuration, maxDuration, minSize, avgSize, maxSize, startTs, stopTs) " +
-            "VALUES " +
-            "(%d, '%s', %f, %d, %d, %d, %d, %d, %d, %d, %d);",
+                "(experimentId, jobId, config, minDuration, avgDuration, maxDuration, minSize, avgSize, maxSize, startTs, stopTs) " +
+                "VALUES " +
+                "(%d, '%s', %f, %d, %d, %d, %d, %d, %d, %d, %d);",
             experimentId, jobId, config, minDuration, avgDuration, maxDuration, minSize, avgSize, maxSize, startTs, stopTs);
         IOManager.executeUpdate(insertValue);
     }
 
-    public List<Tuple11<Integer, String, Double, Long, Long, Long, Long, Long, Long, Long, Long>> fetchJobs(int experimentId) {
+    public List<JobMetrics> fetchJobMetricsList(int experimentId) {
 
+        List<JobMetrics> jobMetricsList = new ArrayList<>();
         List<Tuple11<Integer, String, Double, Long, Long, Long, Long, Long, Long, Long, Long>> jobs = new ArrayList<>();
         String selectValues = String.format(
-            "SELECT experimentId, jobId, config, minDuration, avgDuration, maxDuration, minSize, avgSize, maxSize, startTs, stopTs " +
-            "FROM jobs " +
-            "WHERE experimentId = %d " +
-            "ORDER BY config ASC;",
+                "SELECT experimentId, jobId, config, minDuration, avgDuration, maxDuration, minSize, avgSize, maxSize, startTs, stopTs " +
+                "FROM jobs " +
+                "WHERE experimentId = %d " +
+                "ORDER BY config ASC;",
             experimentId);
         IOManager.executeQuery(selectValues, (rs) -> {
-            jobs.add(
-                new Tuple11<>(
+            jobMetricsList.add(
+                new JobMetrics(
                     rs.getInt("experimentId"),
                     rs.getString("jobId"),
                     rs.getDouble("config"),
@@ -607,7 +627,72 @@ public class IOManager {
                     rs.getLong("startTs"),
                     rs.getLong("stopTs")));
         });
-        return jobs;
+        return jobMetricsList;
+    }
+
+    public void initFailureMetrics(int experimentId, boolean removePrevious) {
+
+        // TODO remove!
+        //IOManager.executeUpdate("DROP TABLE IF EXISTS metrics;");
+
+        String createTable =
+            "CREATE TABLE IF NOT EXISTS metrics " +
+            "(experimentId INTEGER NOT NULL, " +
+            "jobId TEXT NOT NULL, " +
+            "timestamp INTEGER NOT NULL, " +
+            "avgThr REAL NOT NULL, " +
+            "avgLat REAL NOT NULL, " +
+            "recTime REAL);";
+        IOManager.executeUpdate(createTable);
+        if (removePrevious) {
+
+            IOManager.executeUpdate(String.format("DELETE FROM metrics WHERE experimentId = %d;", experimentId));
+        }
+    }
+
+    public void addFailureMetrics(int experimentId, String jobId, long timestamp, double avgThr, double avgLat) {
+
+        String insertValue = String.format(
+            "INSERT INTO metrics " +
+            "(experimentId, jobId, timestamp, avgThr, avgLat) " +
+            "VALUES " +
+            "(%d, '%s', %d, %f, %f);",
+            experimentId, jobId, timestamp, avgThr, avgLat);
+        IOManager.executeUpdate(insertValue);
+    }
+
+    public List<FailureMetrics> fetchFailureMetricsList(int experimentId, String jobId) {
+
+        List<FailureMetrics> failureMetricsList = new ArrayList<>();
+        String selectValues = String.format(
+            "SELECT experimentId, jobId, timestamp, avgThr, avgLat, recTime " +
+            "FROM metrics " +
+            "WHERE experimentId = %d " +
+            "AND jobId = '%s' " +
+            "ORDER BY avgThr ASC;",
+            experimentId, jobId);
+        IOManager.executeQuery(selectValues, (rs) -> {
+            failureMetricsList.add(
+                new FailureMetrics(
+                    rs.getInt("experimentId"),
+                    rs.getString("jobId"),
+                    rs.getLong("timestamp"),
+                    rs.getDouble("avgThr"),
+                    rs.getDouble("avgLat"),
+                    rs.getDouble("recTime")));
+        });
+        return failureMetricsList;
+    }
+
+    public void updateRecTime(String jobId, long timestamp, double recTime) {
+
+        String updateValue = String.format(
+            "UPDATE metrics " +
+            "SET recTime = %f " +
+            "WHERE jobId = '%s' " +
+            "AND timestamp = %d;",
+            recTime, jobId, timestamp);
+        IOManager.executeUpdate(updateValue);
     }
 
     public void registerListener(Listener listener) {

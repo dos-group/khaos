@@ -1,69 +1,55 @@
 package de.tu_berlin.dos.arm.khaos.modeling;
 
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.math3.distribution.TDistribution;
-import org.apache.commons.math3.stat.regression.OLSMultipleLinearRegression;
-import org.apache.commons.math3.util.FastMath;
+import org.apache.log4j.Logger;
+import scala.Tuple2;
 import scala.Tuple3;
+import smile.data.DataFrame;
+import smile.data.formula.Formula;
+import smile.regression.LinearModel;
+import smile.regression.OLS;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-public class RegressionModel extends OLSMultipleLinearRegression {
+public class RegressionModel {
 
-    private final OLSMultipleLinearRegression regression;
-    private double[] parameters;
+    private static final Logger LOG = Logger.getLogger(RegressionModel.class);
 
-    public RegressionModel() {
+    private LinearModel model;
 
-        this.regression = new OLSMultipleLinearRegression();
-    }
+    public RegressionModel() { }
 
-    public RegressionModel fit(List<Double> y, List<List<Double>> x) {
+    public RegressionModel fit(Tuple3<String, String, String> header, double [][] dataArr, String lhs) {
 
-        //regression.setNoIntercept(true);
-        double[] y_arr = ArrayUtils.toPrimitive(y.toArray(new Double[0]));
-        double[][] x_arr = new double[x.size()][];
-        for (int i = 0; i < x.size(); i++) {
-
-            x_arr[i] = ArrayUtils.toPrimitive(x.get(i).toArray(new Double[0]));
-        }
-        this.regression.newSampleData(y_arr, x_arr);
-        this.parameters = this.regression.estimateRegressionParameters();
-
+        // create dataframe
+        DataFrame df = DataFrame.of(dataArr, header._1(), header._2(), header._3());
+        // fit the model
+        this.model = OLS.fit(Formula.lhs(lhs), df);
+        LOG.info(this.model);
+        LOG.info(Arrays.toString(this.model.coefficients()));
         return this;
     }
 
-    public double calculateRSquared() {
+    public RegressionModel fit(Tuple3<String, String, String> header, List<Tuple3<Double, Double, Double>> data, String lhs) {
 
-        return this.regression.calculateRSquared();
+        // convert to multi-dimensional array
+        double [][] dataArr = new double[data.size()][];
+        for (int i = 0; i < data.size(); i++) {
+
+            dataArr[i] = new double[]{data.get(i)._1(), data.get(i)._2(), data.get(i)._3()};
+        }
+        return this.fit(header, dataArr, lhs);
     }
 
-    public List<Tuple3<Double, Double, Double>> calculatePValues() {
+    public double[] predict(String header1, double val1, String header2, double val2) {
 
-        final double[] beta = regression.estimateRegressionParameters();
-        int residualdf = this.regression.estimateResiduals().length - beta.length;
-        List<Tuple3<Double, Double, Double>> pValues = new ArrayList<>();
-        for (int i = 0; i < beta.length; i++) {
-
-            double tStat = beta[i] / regression.estimateRegressionParametersStandardErrors()[i];
-            double pValue = new TDistribution(residualdf).cumulativeProbability(-FastMath.abs(tStat)) * 2;
-            pValues.add(new Tuple3<>(beta[i], tStat, pValue));
-        }
-        return pValues;
+        double[][] values = new double[1][];
+        values[0] = new double[]{val1, val2};
+        DataFrame df = DataFrame.of(values, header1, header2);
+        return this.model.predict(df);
     }
 
-    public double predict(List<Double> args) {
+    public LinearModel getModel() {
 
-        if (this.parameters == null) throw new IllegalStateException("Fit the model first");
-
-        double[] args_arr = ArrayUtils.toPrimitive(args.toArray(new Double[0]));
-        double result = 0;
-        for (int i = 0; i < parameters.length; i++) {
-
-            if (i == 0) result += parameters[i]; // y-intercept
-            else result += parameters[i] * args_arr[i-1];
-        }
-        return result;
+        return model;
     }
 }

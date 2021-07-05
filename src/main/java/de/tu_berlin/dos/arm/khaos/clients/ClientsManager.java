@@ -61,6 +61,11 @@ public class ClientsManager {
         return this.flink.startJob(this.jarId, programArgs, this.parallelism).jobId;
     }
 
+    public String restartJob(String savePointPath, String programArgs) throws Exception {
+
+        return this.flink.restartJob(this.jarId, savePointPath, programArgs, this.parallelism).jobId;
+    }
+
     public List<String> getOperatorIds(String jobId) throws Exception {
 
         // store list of operator ids

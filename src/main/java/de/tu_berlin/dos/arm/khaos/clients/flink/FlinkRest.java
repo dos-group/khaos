@@ -4,6 +4,8 @@ import de.tu_berlin.dos.arm.khaos.clients.flink.responses.*;
 import retrofit2.Call;
 import retrofit2.http.*;
 
+import java.util.Map;
+
 public interface FlinkRest {
 
     @POST("v1/jars/{jarId}/run")
@@ -13,9 +15,23 @@ public interface FlinkRest {
         @Query("parallelism") int parallelism
     );
 
-    @PATCH("v1/jobs/{jarId}")
+    @POST("v1/jars/{jarId}/run")
+    Call<Job> restartJob(
+        @Path("jarId") String jarId,
+        @Query("savepointPath") String savepointPath,
+        @Query("programArg") String programArg,
+        @Query("parallelism") int parallelism
+    );
+
+    @PATCH("v1/jobs/{jobId}")
     Call<Void> stopJob(
-        @Path("jarId") String jarId
+        @Path("jobId") String jobId
+    );
+
+    @POST("v1/jobs/{jobId}/savepoints")
+    Call<Trigger> saveAndStopJob(
+        @Path("jobId") String jobId,
+        @Body Map<String, Object> body
     );
 
     @GET("v1/jobs/{jobId}/vertices/{vertexId}/taskmanagers")

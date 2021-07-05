@@ -172,6 +172,32 @@ public class TimeSeries {
         return sum / count;
     }
 
+    public double min() {
+
+        double min = 0;
+        for (Observation observation : this.observations) {
+
+            if (!Double.isNaN(observation.value) && observation.value < min) {
+
+                min = observation.value;
+            }
+        }
+        return min;
+    }
+
+    public double max() {
+
+        double max = 0;
+        for (Observation observation : this.observations) {
+
+            if (!Double.isNaN(observation.value) && max < observation.value) {
+
+                max = observation.value;
+            }
+        }
+        return max;
+    }
+
     @Override
     public String toString() {
 

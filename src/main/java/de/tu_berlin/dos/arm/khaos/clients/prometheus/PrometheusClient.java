@@ -28,7 +28,7 @@ public class PrometheusClient {
         this.service = retrofit.create(PrometheusRest.class);
     }
 
-    public TimeSeries queryRange(String query, long start, long end) throws IOException {
+    public TimeSeries queryRange(String query, long start, long end, int step) throws IOException {
 
         TimeSeries ts = TimeSeries.create(start, end);
 
@@ -39,7 +39,7 @@ public class PrometheusClient {
             long last = current + (end - start) % LIMIT;
             if (i < iterations) last = current + LIMIT;
 
-            Matrix matrix = this.service.queryRange(query, current, last, 1, 120).execute().body();
+            Matrix matrix = this.service.queryRange(query, current, last, step, 120).execute().body();
             List<List<String>> values = Objects.requireNonNull(matrix).data.result.get(0).values;
             for (List<String> strings : values) {
 
@@ -50,5 +50,10 @@ public class PrometheusClient {
             current += LIMIT;
         }
         return ts;
+    }
+
+    public TimeSeries queryRange(String query, long start, long end) throws IOException {
+
+       return this.queryRange(query, start, end, 1);
     }
 }

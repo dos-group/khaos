@@ -8,6 +8,8 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -39,9 +41,23 @@ public class FlinkClient {
         return this.service.startJob(jarId, programArg, parallelism).execute().body();
     }
 
-    public boolean stopJob(String jarId) throws IOException {
+    public Job restartJob(String jarId, String savePointPath, String programArg, int parallelism) throws IOException {
 
-        return this.service.stopJob(jarId).execute().isSuccessful();
+        return this.service.restartJob(jarId, savePointPath, programArg, parallelism).execute().body();
+    }
+
+    public boolean stopJob(String jobId) throws IOException {
+
+        return this.service.stopJob(jobId).execute().isSuccessful();
+    }
+
+    public Trigger saveAndStopJob(String jobId, boolean cancel, String targetDirectory) throws IOException {
+
+        Map<String, Object> body = Map.ofEntries(
+            Map.entry("cancel-type", cancel),
+            Map.entry("target-directory", "savepoints" )
+        );
+        return this.service.saveAndStopJob(jobId, body).execute().body();
     }
 
     public TaskManagers getTaskManagers(String jobId, String vertexId) throws IOException {

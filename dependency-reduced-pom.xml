@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>de.tu_berlin.dos.arm</groupId>
   <artifactId>khaos</artifactId>
-  <version>1.0</version>
+  <version>1.0-test</version>
   <build>
     <resources>
       <resource>

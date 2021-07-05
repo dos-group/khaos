@@ -6,7 +6,7 @@
 
     <groupId>de.tu_berlin.dos.arm</groupId>
     <artifactId>khaos</artifactId>
-    <version>1.0</version>
+    <version>1.0-test</version>
 
     <dependencies>
         <dependency>

@@ -10,12 +10,13 @@ public class Optimization {
 
     public static double getOptimalCheckpointInterval(Context context, double currentThr, double[] checkpointIntervals){
 
+        // TODO FIX THIS
         double[] predLatencies = Arrays.stream(checkpointIntervals)
-                .map(i -> context.performance.predict(Arrays.asList(i, currentThr)))
+                //.map(i -> context.performance.predict(Arrays.asList(i, currentThr)))
                 .toArray();
 
         double[] predRecoveryTimes = Arrays.stream(checkpointIntervals)
-                .map(i -> context.availability.predict(Arrays.asList(i, currentThr)))
+                //.map(i -> context.availability.predict(Arrays.asList(i, currentThr)))
                 .toArray();
 
         double bestCheckpointInterval = -1;

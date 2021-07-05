@@ -4,6 +4,7 @@ import de.tu_berlin.dos.arm.khaos.clients.ClientsManager;
 import de.tu_berlin.dos.arm.khaos.io.IOManager;
 import de.tu_berlin.dos.arm.khaos.modeling.ForecastModel;
 import de.tu_berlin.dos.arm.khaos.modeling.RegressionModel;
+import de.tu_berlin.dos.arm.khaos.modeling.RegressionModelOld;
 import de.tu_berlin.dos.arm.khaos.utils.FileReader;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.log4j.Logger;
