@@ -1,0 +1,81 @@
+2021-08-02 20:55:36 INFO  ExecutionManager:52 - FailureMetrics{experimentId=50, jobId='vehicles', timestamp=1627732016, avgThr=308.483965, avgLat=340.973713, recTime=70.0} 84
+2021-08-02 20:55:36 INFO  ExecutionManager:52 - FailureMetrics{experimentId=50, jobId='vehicles', timestamp=1627758123, avgThr=5058.993009, avgLat=699.159294, recTime=87.0} 82
+2021-08-02 20:55:36 INFO  ExecutionManager:52 - FailureMetrics{experimentId=50, jobId='vehicles', timestamp=1627801488, avgThr=5114.806216, avgLat=472.289917, recTime=82.0} 82
+2021-08-02 20:55:36 INFO  ExecutionManager:52 - FailureMetrics{experimentId=50, jobId='vehicles', timestamp=1627752377, avgThr=7726.913266, avgLat=487.819111, recTime=104.0} 109
+2021-08-02 20:55:36 INFO  ExecutionManager:91 - FailureMetrics{experimentId=51, jobId='vehicles', timestamp=1627848385, avgThr=10221.309376, avgLat=591.230831, recTime=112.0} 134
+2021-08-02 20:55:36 INFO  ExecutionManager:52 - FailureMetrics{experimentId=50, jobId='vehicles', timestamp=1627750255, avgThr=12931.923858, avgLat=675.877492, recTime=117.0} 150
+2021-08-02 20:55:36 INFO  ExecutionManager:91 - FailureMetrics{experimentId=51, jobId='vehicles', timestamp=1627831463, avgThr=15083.452965, avgLat=699.197782, recTime=142.0} 165
+2021-08-02 20:55:36 INFO  ExecutionManager:52 - FailureMetrics{experimentId=50, jobId='vehicles', timestamp=1627746543, avgThr=17993.173709, avgLat=718.52652, recTime=259.0} 226
+2021-08-02 20:55:36 INFO  ExecutionManager:91 - FailureMetrics{experimentId=51, jobId='vehicles', timestamp=1627834166, avgThr=20451.000467, avgLat=789.07745, recTime=200.0} 203
+2021-08-02 20:55:36 INFO  ExecutionManager:91 - FailureMetrics{experimentId=51, jobId='vehicles', timestamp=1627836439, avgThr=23011.120388, avgLat=922.915797, recTime=269.0} 227
+2021-08-02 20:55:36 INFO  ExecutionManager:91 - FailureMetrics{experimentId=51, jobId='vehicles', timestamp=1627841108, avgThr=25288.761556, avgLat=1172.455324, recTime=270.0} 250
+2021-08-02 20:55:36 INFO  ExecutionManager:91 - FailureMetrics{experimentId=51, jobId='vehicles', timestamp=1627838245, avgThr=27843.634751, avgLat=903.86039, recTime=359.0} 265
+
+2021-08-04 15:19:28 INFO  ExecutionManager:55 - FailureMetrics{experimentId=60, jobId='iot_profile_10000', timestamp=1627945211, avgThr=402.296882, avgLat=537.10559, recTime=97.0}
+2021-08-04 15:19:28 INFO  ExecutionManager:55 - FailureMetrics{experimentId=60, jobId='iot_profile_10000', timestamp=1627961250, avgThr=2584.756548, avgLat=508.545581, recTime=84.0}
+2021-08-04 15:19:28 INFO  ExecutionManager:55 - FailureMetrics{experimentId=60, jobId='iot_profile_10000', timestamp=1627974774, avgThr=5438.931294, avgLat=589.827849, recTime=82.0}
+2021-08-04 15:19:28 INFO  ExecutionManager:55 - FailureMetrics{experimentId=60, jobId='iot_profile_10000', timestamp=1627995656, avgThr=7663.962769, avgLat=586.094277, recTime=94.0}
+2021-08-04 15:19:28 INFO  ExecutionManager:55 - FailureMetrics{experimentId=60, jobId='iot_profile_10000', timestamp=1628016987, avgThr=10467.800192, avgLat=567.553056, recTime=79.0}
+2021-08-04 15:19:28 INFO  ExecutionManager:55 - FailureMetrics{experimentId=60, jobId='iot_profile_10000', timestamp=1627999213, avgThr=12894.822023, avgLat=665.199244, recTime=111.0}
+2021-08-04 15:19:28 INFO  ExecutionManager:55 - FailureMetrics{experimentId=60, jobId='iot_profile_10000', timestamp=1627970861, avgThr=15484.305641, avgLat=820.886196, recTime=111.0}
+2021-08-04 15:19:28 INFO  ExecutionManager:55 - FailureMetrics{experimentId=60, jobId='iot_profile_10000', timestamp=1628014774, avgThr=18064.180461, avgLat=860.274045, recTime=115.0}
+2021-08-04 15:19:28 INFO  ExecutionManager:55 - FailureMetrics{experimentId=60, jobId='iot_profile_10000', timestamp=1627968660, avgThr=20382.356977, avgLat=908.281188, recTime=142.0}
+2021-08-04 15:19:28 INFO  ExecutionManager:55 - FailureMetrics{experimentId=60, jobId='iot_profile_10000', timestamp=1628009629, avgThr=25515.095626, avgLat=1107.020282, recTime=174.0}
+2021-08-04 15:19:28 INFO  ExecutionManager:55 - FailureMetrics{experimentId=60, jobId='iot_profile_10000', timestamp=1628006879, avgThr=27752.380191, avgLat=1376.055473, recTime=271.0}
+2021-08-04 15:19:28 INFO  ExecutionManager:55 - FailureMetrics{experimentId=60, jobId='iot_profile_10000', timestamp=1628012825, avgThr=29964.456756, avgLat=7085.647716, recTime=1397.0}
+
+2021-08-04 15:19:28 INFO  ExecutionManager:55 - FailureMetrics{experimentId=60, jobId='iot_profile_30000', timestamp=1627945211, avgThr=400.776675, avgLat=432.809809, recTime=71.0}
+2021-08-04 15:19:28 INFO  ExecutionManager:55 - FailureMetrics{experimentId=60, jobId='iot_profile_30000', timestamp=1627961250, avgThr=2567.097909, avgLat=376.483854, recTime=80.0}
+2021-08-04 15:19:28 INFO  ExecutionManager:55 - FailureMetrics{experimentId=60, jobId='iot_profile_30000', timestamp=1627974774, avgThr=5372.909187, avgLat=440.186013, recTime=82.0}
+2021-08-04 15:19:28 INFO  ExecutionManager:55 - FailureMetrics{experimentId=60, jobId='iot_profile_30000', timestamp=1627995656, avgThr=7688.568578, avgLat=529.131395, recTime=69.0}
+2021-08-04 15:19:28 INFO  ExecutionManager:55 - FailureMetrics{experimentId=60, jobId='iot_profile_30000', timestamp=1628016987, avgThr=10515.07854, avgLat=741.775166, recTime=81.0}
+2021-08-04 15:19:28 INFO  ExecutionManager:55 - FailureMetrics{experimentId=60, jobId='iot_profile_30000', timestamp=1627999213, avgThr=12856.173739, avgLat=477.403513, recTime=113.0}
+2021-08-04 15:19:28 INFO  ExecutionManager:55 - FailureMetrics{experimentId=60, jobId='iot_profile_30000', timestamp=1627970861, avgThr=15591.201064, avgLat=655.338306, recTime=112.0}
+2021-08-04 15:19:28 INFO  ExecutionManager:55 - FailureMetrics{experimentId=60, jobId='iot_profile_30000', timestamp=1628014774, avgThr=17989.975733, avgLat=998.325781, recTime=142.0}
+2021-08-04 15:19:28 INFO  ExecutionManager:55 - FailureMetrics{experimentId=60, jobId='iot_profile_30000', timestamp=1627968660, avgThr=20378.646214, avgLat=934.76049, recTime=170.0}
+2021-08-04 15:19:28 INFO  ExecutionManager:55 - FailureMetrics{experimentId=60, jobId='iot_profile_30000', timestamp=1628012825, avgThr=22988.685235, avgLat=852.963513, recTime=134.0}
+2021-08-04 15:19:28 INFO  ExecutionManager:55 - FailureMetrics{experimentId=60, jobId='iot_profile_30000', timestamp=1628009629, avgThr=25507.824919, avgLat=955.282724, recTime=270.0}
+2021-08-04 15:19:28 INFO  ExecutionManager:55 - FailureMetrics{experimentId=60, jobId='iot_profile_30000', timestamp=1628006883, avgThr=28117.275853, avgLat=1170.536769, recTime=357.0}
+
+2021-08-02 20:55:36 INFO  ExecutionManager:52 - FailureMetrics{experimentId=50, jobId='profile_60000', timestamp=1627732016, avgThr=309.990089, avgLat=437.066138, recTime=100.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:52 - FailureMetrics{experimentId=50, jobId='profile_60000', timestamp=1627801488, avgThr=2539.716843, avgLat=368.706645, recTime=80.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:52 - FailureMetrics{experimentId=50, jobId='profile_60000', timestamp=1627758129, avgThr=5056.260499, avgLat=401.572209, recTime=82.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:52 - FailureMetrics{experimentId=50, jobId='profile_60000', timestamp=1627752377, avgThr=7801.09745, avgLat=442.995341, recTime=112.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:91 - FailureMetrics{experimentId=51, jobId='profile_60000', timestamp=1627848391, avgThr=10118.594981, avgLat=539.719045, recTime=126.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:52 - FailureMetrics{experimentId=50, jobId='profile_60000', timestamp=1627750262, avgThr=12956.273474, avgLat=514.813887, recTime=110.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:91 - FailureMetrics{experimentId=51, jobId='profile_60000', timestamp=1627831463, avgThr=15192.553941, avgLat=898.728355, recTime=141.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:52 - FailureMetrics{experimentId=50, jobId='profile_60000', timestamp=1627746544, avgThr=18016.957825, avgLat=700.825033, recTime=171.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:91 - FailureMetrics{experimentId=51, jobId='profile_60000', timestamp=1627834169, avgThr=20511.071132, avgLat=649.191453, recTime=203.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:91 - FailureMetrics{experimentId=51, jobId='profile_60000', timestamp=1627836448, avgThr=22985.801181, avgLat=736.075606, recTime=232.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:91 - FailureMetrics{experimentId=51, jobId='profile_60000', timestamp=1627841114, avgThr=25319.425157, avgLat=922.885274, recTime=293.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:91 - FailureMetrics{experimentId=51, jobId='profile_60000', timestamp=1627838245, avgThr=27769.486119, avgLat=1083.203248, recTime=414.0}
+
+2021-08-02 20:55:36 INFO  ExecutionManager:52 - FailureMetrics{experimentId=50, jobId='profile_90000', timestamp=1627732016, avgThr=312.192082, avgLat=399.255548, recTime=70.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:52 - FailureMetrics{experimentId=50, jobId='profile_90000', timestamp=1627801488, avgThr=2530.267362, avgLat=535.046171, recTime=94.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:52 - FailureMetrics{experimentId=50, jobId='profile_90000', timestamp=1627758129, avgThr=5031.2108, avgLat=427.564751, recTime=101.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:52 - FailureMetrics{experimentId=50, jobId='profile_90000', timestamp=1627752377, avgThr=7768.98431, avgLat=388.707741, recTime=112.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:91 - FailureMetrics{experimentId=51, jobId='profile_90000', timestamp=1627848391, avgThr=10200.58104, avgLat=677.830017, recTime=98.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:52 - FailureMetrics{experimentId=50, jobId='profile_90000', timestamp=1627750262, avgThr=12853.343662, avgLat=434.418779, recTime=137.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:91 - FailureMetrics{experimentId=51, jobId='profile_90000', timestamp=1627831463, avgThr=15118.832979, avgLat=574.48397, recTime=172.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:52 - FailureMetrics{experimentId=50, jobId='profile_90000', timestamp=1627746544, avgThr=17935.260645, avgLat=774.893978, recTime=206.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:91 - FailureMetrics{experimentId=51, jobId='profile_90000', timestamp=1627834175, avgThr=20471.926521, avgLat=685.295673, recTime=257.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:91 - FailureMetrics{experimentId=51, jobId='profile_90000', timestamp=1627836448, avgThr=23097.6405, avgLat=692.215648, recTime=325.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:91 - FailureMetrics{experimentId=51, jobId='profile_90000', timestamp=1627841114, avgThr=25468.783368, avgLat=851.926362, recTime=384.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:91 - FailureMetrics{experimentId=51, jobId='profile_90000', timestamp=1627838245, avgThr=27868.378983, avgLat=1001.561096, recTime=549.0}
+
+
+2021-08-02 20:55:36 INFO  ExecutionManager:52 - FailureMetrics{experimentId=50, jobId='profile_120000', timestamp=1627732016, avgThr=310.720889, avgLat=431.893131, recTime=80.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:52 - FailureMetrics{experimentId=50, jobId='profile_120000', timestamp=1627801488, avgThr=2530.876055, avgLat=447.870341, recTime=83.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:52 - FailureMetrics{experimentId=50, jobId='profile_120000', timestamp=1627758129, avgThr=5047.891058, avgLat=478.845498, recTime=107.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:52 - FailureMetrics{experimentId=50, jobId='profile_120000', timestamp=1627752377, avgThr=7751.617992, avgLat=439.240141, recTime=113.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:91 - FailureMetrics{experimentId=51, jobId='profile_120000', timestamp=1627848391, avgThr=10122.639102, avgLat=535.223904, recTime=112.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:52 - FailureMetrics{experimentId=50, jobId='profile_120000', timestamp=1627750262, avgThr=12938.826209, avgLat=540.153671, recTime=172.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:91 - FailureMetrics{experimentId=51, jobId='profile_120000', timestamp=1627831463, avgThr=15107.681626, avgLat=555.577151, recTime=211.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:52 - FailureMetrics{experimentId=50, jobId='profile_120000', timestamp=1627746544, avgThr=17891.382238, avgLat=614.62799, recTime=270.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:91 - FailureMetrics{experimentId=51, jobId='profile_120000', timestamp=1627834175, avgThr=20429.660339, avgLat=508.481445, recTime=297.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:91 - FailureMetrics{experimentId=51, jobId='profile_120000', timestamp=1627836448, avgThr=22959.501787, avgLat=647.011977, recTime=420.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:91 - FailureMetrics{experimentId=51, jobId='profile_120000', timestamp=1627841114, avgThr=25302.059468, avgLat=724.911088, recTime=430.0}
+2021-08-02 20:55:36 INFO  ExecutionManager:91 - FailureMetrics{experimentId=51, jobId='profile_120000', timestamp=1627838245, avgThr=27748.38743, avgLat=918.638588, recTime=609.0}
+
+
+

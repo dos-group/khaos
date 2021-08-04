@@ -1,0 +1,24 @@
+experimentId=15, jobId='b698564396ae624bd3b67023d6736a64', timestamp=1626164922, avgThr=267.139076, avgLat=446.37407, recTime=83.0}
+83
+experimentId=15, jobId='b698564396ae624bd3b67023d6736a64', timestamp=1626181775, avgThr=2577.389392, avgLat=383.485141, recTime=84.0}
+102
+experimentId=15, jobId='9a33d5e0ea9224180eb1a312aec639bb', timestamp=1626195270, avgThr=5460.897466, avgLat=469.433206, recTime=84.0}
+88
+experimentId=15, jobId='f8f3970c32f88c6dd3dbd3f5c09aa22c', timestamp=1626238046, avgThr=7989.280821, avgLat=367.266852, recTime=119.0}
+115
+experimentId=15, jobId='9a33d5e0ea9224180eb1a312aec639bb', timestamp=1626218549, avgThr=10222.456688, avgLat=405.918571, recTime=113.0}
+120
+experimentId=15, jobId='b698564396ae624bd3b67023d6736a64', timestamp=1626186161, avgThr=12906.91942, avgLat=494.318522, recTime=166.0}
+183
+experimentId=15, jobId='9a33d5e0ea9224180eb1a312aec639bb', timestamp=1626220767, avgThr=15198.90424, avgLat=497.556819, recTime=144.0}
+163
+experimentId=15, jobId='b698564396ae624bd3b67023d6736a64', timestamp=1626188186, avgThr=17743.535101, avgLat=619.415689, recTime=227.0}
+222
+experimentId=15, jobId='9a33d5e0ea9224180eb1a312aec639bb', timestamp=1626225567, avgThr=22680.536062, avgLat=1127.23044, recTime=245.0}
+219
+experimentId=16, jobId='70392d1004b3c16aa9e112eeff8bb457', timestamp=1626258851, avgThr=23071.559846, avgLat=999.472359, recTime=207.0}
+218
+experimentId=16, jobId='70392d1004b3c16aa9e112eeff8bb457', timestamp=1626255662, avgThr=25825.965154, avgLat=2527.854601, recTime=237.0}
+231
+experimentId=16, jobId='c8d89757474055593b4ad165f7c497e5', timestamp=1626252876, avgThr=27920.9748, avgLat=1467.646387, recTime=206.0}
+266

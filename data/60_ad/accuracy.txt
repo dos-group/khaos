@@ -1,0 +1,23 @@
+
+LATENCY
+
+accuracy = 0.8767520424719598
+percent error = 0.123247958
+
+RECOVERY TIME
+
+recTime: 202, 205
+recTime: 229, 205
+recTime: 215, 210
+recTime: 191, 177
+recTime: 166, 177
+recTime: 209, 204
+recTime: 237, 206
+recTime: 226, 249
+recTime: 204, 196
+recTime: 177, 203
+recTime: 153, 140
+recTime: 140, 147
+
+0.9272086806497488
+

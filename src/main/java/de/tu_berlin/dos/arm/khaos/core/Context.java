@@ -25,17 +25,16 @@ public enum Context implements AutoCloseable { get;
 
         public final Experiment experiment;
         public final String jobName;
-        public final int config;
 
         private String jobId;
+        private int config;
         private List<String> operatorIds;
         private String sinkId;
 
-        public Job(Experiment experiment, String jobName, int config) {
+        public Job(Experiment experiment, String jobName) {
 
             this.experiment = experiment;
             this.jobName = jobName;
-            this.config = config;
         }
 
         public String getJobId() {
@@ -46,6 +45,16 @@ public enum Context implements AutoCloseable { get;
         public void setJobId(String jobId) {
 
             this.jobId = jobId;
+        }
+
+        public int getConfig() {
+
+            return config;
+        }
+
+        public void setConfig(int config) {
+
+            this.config = config;
         }
 
         public void setOperatorIds(List<String> operatorIds) {
@@ -106,8 +115,10 @@ public enum Context implements AutoCloseable { get;
             String uniqueStr = RandomStringUtils.random(10, true, true);
             this.experimentId = experimentId;
             this.brokerList = brokerList;
-            this.consumerTopic = consumerTopic + "-" + uniqueStr;
-            this.producerTopic = producerTopic + "-" + uniqueStr;
+            //this.consumerTopic = consumerTopic + "-" + uniqueStr;
+            //this.producerTopic = producerTopic + "-" + uniqueStr;
+            this.consumerTopic = consumerTopic;
+            this.producerTopic = producerTopic;
             this.partitions = partitions;
 
             this.jobs = new ArrayList<>();
@@ -117,11 +128,13 @@ public enum Context implements AutoCloseable { get;
                 this.jobs.add(current);
             });*/
             // TODO remove!
-            this.jobs.add(new Job(this, "profile-" + 10000, 10000));
-            this.jobs.add(new Job(this, "profile-" + 30000, 30000));
-            this.jobs.add(new Job(this, "profile-" + 60000, 60000));
-            this.jobs.add(new Job(this, "profile-" + 90000, 90000));
-            this.jobs.add(new Job(this, "profile-" + 120000, 120000));
+            //for (int config : Arrays.asList(10000, 30000, 60000, 90000, 120000)) {
+            for (int config : Arrays.asList(10000, 30000)) {
+
+                Job job = new Job(this, "iot_profile_" + config);
+                job.setConfig(config);
+                this.jobs.add(job);
+            }
         }
 
         public long getStartTs() {
@@ -164,7 +177,6 @@ public enum Context implements AutoCloseable { get;
     public final long recTimeConst;
     public final long optInterval;
     public final int minUpTime;
-    public final boolean doReplayAll;
     public final int averagingWindow;
     public final float maxViolation;
     public final int experimentId;
@@ -186,8 +198,10 @@ public enum Context implements AutoCloseable { get;
     public final String jarId;
     public final String jobName;
     public final String jobId;
+    public final int jobConfig;
     public final int parallelism;
     public final String sinkRegex;
+    public final String savepoints;
     public final String promUrl;
 
     public final Experiment experiment;
@@ -212,14 +226,13 @@ public enum Context implements AutoCloseable { get;
         try {
 
             // get properties file
-            Properties props = FileReader.GET.read("iot.properties", Properties.class);
+            Properties props = FileReader.GET.read("advertising.properties", Properties.class);
 
             // load properties into context
             this.avgLatConst = Long.parseLong(props.getProperty("general.avgLatConst"));
             this.recTimeConst = Long.parseLong(props.getProperty("general.recTimeConst"));
             this.optInterval = Long.parseLong(props.getProperty("general.optInterval"));
             this.minUpTime = Integer.parseInt(props.getProperty("general.minUpTime"));
-            this.doReplayAll = Boolean.parseBoolean(props.getProperty("general.doReplayAll"));
             this.averagingWindow = Integer.parseInt(props.getProperty("general.averagingWindow"));
             this.maxViolation = Float.parseFloat(props.getProperty("general.maxViolation"));
             this.experimentId = Integer.parseInt(props.getProperty("experiment.id"));
@@ -241,8 +254,10 @@ public enum Context implements AutoCloseable { get;
             this.jarId = props.getProperty("flink.jarid");
             this.jobName = props.getProperty("flink.jobName");
             this.jobId = props.getProperty("flink.jobId");
+            this.jobConfig = Integer.parseInt(props.getProperty("flink.jobConfig"));
             this.parallelism = Integer.parseInt(props.getProperty("flink.parallelism"));
             this.sinkRegex = props.getProperty("flink.sinkRegex");
+            this.savepoints = props.getProperty("flink.savepoints");
             this.promUrl = props.getProperty("prometheus.url");
 
             // set experiment variables
@@ -259,8 +274,9 @@ public enum Context implements AutoCloseable { get;
             );
 
             // create object for target job and store list of operator ids
-            this.targetJob = new Job(experiment, this.jobName, 30000);
+            this.targetJob = new Job(experiment, this.jobName);
             this.targetJob.setJobId(this.jobId);
+            this.targetJob.setConfig(this.jobConfig);
 
             // create global context objects
             this.executors.put(ExecutorType.NEW_SINGLE_THREAD_SCHEDULED_EXECUTOR, Executors.newSingleThreadScheduledExecutor());
@@ -270,11 +286,11 @@ public enum Context implements AutoCloseable { get;
 
             // create forecast model
             this.forecast = new ForecastModel(
-                    Integer.parseInt(props.getProperty("arima.coefficient.p")),
-                    Integer.parseInt(props.getProperty("arima.coefficient.d")),
-                    Integer.parseInt(props.getProperty("arima.coefficient.q")),
-                    Boolean.parseBoolean(props.getProperty("arima.coefficient.constant")),
-                    props.getProperty("arima.strategy")
+                Integer.parseInt(props.getProperty("arima.coefficient.p")),
+                Integer.parseInt(props.getProperty("arima.coefficient.d")),
+                Integer.parseInt(props.getProperty("arima.coefficient.q")),
+                Boolean.parseBoolean(props.getProperty("arima.coefficient.constant")),
+                props.getProperty("arima.strategy")
             );
 
             // create multiple regression models
@@ -282,7 +298,7 @@ public enum Context implements AutoCloseable { get;
             this.availability = new RegressionModel();
         }
         catch (Exception e) {
-
+            e.printStackTrace();
             throw new IllegalStateException(e.fillInStackTrace());
         }
     }

@@ -7,5 +7,5 @@ public class Trigger {
 
     @SerializedName("request-id")
     @Expose
-    String requestId;
+    public String requestId;
 }

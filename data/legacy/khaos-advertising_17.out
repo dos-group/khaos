@@ -1,0 +1,571 @@
+2021-07-14 09:42:09 INFO  ExecutionManager:640 - START
+SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+2021-07-14 09:42:10 INFO  SequenceFSM:21 - STATE-CHANGE: START -> RECORD
+2021-07-14 09:42:10 INFO  IOManager:426 - Starting extract failure scenario
+2021-07-14 09:42:10 INFO  IOManager:412 - Starting get workload
+2021-07-14 09:42:10 INFO  IOManager:419 - Finished get workload
+2021-07-14 09:42:10 INFO  IOManager:430 - 86365
+2021-07-14 09:42:10 INFO  IOManager:461 - [(3405,1617731757,56967)]
+2021-07-14 09:42:10 INFO  IOManager:462 - [(47686,1617776038,91196)]
+2021-07-14 09:42:10 INFO  IOManager:476 - {56967=[(3405,1617731757,56967)], 60079=[], 63191=[], 66303=[], 69415=[], 72527=[], 75639=[], 78751=[], 81863=[], 84975=[], 88087=[], 91196=[(47686,1617776038,91196)]}
+2021-07-14 09:42:12 INFO  IOManager:512 - [(3483,1617731835,57088), (78652,1617807004,59927), (76063,1617804415,63262), (69468,1617797820,66094), (65809,1617794161,69169), (38349,1617766701,72573), (53864,1617782216,75444), (33519,1617761871,78254), (45014,1617773366,82658), (45583,1617773935,85890), (46230,1617774582,88636), (47883,1617776235,91157)]
+2021-07-14 09:42:12 INFO  IOManager:512 - [(3681,1617732033,57416), (78576,1617806928,60008), (8813,1617737165,62688), (23566,1617751918,66309), (65773,1617794125,69202), (63457,1617791809,72085), (60434,1617788786,75557), (33346,1617761698,78600), (51779,1617780131,81359), (50803,1617779155,84543), (49711,1617778063,87626), (47960,1617776312,91117)]
+2021-07-14 09:42:12 INFO  IOManager:512 - [(3502,1617731854,57118), (78489,1617806841,60104), (8682,1617737034,62988), (23597,1617751949,66327), (26151,1617754503,69863), (38379,1617766731,72584), (59568,1617787920,75747), (33362,1617761714,78570), (45015,1617773367,82664), (50838,1617779190,84436), (49619,1617777971,87862), (47873,1617776225,91161)]
+2021-07-14 09:42:12 INFO  IOManager:512 - [(3622,1617731974,57315), (78753,1617807105,59823), (76497,1617804849,62823), (69355,1617797707,66207), (26180,1617754532,69926), (40685,1617769037,72556), (58476,1617786828,75603), (30430,1617758782,79037), (51740,1617780092,81494), (50800,1617779152,84552), (49670,1617778022,87732), (47525,1617775877,91159)]
+2021-07-14 09:42:12 INFO  IOManager:512 - [(3559,1617731911,57210), (10151,1617738503,59786), (6123,1617734475,63342), (23605,1617751957,66332), (65724,1617794076,69247), (38171,1617766523,72500), (58361,1617786713,75577), (33300,1617761652,78686), (51792,1617780144,81314), (50846,1617779198,84411), (49679,1617778031,87708), (47897,1617776249,91151)]
+2021-07-14 09:42:12 INFO  IOManager:512 - [(3456,1617731808,57046), (13814,1617742166,60352), (6213,1617734565,63507), (24004,1617752356,66623), (65720,1617794072,69251), (40267,1617768619,72692), (58355,1617786707,75575), (30467,1617758819,79091), (51731,1617780083,81525), (50774,1617779126,84631), (49698,1617778050,87659), (47864,1617776216,91165)]
+2021-07-14 09:42:12 INFO  IOManager:512 - [(3452,1617731804,57040), (13654,1617742006,60170), (16069,1617744421,63402), (23271,1617751623,66160), (65890,1617794242,69096), (63394,1617791746,72184), (58575,1617786927,75624), (44473,1617772825,79470), (45064,1617773416,82973), (45539,1617773891,85668), (49707,1617778059,87636), (48016,1617776368,91079)]
+2021-07-14 09:42:12 INFO  IOManager:512 - [(3577,1617731929,57240), (78680,1617807032,59898), (76202,1617804554,63132), (23502,1617751854,66273), (65881,1617794233,69104), (42625,1617770977,72883), (58400,1617786752,75586), (33326,1617761678,78638), (51731,1617780083,81525), (45541,1617773893,85678), (49748,1617778100,87530), (47595,1617775947,91183)]
+2021-07-14 09:42:13 INFO  IOManager:545 - Finished extract failiure scenario
+2021-07-14 09:42:13 INFO  IOManager:557 - Starting get scenario
+2021-07-14 09:42:13 INFO  IOManager:564 - Finished get scenario
+2021-07-14 09:42:13 INFO  ExecutionManager:123 - 3577 1617731929 57240
+2021-07-14 09:42:13 INFO  ExecutionManager:123 - 23502 1617751854 66273
+2021-07-14 09:42:13 INFO  ExecutionManager:123 - 33326 1617761678 78638
+2021-07-14 09:42:13 INFO  ExecutionManager:123 - 42625 1617770977 72883
+2021-07-14 09:42:13 INFO  ExecutionManager:123 - 45541 1617773893 85678
+2021-07-14 09:42:13 INFO  ExecutionManager:123 - 47595 1617775947 91183
+2021-07-14 09:42:13 INFO  ExecutionManager:123 - 49748 1617778100 87530
+2021-07-14 09:42:13 INFO  ExecutionManager:123 - 51731 1617780083 81525
+2021-07-14 09:42:13 INFO  ExecutionManager:123 - 58400 1617786752 75586
+2021-07-14 09:42:13 INFO  ExecutionManager:123 - 65881 1617794233 69104
+2021-07-14 09:42:13 INFO  ExecutionManager:123 - 76202 1617804554 63132
+2021-07-14 09:42:13 INFO  ExecutionManager:123 - 78680 1617807032 59898
+2021-07-14 09:42:13 INFO  SequenceFSM:21 - STATE-CHANGE: RECORD -> DEPLOY
+2021-07-14 09:42:13 INFO  SequenceFSM:21 - STATE-CHANGE: DEPLOY -> REGISTER
+2021-07-14 09:42:13 INFO  IOManager:557 - Starting get scenario
+2021-07-14 09:42:13 INFO  IOManager:564 - Finished get scenario
+2021-07-14 09:42:13 INFO  SequenceFSM:21 - STATE-CHANGE: REGISTER -> MODEL
+2021-07-14 09:42:13 INFO  ExecutionManager:287 - 80 77
+2021-07-14 09:42:13 INFO  ExecutionManager:293 - [[D@4dd02341, [D@3212a8d7, [D@7a1a3478, [D@495b0487, [D@55dfcc6, [D@222eb8aa, [D@93cf163, [D@1852a3ff, [D@7203c7ff, [D@25bfcafd, [D@4b6690c0, [D@46268f08, [D@2a76840c, [D@71454b9d, [D@eda25e5, [D@7cf6a5f9, [D@623e088f, [D@39fcbef6, [D@66565121, [D@2fc6f97f, [D@3d2ee678, [D@6179e425, [D@35f26e72, [D@2d6764b2, [D@67304a40, [D@49c6c24f, [D@6fe1b4fb, [D@79351f41, [D@1c32386d, [D@6399551e, [D@13d73fa, [D@5023bb8b, [D@5d5f10b2, [D@74c79fa2, [D@1e0f9063, [D@53bd8fca, [D@7642df8f, [D@3e30646a, [D@5cde6747, [D@63a270c9, [D@37c7595, [D@3ed242a4, [D@1199fe66, [D@614df0a4, [D@1fdf1c5, [D@2d96543c, [D@73a2e526, [D@7d64e326, [D@13f95696, [D@cd1d761, [D@68be8808, [D@32193bea, [D@6b8d96d9, [D@69653e16, [D@758705fa, [D@ebaa6cb, [D@906d29b, [D@49d3c823, [D@436bc36, [D@5fe1ce85, [D@604c5de8, [D@37091312, [D@66fdec9, [D@57abad67, [D@550a1967, [D@2a640157, [D@52851b44, [D@584f54e6, [D@5d8bafa9, [D@576f63f6, [D@2dca0d64, [D@f80945f, [D@ff684e1, [D@23aa363a, [D@5ef6ae06, [D@55dfebeb, [D@6e35bc3d, [D@1cdc4c27, [D@77b14724, [D@5d9b7a8a]
+2021-07-14 09:42:13 INFO  ExecutionManager:298 - [[D@1e8ce150, [D@604f2bd2, [D@1d3ac898, [D@1b73be9f, [D@628c4ac0, [D@7b84fcf8, [D@30b19518, [D@363042d7, [D@366ac49b, [D@6ad59d92, [D@56f0cc85, [D@62e20a76, [D@2cc44ad, [D@44b3606b, [D@1477089c, [D@663411de, [D@63dd899, [D@59d2400d, [D@75cd8043, [D@33b1c5c5, [D@5b202a3a, [D@10b9db7b, [D@9ef8eb7, [D@34cdeda2, [D@6ee660fb, [D@305a0c5f, [D@4535b6d5, [D@1ecee32c, [D@4372b9b6, [D@232a7d73, [D@4b41e4dd, [D@22ffa91a, [D@74960bfa, [D@42721fe, [D@40844aab, [D@1f6c9cd8, [D@5b619d14, [D@66746f57, [D@447a020, [D@7f36662c, [D@28e8dde3, [D@6d23017e, [D@54dcfa5a, [D@1817f1eb, [D@767e20cf, [D@3a3e78f, [D@301ec38b, [D@17a1e4ca, [D@10ded6a9, [D@c5dc4a2, [D@4a194c39, [D@52066604, [D@340b9973, [D@56113384, [D@5669c5fb, [D@373ebf74, [D@5f9678e1, [D@c4ed84, [D@189aa67a, [D@5a9d6f02, [D@362045c0, [D@112f364d, [D@5ccbeb64, [D@6d9f7a80, [D@59252cb6, [D@31d0e481, [D@3243b914, [D@241e8ea6, [D@542e560f, [D@626c44e7, [D@4dc8caa7, [D@1d730606, [D@3bcbb589, [D@3b00856b, [D@3016fd5e, [D@35d08e6c, [D@53d102a2]
+2021-07-14 09:42:13 INFO  ExecutionManager:300 - -PERFORMANCE -----------------------------------------------------------------------
+2021-07-14 09:42:15 INFO  RegressionModel:27 - Linear Model:
+
+Residuals:
+       Min          1Q      Median          3Q         Max
+ -173.3280    -55.3143     -7.8755     47.3526    412.6434
+
+Coefficients:
+                  Estimate Std. Error    t value   Pr(>|t|)
+Intercept         274.7162    75.8402     3.6223     0.0005 ***
+thr                 0.0047     0.0010     4.8195     0.0000 ***
+conf               -0.0008     0.0003    -2.6346     0.0102 *
+---------------------------------------------------------------------
+Significance codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 99.5462 on 77 degrees of freedom
+Multiple R-squared: 0.2817,    Adjusted R-squared: 0.2630
+F-statistic: 15.0969 on 3 and 77 DF,  p-value: 2.940e-06
+
+2021-07-14 09:42:16 INFO  RegressionModel:28 - [274.71616392312563, 0.0047298210978040595, -8.14383936405724E-4]
+2021-07-14 09:42:16 INFO  ExecutionManager:302 - [628.6703336552787]
+2021-07-14 09:42:16 INFO  ExecutionManager:304 - -AVAILABILITY -----------------------------------------------------------------------
+2021-07-14 09:42:16 INFO  RegressionModel:27 - Linear Model:
+
+Residuals:
+       Min          1Q      Median          3Q         Max
+  -44.2031    -16.1223     -2.8874     13.2548     58.7380
+
+Coefficients:
+                  Estimate Std. Error    t value   Pr(>|t|)
+Intercept        -154.5804    18.5470    -8.3345     0.0000 ***
+thr                 0.0040     0.0002    16.4286     0.0000 ***
+conf                0.0011     0.0001    14.8036     0.0000 ***
+---------------------------------------------------------------------
+Significance codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 23.4525 on 74 degrees of freedom
+Multiple R-squared: 0.8703,    Adjusted R-squared: 0.8668
+F-statistic: 248.2925 on 3 and 74 DF,  p-value: 1.506e-33
+
+2021-07-14 09:42:16 INFO  RegressionModel:28 - [-154.58040992989058, 0.003962422738238523, 0.0011068675456243787]
+2021-07-14 09:42:16 INFO  ExecutionManager:306 - [195.61943549792267]
+2021-07-14 09:42:16 INFO  SequenceFSM:21 - STATE-CHANGE: MODEL -> OPTIMIZE
+2021-07-14 09:42:16 INFO  SequenceFSM:21 - STATE-CHANGE: OPTIMIZE -> REPLAY
+2021-07-14 09:42:16 INFO  IOManager:412 - Starting get workload
+2021-07-14 09:42:16 INFO  ExecutionManager:327 - uptime: 391, chkInt: 48000
+2021-07-14 09:42:16 INFO  IOManager:419 - Finished get workload
+2021-07-14 09:42:16 INFO  IOManager:412 - Starting get workload
+2021-07-14 09:42:16 INFO  IOManager:419 - Finished get workload
+2021-07-14 09:42:16 INFO  IOManager$DatabaseToQueue:56 - Starting replay events from database to queue
+2021-07-14 09:42:16 INFO  IOManager$QueueToKafka:98 - Starting replay events from queue to kafka topic ad-events
+2021-07-14 09:45:45 INFO  ExecutionManager:335 - startTime: 1626248446
+2021-07-14 09:45:45 INFO  ExecutionManager:336 - stopTime: 1626248746
+2021-07-14 09:45:45 INFO  ExecutionManager:343 - recTime: 82.11156522021514, avgLat: 599.7439867109634, predLat: 454.73839724119813, avgThr: 46325.78225152658
+2021-07-14 09:45:45 INFO  ExecutionManager:348 - weight: 1.3188769418845727
+2021-07-14 09:45:45 INFO  ExecutionManager:486 - No violation
+2021-07-14 09:50:45 INFO  ExecutionManager:327 - uptime: 901, chkInt: 48000
+2021-07-14 09:50:45 INFO  ExecutionManager:335 - startTime: 1626248746
+2021-07-14 09:50:45 INFO  ExecutionManager:336 - stopTime: 1626249046
+2021-07-14 09:50:45 INFO  ExecutionManager:343 - recTime: 190.8827198984118, avgLat: 670.1054900332202, predLat: 584.5751502117173, avgThr: 73776.4511638876
+2021-07-14 09:50:45 INFO  ExecutionManager:348 - weight: 1.2325944542153746
+2021-07-14 09:50:45 INFO  ExecutionManager:486 - No violation
+2021-07-14 09:55:45 INFO  ExecutionManager:327 - uptime: 1201, chkInt: 48000
+2021-07-14 09:55:45 INFO  ExecutionManager:335 - startTime: 1626249046
+2021-07-14 09:55:45 INFO  ExecutionManager:336 - stopTime: 1626249346
+2021-07-14 09:55:45 INFO  ExecutionManager:343 - recTime: 188.8953923219864, avgLat: 650.3960963455136, predLat: 582.202938935895, avgThr: 73274.9076114425
+2021-07-14 09:55:45 INFO  ExecutionManager:348 - weight: 1.1941061466058722
+2021-07-14 09:55:45 INFO  ExecutionManager:486 - No violation
+2021-07-14 10:00:45 INFO  ExecutionManager:327 - uptime: 1501, chkInt: 48000
+2021-07-14 10:00:45 INFO  ExecutionManager:335 - startTime: 1626249346
+2021-07-14 10:00:45 INFO  ExecutionManager:336 - stopTime: 1626249646
+2021-07-14 10:00:45 INFO  ExecutionManager:343 - recTime: 185.83473761717053, avgLat: 588.184750830565, predLat: 578.5495303643585, avgThr: 72502.48757778993
+2021-07-14 10:00:45 INFO  ExecutionManager:348 - weight: 1.1497431344067266
+2021-07-14 10:00:45 INFO  ExecutionManager:486 - No violation
+2021-07-14 10:05:45 INFO  ExecutionManager:327 - uptime: 1801, chkInt: 48000
+2021-07-14 10:05:45 INFO  ExecutionManager:335 - startTime: 1626249646
+2021-07-14 10:05:45 INFO  ExecutionManager:336 - stopTime: 1626249946
+2021-07-14 10:05:45 INFO  ExecutionManager:343 - recTime: 184.32105595648702, avgLat: 671.0527906976746, predLat: 576.7426955244084, avgThr: 72120.47844835605
+2021-07-14 10:05:45 INFO  ExecutionManager:348 - weight: 1.1524988992429095
+2021-07-14 10:05:45 INFO  ExecutionManager:486 - No violation
+2021-07-14 10:10:46 INFO  ExecutionManager:327 - uptime: 2101, chkInt: 48000
+2021-07-14 10:10:46 INFO  ExecutionManager:335 - startTime: 1626249947
+2021-07-14 10:10:46 INFO  ExecutionManager:336 - stopTime: 1626250247
+2021-07-14 10:10:46 INFO  ExecutionManager:343 - recTime: 183.51904948981493, avgLat: 766.3748255813929, predLat: 575.7853652855033, avgThr: 71918.07539354505
+2021-07-14 10:10:46 INFO  ExecutionManager:348 - weight: 1.1822503865408163
+2021-07-14 10:10:46 INFO  ExecutionManager:486 - No violation
+2021-07-14 10:15:46 INFO  ExecutionManager:327 - uptime: 2402, chkInt: 48000
+2021-07-14 10:15:46 INFO  ExecutionManager:335 - startTime: 1626250247
+2021-07-14 10:15:46 INFO  ExecutionManager:336 - stopTime: 1626250547
+2021-07-14 10:15:46 INFO  ExecutionManager:343 - recTime: 181.25054339996794, avgLat: 610.0617940199319, predLat: 573.0775199411105, avgThr: 71345.57058027633
+2021-07-14 10:15:46 INFO  ExecutionManager:348 - weight: 1.1398602712216375
+2021-07-14 10:15:46 INFO  ExecutionManager:486 - No violation
+2021-07-14 10:20:46 INFO  ExecutionManager:327 - uptime: 2702, chkInt: 48000
+2021-07-14 10:20:46 INFO  ExecutionManager:335 - startTime: 1626250547
+2021-07-14 10:20:46 INFO  ExecutionManager:336 - stopTime: 1626250847
+2021-07-14 10:20:46 INFO  ExecutionManager:343 - recTime: 179.5669591748206, avgLat: 563.7987956810609, predLat: 571.0678776807868, avgThr: 70920.68299599606
+2021-07-14 10:20:46 INFO  ExecutionManager:348 - weight: 1.1133534554342852
+2021-07-14 10:20:46 INFO  ExecutionManager:486 - No violation
+2021-07-14 10:25:46 INFO  ExecutionManager:327 - uptime: 3002, chkInt: 48000
+2021-07-14 10:25:46 INFO  ExecutionManager:335 - startTime: 1626250847
+2021-07-14 10:25:46 INFO  ExecutionManager:336 - stopTime: 1626251147
+2021-07-14 10:25:46 INFO  ExecutionManager:343 - recTime: 178.40020612917672, avgLat: 972.2603073089689, predLat: 569.6751607659663, avgThr: 70626.22853650985
+2021-07-14 10:25:46 INFO  ExecutionManager:348 - weight: 1.2116139452276151
+2021-07-14 10:25:46 INFO  ExecutionManager:486 - No violation
+2021-07-14 10:30:46 INFO  ExecutionManager:327 - uptime: 3302, chkInt: 48000
+2021-07-14 10:30:46 INFO  ExecutionManager:335 - startTime: 1626251147
+2021-07-14 10:30:46 INFO  ExecutionManager:336 - stopTime: 1626251447
+2021-07-14 10:30:46 INFO  ExecutionManager:343 - recTime: 177.2117996751339, avgLat: 692.4909551495003, predLat: 568.2565968492861, avgThr: 70326.3093879106
+2021-07-14 10:30:46 INFO  ExecutionManager:348 - weight: 1.2452755451667565
+2021-07-14 10:30:46 INFO  ExecutionManager:486 - No violation
+2021-07-14 10:35:47 INFO  ExecutionManager:327 - uptime: 3603, chkInt: 48000
+2021-07-14 10:35:47 INFO  ExecutionManager:335 - startTime: 1626251448
+2021-07-14 10:35:47 INFO  ExecutionManager:336 - stopTime: 1626251748
+2021-07-14 10:35:47 INFO  ExecutionManager:343 - recTime: 175.299395132314, avgLat: 628.4143604651176, predLat: 565.973818874368, avgThr: 69843.67422524493
+2021-07-14 10:35:47 INFO  ExecutionManager:348 - weight: 1.2364092322806486
+2021-07-14 10:35:47 INFO  ExecutionManager:486 - No violation
+2021-07-14 10:40:47 INFO  ExecutionManager:327 - uptime: 3903, chkInt: 48000
+2021-07-14 10:40:47 INFO  ExecutionManager:335 - startTime: 1626251748
+2021-07-14 10:40:47 INFO  ExecutionManager:336 - stopTime: 1626252048
+2021-07-14 10:40:47 INFO  ExecutionManager:343 - recTime: 174.5093848626736, avgLat: 654.5873338870427, predLat: 565.0308081237058, avgThr: 69644.29866089221
+2021-07-14 10:40:47 INFO  ExecutionManager:348 - weight: 1.2076576755580313
+2021-07-14 10:40:47 INFO  ExecutionManager:486 - No violation
+2021-07-14 10:43:02 INFO  KubernetesClient:67 - Running command: [[sh, -c, kill 1]] on pod [flink-native-taskmanager-1-463] in namespace [khaos]
+
+2021-07-14 10:43:03 INFO  KubernetesClient:35 - Reading data... Switching Protocols
+2021-07-14 10:43:03 INFO  KubernetesClient:48 - Exit with: 1000 and with reason: 
+2021-07-14 10:43:03 INFO  ExecutionManager:166 - FailureMetrics{experimentId=17, jobId='de20f78fd96928f1ccd59864b9534014', timestamp=1626252138, avgThr=69525.478414, avgLat=597.711728, recTime=0.0}
+2021-07-14 10:43:03 INFO  ExecutionManager:168 - Finishing inject failure into job de20f78fd96928f1ccd59864b9534014
+2021-07-14 10:45:47 INFO  ExecutionManager:327 - uptime: 161, chkInt: 48000
+2021-07-14 10:53:06 INFO  ExecutionManager:335 - startTime: 1626252487
+2021-07-14 10:53:06 INFO  ExecutionManager:336 - stopTime: 1626252787
+2021-07-14 10:53:06 INFO  ExecutionManager:343 - recTime: 171.4428905029355, avgLat: 668.5264950166113, predLat: 561.3704289372504, avgThr: 68870.40486855512
+2021-07-14 10:53:06 INFO  ExecutionManager:348 - weight: 1.228715465594655
+2021-07-14 10:53:06 INFO  ExecutionManager:486 - No violation
+2021-07-14 10:58:06 INFO  ExecutionManager:327 - uptime: 900, chkInt: 48000
+2021-07-14 10:58:06 INFO  ExecutionManager:335 - startTime: 1626252787
+2021-07-14 10:58:06 INFO  ExecutionManager:336 - stopTime: 1626253087
+2021-07-14 10:58:06 INFO  ExecutionManager:343 - recTime: 170.34893384162203, avgLat: 694.461827242522, predLat: 560.0646068080689, avgThr: 68594.3220945602
+2021-07-14 10:58:06 INFO  ExecutionManager:348 - weight: 1.2708315122284255
+2021-07-14 10:58:06 INFO  ExecutionManager:486 - No violation
+2021-07-14 11:03:06 INFO  ExecutionManager:327 - uptime: 1200, chkInt: 48000
+2021-07-14 11:03:06 INFO  ExecutionManager:335 - startTime: 1626253087
+2021-07-14 11:03:06 INFO  ExecutionManager:336 - stopTime: 1626253387
+2021-07-14 11:03:07 INFO  ExecutionManager:343 - recTime: 168.90126797247618, avgLat: 610.5447591362132, predLat: 558.3365729704929, avgThr: 68228.97342664158
+2021-07-14 11:03:07 INFO  ExecutionManager:348 - weight: 1.168633876628254
+2021-07-14 11:03:07 INFO  ExecutionManager:486 - No violation
+2021-07-14 11:08:07 INFO  ExecutionManager:327 - uptime: 1500, chkInt: 48000
+2021-07-14 11:08:07 INFO  ExecutionManager:335 - startTime: 1626253388
+2021-07-14 11:08:07 INFO  ExecutionManager:336 - stopTime: 1626253688
+2021-07-14 11:08:07 INFO  ExecutionManager:343 - recTime: 168.89992821939413, avgLat: 463.92465946843936, predLat: 558.3349737488014, avgThr: 68228.63531201561
+2021-07-14 11:08:07 INFO  ExecutionManager:348 - weight: 1.1040144931542586
+2021-07-14 11:08:07 INFO  ExecutionManager:486 - No violation
+2021-07-14 11:13:07 INFO  ExecutionManager:327 - uptime: 1801, chkInt: 48000
+2021-07-14 11:13:07 INFO  ExecutionManager:335 - startTime: 1626253688
+2021-07-14 11:13:07 INFO  ExecutionManager:336 - stopTime: 1626253988
+2021-07-14 11:13:07 INFO  ExecutionManager:343 - recTime: 167.85993005897248, avgLat: 470.1568770764104, predLat: 557.093560208199, avgThr: 67966.17009083026
+2021-07-14 11:13:07 INFO  ExecutionManager:348 - weight: 1.0596181448735245
+2021-07-14 11:13:07 INFO  ExecutionManager:486 - No violation
+2021-07-14 11:18:07 INFO  ExecutionManager:327 - uptime: 2101, chkInt: 48000
+2021-07-14 11:18:07 INFO  ExecutionManager:335 - startTime: 1626253988
+2021-07-14 11:18:07 INFO  ExecutionManager:336 - stopTime: 1626254288
+2021-07-14 11:18:07 INFO  ExecutionManager:343 - recTime: 166.56459159627028, avgLat: 540.7318272425243, predLat: 555.5473548700959, avgThr: 67639.26442016524
+2021-07-14 11:18:07 INFO  ExecutionManager:348 - weight: 1.0287570071932033
+2021-07-14 11:18:07 INFO  ExecutionManager:486 - No violation
+2021-07-14 11:23:07 INFO  ExecutionManager:327 - uptime: 2401, chkInt: 48000
+2021-07-14 11:23:07 INFO  ExecutionManager:335 - startTime: 1626254288
+2021-07-14 11:23:07 INFO  ExecutionManager:336 - stopTime: 1626254588
+2021-07-14 11:23:07 INFO  ExecutionManager:343 - recTime: 165.4438740777081, avgLat: 594.8890946843878, predLat: 554.2095891358092, avgThr: 67356.42798584263
+2021-07-14 11:23:07 INFO  ExecutionManager:348 - weight: 1.0091766657202406
+2021-07-14 11:23:07 INFO  ExecutionManager:486 - No violation
+2021-07-14 11:28:08 INFO  ExecutionManager:327 - uptime: 2701, chkInt: 48000
+2021-07-14 11:28:08 INFO  ExecutionManager:335 - startTime: 1626254588
+2021-07-14 11:28:08 INFO  ExecutionManager:336 - stopTime: 1626254888
+2021-07-14 11:28:08 INFO  ExecutionManager:343 - recTime: 164.52131609432033, avgLat: 610.6013787375404, predLat: 553.1083602912274, avgThr: 67123.60124212223
+2021-07-14 11:28:08 INFO  ExecutionManager:348 - weight: 0.9865063249891066
+2021-07-14 11:28:08 INFO  ExecutionManager:486 - No violation
+2021-07-14 11:33:08 INFO  ExecutionManager:327 - uptime: 3001, chkInt: 48000
+2021-07-14 11:33:08 INFO  ExecutionManager:335 - startTime: 1626254889
+2021-07-14 11:33:08 INFO  ExecutionManager:336 - stopTime: 1626255189
+2021-07-14 11:33:08 INFO  ExecutionManager:343 - recTime: 163.45328123464643, avgLat: 596.7907890365435, predLat: 551.8334802125003, avgThr: 66854.06037527653
+2021-07-14 11:33:08 INFO  ExecutionManager:348 - weight: 0.984500044979265
+2021-07-14 11:33:08 INFO  ExecutionManager:486 - No violation
+2021-07-14 11:38:08 INFO  ExecutionManager:327 - uptime: 3302, chkInt: 48000
+2021-07-14 11:38:08 INFO  ExecutionManager:335 - startTime: 1626255189
+2021-07-14 11:38:08 INFO  ExecutionManager:336 - stopTime: 1626255489
+2021-07-14 11:38:08 INFO  ExecutionManager:343 - recTime: 162.6598341525565, avgLat: 555.0946843853823, predLat: 550.8863670454361, avgThr: 66653.81745963986
+2021-07-14 11:38:08 INFO  ExecutionManager:348 - weight: 1.0139553413722702
+2021-07-14 11:38:08 INFO  ExecutionManager:486 - No violation
+2021-07-14 11:43:08 INFO  ExecutionManager:327 - uptime: 3602, chkInt: 48000
+2021-07-14 11:43:08 INFO  ExecutionManager:335 - startTime: 1626255489
+2021-07-14 11:43:08 INFO  ExecutionManager:336 - stopTime: 1626255789
+2021-07-14 11:43:08 INFO  ExecutionManager:343 - recTime: 161.3350866597248, avgLat: 475.684867109635, predLat: 549.3050570604132, avgThr: 66319.48980700262
+2021-07-14 11:43:08 INFO  ExecutionManager:348 - weight: 1.0176269703058711
+2021-07-14 11:43:08 INFO  ExecutionManager:486 - No violation
+2021-07-14 11:48:08 INFO  ExecutionManager:327 - uptime: 3902, chkInt: 48000
+2021-07-14 11:48:08 INFO  ExecutionManager:335 - startTime: 1626255789
+2021-07-14 11:48:08 INFO  ExecutionManager:336 - stopTime: 1626256089
+2021-07-14 11:48:08 INFO  ExecutionManager:343 - recTime: 159.76421187431438, avgLat: 428.3628156146183, predLat: 547.4299525617586, avgThr: 65923.046799988
+2021-07-14 11:48:08 INFO  ExecutionManager:348 - weight: 0.9858213525268686
+2021-07-14 11:48:08 INFO  ExecutionManager:486 - No violation
+2021-07-14 11:53:08 INFO  ExecutionManager:327 - uptime: 4202, chkInt: 48000
+2021-07-14 11:53:08 INFO  ExecutionManager:335 - startTime: 1626256089
+2021-07-14 11:53:08 INFO  ExecutionManager:336 - stopTime: 1626256389
+2021-07-14 11:53:08 INFO  ExecutionManager:343 - recTime: 158.69762738261588, avgLat: 536.3727990033212, predLat: 546.1568037422894, avgThr: 65653.87196374308
+2021-07-14 11:53:08 INFO  ExecutionManager:348 - weight: 0.9706021493244693
+2021-07-14 11:53:08 INFO  ExecutionManager:486 - No violation
+2021-07-14 11:58:09 INFO  ExecutionManager:327 - uptime: 4502, chkInt: 48000
+2021-07-14 11:58:09 INFO  ExecutionManager:335 - startTime: 1626256390
+2021-07-14 11:58:09 INFO  ExecutionManager:336 - stopTime: 1626256690
+2021-07-14 11:58:09 INFO  ExecutionManager:343 - recTime: 157.2120393580984, avgLat: 411.7805647840534, predLat: 544.3835034042918, avgThr: 65278.95284918694
+2021-07-14 11:58:09 INFO  ExecutionManager:348 - weight: 0.9126806509831523
+2021-07-14 11:58:09 INFO  ExecutionManager:486 - No violation
+2021-07-14 12:03:09 INFO  ExecutionManager:327 - uptime: 4802, chkInt: 48000
+2021-07-14 12:03:09 INFO  ExecutionManager:335 - startTime: 1626256690
+2021-07-14 12:03:09 INFO  ExecutionManager:336 - stopTime: 1626256990
+2021-07-14 12:03:09 INFO  ExecutionManager:343 - recTime: 156.1770994599478, avgLat: 423.66598006644494, predLat: 543.1481277544417, avgThr: 65017.76418595747
+2021-07-14 12:03:09 INFO  ExecutionManager:348 - weight: 0.8624390252429274
+2021-07-14 12:03:09 INFO  ExecutionManager:486 - No violation
+2021-07-14 12:08:09 INFO  ExecutionManager:327 - uptime: 5103, chkInt: 48000
+2021-07-14 12:08:09 INFO  ExecutionManager:335 - startTime: 1626256990
+2021-07-14 12:08:09 INFO  ExecutionManager:336 - stopTime: 1626257290
+2021-07-14 12:08:09 INFO  ExecutionManager:343 - recTime: 154.76716289302826, avgLat: 387.9391445182727, predLat: 541.4651302144705, avgThr: 64661.93729416391
+2021-07-14 12:08:09 INFO  ExecutionManager:348 - weight: 0.8139094820455596
+2021-07-14 12:08:09 INFO  ExecutionManager:486 - No violation
+2021-07-14 12:13:09 INFO  ExecutionManager:327 - uptime: 5403, chkInt: 48000
+2021-07-14 12:13:09 INFO  ExecutionManager:335 - startTime: 1626257290
+2021-07-14 12:13:09 INFO  ExecutionManager:336 - stopTime: 1626257590
+2021-07-14 12:13:09 INFO  ExecutionManager:343 - recTime: 153.80067547790932, avgLat: 335.2847425249164, predLat: 540.3114641700383, avgThr: 64418.024042356614
+2021-07-14 12:13:09 INFO  ExecutionManager:348 - weight: 0.7730034800159746
+2021-07-14 12:13:09 INFO  ExecutionManager:486 - No violation
+2021-07-14 12:18:09 INFO  ExecutionManager:327 - uptime: 5703, chkInt: 48000
+2021-07-14 12:18:09 INFO  ExecutionManager:335 - startTime: 1626257590
+2021-07-14 12:18:09 INFO  ExecutionManager:336 - stopTime: 1626257890
+2021-07-14 12:18:09 INFO  ExecutionManager:343 - recTime: 152.25429820864125, avgLat: 476.09594684385297, predLat: 538.4656015964251, avgThr: 64027.763494347666
+2021-07-14 12:18:09 INFO  ExecutionManager:348 - weight: 0.7899490742253432
+2021-07-14 12:18:09 INFO  ExecutionManager:486 - No violation
+2021-07-14 12:23:09 INFO  ExecutionManager:327 - uptime: 6003, chkInt: 48000
+2021-07-14 12:23:09 INFO  ExecutionManager:335 - startTime: 1626257890
+2021-07-14 12:23:09 INFO  ExecutionManager:336 - stopTime: 1626258190
+2021-07-14 12:23:09 INFO  ExecutionManager:343 - recTime: 152.90538139200356, avgLat: 463.241196013288, predLat: 539.2427793940826, avgThr: 64192.07791165583
+2021-07-14 12:23:09 INFO  ExecutionManager:348 - weight: 0.7694445689789013
+2021-07-14 12:23:09 INFO  ExecutionManager:486 - No violation
+2021-07-14 12:28:10 INFO  ExecutionManager:327 - uptime: 6303, chkInt: 48000
+2021-07-14 12:28:10 INFO  ExecutionManager:335 - startTime: 1626258191
+2021-07-14 12:28:10 INFO  ExecutionManager:336 - stopTime: 1626258491
+2021-07-14 12:28:10 INFO  ExecutionManager:343 - recTime: 151.5061122785464, avgLat: 439.50851328903616, predLat: 537.5725152623768, avgThr: 63838.943174174696
+2021-07-14 12:28:10 INFO  ExecutionManager:348 - weight: 0.7796385087539122
+2021-07-14 12:28:10 INFO  ExecutionManager:486 - No violation
+2021-07-14 12:33:10 INFO  ExecutionManager:327 - uptime: 6604, chkInt: 48000
+2021-07-14 12:33:10 INFO  ExecutionManager:335 - startTime: 1626258491
+2021-07-14 12:33:10 INFO  ExecutionManager:336 - stopTime: 1626258791
+2021-07-14 12:33:10 INFO  ExecutionManager:343 - recTime: 152.17053746496055, avgLat: 436.92986710963527, predLat: 538.3656189951732, avgThr: 64006.62472415225
+2021-07-14 12:33:10 INFO  ExecutionManager:348 - weight: 0.784899597502713
+2021-07-14 12:33:10 INFO  ExecutionManager:486 - No violation
+2021-07-14 12:38:10 INFO  ExecutionManager:327 - uptime: 6904, chkInt: 48000
+2021-07-14 12:38:10 INFO  ExecutionManager:335 - startTime: 1626258791
+2021-07-14 12:38:10 INFO  ExecutionManager:336 - stopTime: 1626259091
+2021-07-14 12:38:10 INFO  ExecutionManager:343 - recTime: 151.84465130773378, avgLat: 477.254617940201, predLat: 537.976618799142, avgThr: 63924.38055719806
+2021-07-14 12:38:10 INFO  ExecutionManager:348 - weight: 0.8133440985539239
+2021-07-14 12:38:10 INFO  ExecutionManager:486 - No violation
+2021-07-14 12:43:10 INFO  ExecutionManager:327 - uptime: 7204, chkInt: 48000
+2021-07-14 12:43:10 INFO  ExecutionManager:335 - startTime: 1626259091
+2021-07-14 12:43:10 INFO  ExecutionManager:336 - stopTime: 1626259391
+2021-07-14 12:43:10 INFO  ExecutionManager:343 - recTime: 150.8783731038735, avgLat: 468.60620431893767, predLat: 536.823202483699, avgThr: 63680.520104214236
+2021-07-14 12:43:10 INFO  ExecutionManager:348 - weight: 0.8554082474867726
+2021-07-14 12:43:10 INFO  ExecutionManager:486 - No violation
+2021-07-14 12:48:10 INFO  ExecutionManager:327 - uptime: 7504, chkInt: 48000
+2021-07-14 12:48:10 INFO  ExecutionManager:335 - startTime: 1626259391
+2021-07-14 12:48:10 INFO  ExecutionManager:336 - stopTime: 1626259691
+2021-07-14 12:48:10 INFO  ExecutionManager:343 - recTime: 151.8161714099706, avgLat: 464.11469269102986, predLat: 537.9426232287037, avgThr: 63917.19306115218
+2021-07-14 12:48:10 INFO  ExecutionManager:348 - weight: 0.8518394494156186
+2021-07-14 12:48:10 INFO  ExecutionManager:486 - No violation
+2021-07-14 12:53:11 INFO  ExecutionManager:327 - uptime: 7804, chkInt: 48000
+2021-07-14 12:53:11 INFO  ExecutionManager:335 - startTime: 1626259692
+2021-07-14 12:53:11 INFO  ExecutionManager:336 - stopTime: 1626259992
+2021-07-14 12:53:11 INFO  ExecutionManager:343 - recTime: 151.91910837120827, avgLat: 489.37381229235865, predLat: 538.0654958859564, avgThr: 63943.17134969881
+2021-07-14 12:53:11 INFO  ExecutionManager:348 - weight: 0.8602473390733021
+2021-07-14 12:53:11 INFO  ExecutionManager:486 - No violation
+2021-07-14 12:58:11 INFO  ExecutionManager:327 - uptime: 8104, chkInt: 48000
+2021-07-14 12:58:11 INFO  ExecutionManager:335 - startTime: 1626259992
+2021-07-14 12:58:11 INFO  ExecutionManager:336 - stopTime: 1626260292
+2021-07-14 12:58:11 INFO  ExecutionManager:343 - recTime: 151.8054081859169, avgLat: 515.9966860465128, predLat: 537.9297755020546, avgThr: 63914.47673713409
+2021-07-14 12:58:11 INFO  ExecutionManager:348 - weight: 0.8838551553771382
+2021-07-14 12:58:11 INFO  ExecutionManager:486 - No violation
+2021-07-14 13:03:11 INFO  ExecutionManager:327 - uptime: 8405, chkInt: 48000
+2021-07-14 13:03:11 INFO  ExecutionManager:335 - startTime: 1626260292
+2021-07-14 13:03:11 INFO  ExecutionManager:336 - stopTime: 1626260592
+2021-07-14 13:03:11 INFO  ExecutionManager:343 - recTime: 152.0292017456694, avgLat: 530.0721677740872, predLat: 538.1969109316631, avgThr: 63970.955708343514
+2021-07-14 13:03:11 INFO  ExecutionManager:348 - weight: 0.9127414916575399
+2021-07-14 13:03:11 INFO  ExecutionManager:486 - No violation
+2021-07-14 13:08:11 INFO  ExecutionManager:327 - uptime: 8705, chkInt: 48000
+2021-07-14 13:08:11 INFO  ExecutionManager:335 - startTime: 1626260592
+2021-07-14 13:08:11 INFO  ExecutionManager:336 - stopTime: 1626260892
+2021-07-14 13:08:11 INFO  ExecutionManager:343 - recTime: 152.84603385379296, avgLat: 559.7701495016627, predLat: 539.1719380788383, avgThr: 64177.10032290997
+2021-07-14 13:08:11 INFO  ExecutionManager:348 - weight: 0.9379205744647671
+2021-07-14 13:08:11 INFO  ExecutionManager:486 - No violation
+2021-07-14 13:13:11 INFO  ExecutionManager:327 - uptime: 9005, chkInt: 48000
+2021-07-14 13:13:11 INFO  ExecutionManager:335 - startTime: 1626260892
+2021-07-14 13:13:11 INFO  ExecutionManager:336 - stopTime: 1626261192
+2021-07-14 13:13:11 INFO  ExecutionManager:343 - recTime: 151.88813426721913, avgLat: 490.68961794019935, predLat: 538.0285230589232, avgThr: 63935.35438870416
+2021-07-14 13:13:11 INFO  ExecutionManager:348 - weight: 0.9444354891587916
+2021-07-14 13:13:11 INFO  ExecutionManager:486 - No violation
+2021-07-14 13:18:12 INFO  ExecutionManager:327 - uptime: 9305, chkInt: 48000
+2021-07-14 13:18:12 INFO  ExecutionManager:335 - startTime: 1626261193
+2021-07-14 13:18:12 INFO  ExecutionManager:336 - stopTime: 1626261493
+2021-07-14 13:18:12 INFO  ExecutionManager:343 - recTime: 151.7840740222814, avgLat: 485.49609634551626, predLat: 537.904309572765, avgThr: 63909.0926160938
+2021-07-14 13:18:12 INFO  ExecutionManager:348 - weight: 0.9510706405275392
+2021-07-14 13:18:12 INFO  ExecutionManager:486 - No violation
+2021-07-14 13:23:12 INFO  ExecutionManager:327 - uptime: 9605, chkInt: 48000
+2021-07-14 13:23:12 INFO  ExecutionManager:335 - startTime: 1626261493
+2021-07-14 13:23:12 INFO  ExecutionManager:336 - stopTime: 1626261793
+2021-07-14 13:23:12 INFO  ExecutionManager:343 - recTime: 151.55004349500717, avgLat: 568.1194186046522, predLat: 537.6249545926036, avgThr: 63850.03013267532
+2021-07-14 13:23:12 INFO  ExecutionManager:348 - weight: 0.9756064191709809
+2021-07-14 13:23:12 INFO  ExecutionManager:486 - No violation
+2021-07-14 13:28:12 INFO  ExecutionManager:327 - uptime: 9906, chkInt: 48000
+2021-07-14 13:28:12 INFO  ExecutionManager:335 - startTime: 1626261793
+2021-07-14 13:28:12 INFO  ExecutionManager:336 - stopTime: 1626262093
+2021-07-14 13:28:12 INFO  ExecutionManager:343 - recTime: 150.4675647956617, avgLat: 514.6326162790689, predLat: 536.3328333505465, avgThr: 63576.84406171443
+2021-07-14 13:28:12 INFO  ExecutionManager:348 - weight: 0.9756585509871459
+2021-07-14 13:28:12 INFO  ExecutionManager:486 - No violation
+2021-07-14 13:33:12 INFO  ExecutionManager:327 - uptime: 10206, chkInt: 48000
+2021-07-14 13:33:12 INFO  ExecutionManager:335 - startTime: 1626262093
+2021-07-14 13:33:12 INFO  ExecutionManager:336 - stopTime: 1626262393
+2021-07-14 13:33:12 INFO  ExecutionManager:343 - recTime: 149.58376930542204, avgLat: 509.4896677740872, predLat: 535.2778740915206, avgThr: 63353.79984139165
+2021-07-14 13:33:12 INFO  ExecutionManager:348 - weight: 0.9701450502859305
+2021-07-14 13:33:12 INFO  ExecutionManager:486 - No violation
+2021-07-14 13:34:20 INFO  KubernetesClient:67 - Running command: [[sh, -c, kill 1]] on pod [flink-native-taskmanager-1-471] in namespace [khaos]
+
+2021-07-14 13:34:21 INFO  KubernetesClient:35 - Reading data... Switching Protocols
+2021-07-14 13:34:21 INFO  KubernetesClient:48 - Exit with: 1000 and with reason: 
+2021-07-14 13:34:21 INFO  ExecutionManager:166 - FailureMetrics{experimentId=17, jobId='de20f78fd96928f1ccd59864b9534014', timestamp=1626262459, avgThr=63264.062531, avgLat=481.923463, recTime=0.0}
+2021-07-14 13:34:21 INFO  ExecutionManager:166 - FailureMetrics{experimentId=17, jobId='de20f78fd96928f1ccd59864b9534014', timestamp=1626252138, avgThr=69525.478414, avgLat=597.711728, recTime=0.0}
+2021-07-14 13:34:21 INFO  ExecutionManager:168 - Finishing inject failure into job de20f78fd96928f1ccd59864b9534014
+2021-07-14 13:38:12 INFO  ExecutionManager:327 - uptime: 228, chkInt: 48000
+2021-07-14 13:44:24 INFO  ExecutionManager:335 - startTime: 1626262765
+2021-07-14 13:44:24 INFO  ExecutionManager:336 - stopTime: 1626263065
+2021-07-14 13:44:24 INFO  ExecutionManager:343 - recTime: 146.68478599832804, avgLat: 441.2041528239211, predLat: 531.8174476519705, avgThr: 62622.1809560269
+2021-07-14 13:44:24 INFO  ExecutionManager:348 - weight: 0.9353804457329055
+2021-07-14 13:44:24 INFO  ExecutionManager:486 - No violation
+2021-07-14 13:49:25 INFO  ExecutionManager:327 - uptime: 900, chkInt: 48000
+2021-07-14 13:49:25 INFO  ExecutionManager:335 - startTime: 1626263066
+2021-07-14 13:49:25 INFO  ExecutionManager:336 - stopTime: 1626263366
+2021-07-14 13:49:25 INFO  ExecutionManager:343 - recTime: 145.8315065095378, avgLat: 402.41745847176196, predLat: 530.7989143971877, avgThr: 62406.838084970805
+2021-07-14 13:49:25 INFO  ExecutionManager:348 - weight: 0.9097339934498013
+2021-07-14 13:49:25 INFO  ExecutionManager:486 - No violation
+2021-07-14 13:54:25 INFO  ExecutionManager:327 - uptime: 1200, chkInt: 48000
+2021-07-14 13:54:25 INFO  ExecutionManager:335 - startTime: 1626263366
+2021-07-14 13:54:25 INFO  ExecutionManager:336 - stopTime: 1626263666
+2021-07-14 13:54:25 INFO  ExecutionManager:343 - recTime: 143.6168479997412, avgLat: 432.45625415282404, predLat: 528.1553452386067, avgThr: 61847.92283132447
+2021-07-14 13:54:25 INFO  ExecutionManager:348 - weight: 0.8957732262213053
+2021-07-14 13:54:25 INFO  ExecutionManager:486 - No violation
+2021-07-14 13:59:25 INFO  ExecutionManager:327 - uptime: 1500, chkInt: 48000
+2021-07-14 13:59:25 INFO  ExecutionManager:335 - startTime: 1626263666
+2021-07-14 13:59:25 INFO  ExecutionManager:336 - stopTime: 1626263966
+2021-07-14 13:59:25 INFO  ExecutionManager:343 - recTime: 141.9449394629822, avgLat: 440.5580813953483, predLat: 526.1596398853014, avgThr: 61425.98185046329
+2021-07-14 13:59:25 INFO  ExecutionManager:348 - weight: 0.859204571301949
+2021-07-14 13:59:25 INFO  ExecutionManager:486 - No violation
+2021-07-14 14:04:25 INFO  ExecutionManager:327 - uptime: 1801, chkInt: 48000
+2021-07-14 14:04:25 INFO  ExecutionManager:335 - startTime: 1626263966
+2021-07-14 14:04:25 INFO  ExecutionManager:336 - stopTime: 1626264266
+2021-07-14 14:04:25 INFO  ExecutionManager:343 - recTime: 139.9937759945764, avgLat: 409.59027408637854, predLat: 523.8305965833157, avgThr: 60933.565064748705
+2021-07-14 14:04:25 INFO  ExecutionManager:348 - weight: 0.8296002326169658
+2021-07-14 14:04:25 INFO  ExecutionManager:486 - No violation
+2021-07-14 14:09:25 INFO  ExecutionManager:327 - uptime: 2101, chkInt: 48000
+2021-07-14 14:09:25 INFO  ExecutionManager:335 - startTime: 1626264266
+2021-07-14 14:09:25 INFO  ExecutionManager:336 - stopTime: 1626264566
+2021-07-14 14:09:25 INFO  ExecutionManager:343 - recTime: 138.51316409038412, avgLat: 333.6340365448504, predLat: 522.0632360857778, avgThr: 60559.90177791564
+2021-07-14 14:09:25 INFO  ExecutionManager:348 - weight: 0.7774744789348041
+2021-07-14 14:09:25 INFO  ExecutionManager:486 - No violation
+2021-07-14 14:14:25 INFO  ExecutionManager:327 - uptime: 2401, chkInt: 48000
+2021-07-14 14:14:25 INFO  ExecutionManager:335 - startTime: 1626264566
+2021-07-14 14:14:25 INFO  ExecutionManager:336 - stopTime: 1626264866
+2021-07-14 14:14:26 INFO  ExecutionManager:343 - recTime: 137.01497551843306, avgLat: 395.17331395348793, predLat: 520.2748948652111, avgThr: 60181.802652475766
+2021-07-14 14:14:26 INFO  ExecutionManager:348 - weight: 0.7657963721099718
+2021-07-14 14:14:26 INFO  ExecutionManager:486 - No violation
+2021-07-14 14:15:52 INFO  KubernetesClient:67 - Running command: [[sh, -c, kill 1]] on pod [flink-native-taskmanager-1-485] in namespace [khaos]
+
+2021-07-14 14:15:53 INFO  KubernetesClient:35 - Reading data... Switching Protocols
+2021-07-14 14:15:53 INFO  KubernetesClient:48 - Exit with: 1000 and with reason: 
+2021-07-14 14:15:53 INFO  ExecutionManager:166 - FailureMetrics{experimentId=17, jobId='de20f78fd96928f1ccd59864b9534014', timestamp=1626264937, avgThr=60126.038943, avgLat=423.371321, recTime=0.0}
+2021-07-14 14:15:53 INFO  ExecutionManager:166 - FailureMetrics{experimentId=17, jobId='de20f78fd96928f1ccd59864b9534014', timestamp=1626262459, avgThr=63264.062531, avgLat=481.923463, recTime=0.0}
+2021-07-14 14:15:53 INFO  ExecutionManager:166 - FailureMetrics{experimentId=17, jobId='de20f78fd96928f1ccd59864b9534014', timestamp=1626252138, avgThr=69525.478414, avgLat=597.711728, recTime=0.0}
+2021-07-14 14:15:53 INFO  ExecutionManager:168 - Finishing inject failure into job de20f78fd96928f1ccd59864b9534014
+2021-07-14 14:19:26 INFO  ExecutionManager:327 - uptime: 209, chkInt: 48000
+2021-07-14 14:25:57 INFO  ExecutionManager:335 - startTime: 1626265258
+2021-07-14 14:25:57 INFO  ExecutionManager:336 - stopTime: 1626265558
+2021-07-14 14:25:57 INFO  ExecutionManager:343 - recTime: 134.94686787774432, avgLat: 431.6682973421927, predLat: 517.8062589326887, avgThr: 59659.872566437516
+2021-07-14 14:25:57 INFO  ExecutionManager:348 - weight: 0.7783818486652586
+2021-07-14 14:25:57 INFO  ExecutionManager:486 - No violation
+2021-07-14 14:30:57 INFO  ExecutionManager:327 - uptime: 900, chkInt: 48000
+2021-07-14 14:30:57 INFO  ExecutionManager:335 - startTime: 1626265558
+2021-07-14 14:30:57 INFO  ExecutionManager:336 - stopTime: 1626265858
+2021-07-14 14:30:57 INFO  ExecutionManager:343 - recTime: 133.74243747348254, avgLat: 539.6996262458459, predLat: 516.3685677237374, avgThr: 59355.90943987894
+2021-07-14 14:30:57 INFO  ExecutionManager:348 - weight: 0.8161115028100214
+2021-07-14 14:30:57 INFO  ExecutionManager:486 - No violation
+2021-07-14 14:35:57 INFO  ExecutionManager:327 - uptime: 1200, chkInt: 48000
+2021-07-14 14:35:57 INFO  ExecutionManager:335 - startTime: 1626265858
+2021-07-14 14:35:57 INFO  ExecutionManager:336 - stopTime: 1626266158
+2021-07-14 14:35:57 INFO  ExecutionManager:343 - recTime: 132.37877390632585, avgLat: 479.916935215945, predLat: 514.7408048280723, avgThr: 59011.76050443171
+2021-07-14 14:35:57 INFO  ExecutionManager:348 - weight: 0.8319511720536434
+2021-07-14 14:35:57 INFO  ExecutionManager:486 - No violation
+2021-07-14 14:40:57 INFO  ExecutionManager:327 - uptime: 1500, chkInt: 48000
+2021-07-14 14:40:57 INFO  ExecutionManager:335 - startTime: 1626266158
+2021-07-14 14:40:57 INFO  ExecutionManager:336 - stopTime: 1626266458
+2021-07-14 14:40:57 INFO  ExecutionManager:343 - recTime: 132.09418801188923, avgLat: 459.06607142857195, predLat: 514.4011034744904, avgThr: 58939.93931996033
+2021-07-14 14:40:57 INFO  ExecutionManager:348 - weight: 0.8503702766455358
+2021-07-14 14:40:57 INFO  ExecutionManager:486 - No violation
+2021-07-14 14:45:57 INFO  ExecutionManager:327 - uptime: 1801, chkInt: 48000
+2021-07-14 14:45:57 INFO  ExecutionManager:335 - startTime: 1626266458
+2021-07-14 14:45:57 INFO  ExecutionManager:336 - stopTime: 1626266758
+2021-07-14 14:45:57 INFO  ExecutionManager:343 - recTime: 131.79956194396448, avgLat: 465.5320431893683, predLat: 514.0494174772882, avgThr: 58865.584288357684
+2021-07-14 14:45:57 INFO  ExecutionManager:348 - weight: 0.8947951182357329
+2021-07-14 14:45:57 INFO  ExecutionManager:486 - No violation
+2021-07-14 14:50:58 INFO  ExecutionManager:327 - uptime: 2101, chkInt: 48000
+2021-07-14 14:50:58 INFO  ExecutionManager:335 - startTime: 1626266759
+2021-07-14 14:50:58 INFO  ExecutionManager:336 - stopTime: 1626267059
+2021-07-14 14:50:58 INFO  ExecutionManager:343 - recTime: 131.76089951468492, avgLat: 508.70890365448577, predLat: 514.003267334868, avgThr: 58855.82701816376
+2021-07-14 14:50:58 INFO  ExecutionManager:348 - weight: 0.9331538842980063
+2021-07-14 14:50:58 INFO  ExecutionManager:486 - No violation
+2021-07-14 14:55:58 INFO  ExecutionManager:327 - uptime: 2401, chkInt: 48000
+2021-07-14 14:55:58 INFO  ExecutionManager:335 - startTime: 1626267059
+2021-07-14 14:55:58 INFO  ExecutionManager:336 - stopTime: 1626267359
+2021-07-14 14:55:58 INFO  ExecutionManager:343 - recTime: 131.67389210187673, avgLat: 615.8741777408662, predLat: 513.899409285399, avgThr: 58833.86888331648
+2021-07-14 14:55:58 INFO  ExecutionManager:348 - weight: 0.9939513917160481
+2021-07-14 14:55:58 INFO  ExecutionManager:486 - No violation
+2021-07-14 15:00:58 INFO  ExecutionManager:327 - uptime: 2701, chkInt: 48000
+2021-07-14 15:00:58 INFO  ExecutionManager:335 - startTime: 1626267359
+2021-07-14 15:00:58 INFO  ExecutionManager:336 - stopTime: 1626267659
+2021-07-14 15:00:58 INFO  ExecutionManager:343 - recTime: 132.71508339755127, avgLat: 585.750747508307, predLat: 515.1422470345384, avgThr: 59096.63521706142
+2021-07-14 15:00:58 INFO  ExecutionManager:348 - weight: 1.0092652365872021
+2021-07-14 15:00:58 INFO  ExecutionManager:486 - No violation
+2021-07-14 15:05:58 INFO  ExecutionManager:327 - uptime: 3001, chkInt: 48000
+2021-07-14 15:05:58 INFO  ExecutionManager:335 - startTime: 1626267659
+2021-07-14 15:05:58 INFO  ExecutionManager:336 - stopTime: 1626267959
+2021-07-14 15:05:58 INFO  ExecutionManager:343 - recTime: 131.6006095422926, avgLat: 501.8559634551495, predLat: 513.8119341674421, avgThr: 58815.374501362494
+2021-07-14 15:05:58 INFO  ExecutionManager:348 - weight: 1.0166625793041721
+2021-07-14 15:05:58 INFO  ExecutionManager:486 - No violation
+2021-07-14 15:10:58 INFO  ExecutionManager:327 - uptime: 3301, chkInt: 48000
+2021-07-14 15:10:58 INFO  ExecutionManager:335 - startTime: 1626267959
+2021-07-14 15:10:58 INFO  ExecutionManager:336 - stopTime: 1626268259
+2021-07-14 15:10:58 INFO  ExecutionManager:343 - recTime: 131.1042986907996, avgLat: 521.1715282392032, predLat: 513.21950330089, avgThr: 58690.120109219155
+2021-07-14 15:10:58 INFO  ExecutionManager:348 - weight: 1.0371736048879996
+2021-07-14 15:10:58 INFO  ExecutionManager:486 - No violation
+2021-07-14 15:15:58 INFO  ExecutionManager:327 - uptime: 3602, chkInt: 48000
+2021-07-14 15:15:58 INFO  ExecutionManager:335 - startTime: 1626268259
+2021-07-14 15:15:58 INFO  ExecutionManager:336 - stopTime: 1626268559
+2021-07-14 15:15:58 INFO  ExecutionManager:343 - recTime: 130.94317155247114, avgLat: 473.52184385382026, predLat: 513.0271708344571, avgThr: 58649.45631613783
+2021-07-14 15:15:58 INFO  ExecutionManager:348 - weight: 1.0400699962850757
+2021-07-14 15:15:58 INFO  ExecutionManager:486 - No violation
+2021-07-14 15:20:59 INFO  ExecutionManager:327 - uptime: 3902, chkInt: 48000
+2021-07-14 15:20:59 INFO  ExecutionManager:335 - startTime: 1626268560
+2021-07-14 15:20:59 INFO  ExecutionManager:336 - stopTime: 1626268860
+2021-07-14 15:20:59 INFO  ExecutionManager:343 - recTime: 131.17860247842552, avgLat: 464.98315614617803, predLat: 513.308197427079, avgThr: 58708.872219363504
+2021-07-14 15:20:59 INFO  ExecutionManager:348 - weight: 1.0260959883329577
+2021-07-14 15:20:59 INFO  ExecutionManager:486 - No violation
+2021-07-14 15:25:59 INFO  ExecutionManager:327 - uptime: 4202, chkInt: 48000
+2021-07-14 15:25:59 INFO  ExecutionManager:335 - startTime: 1626268860
+2021-07-14 15:25:59 INFO  ExecutionManager:336 - stopTime: 1626269160
+2021-07-14 15:25:59 INFO  ExecutionManager:343 - recTime: 130.88103636769065, avgLat: 541.9461877076416, predLat: 512.9530019919825, avgThr: 58633.775206653765
+2021-07-14 15:25:59 INFO  ExecutionManager:348 - weight: 1.0024441190872475
+2021-07-14 15:25:59 INFO  ExecutionManager:486 - No violation
+2021-07-14 15:30:59 INFO  ExecutionManager:327 - uptime: 4502, chkInt: 48000
+2021-07-14 15:30:59 INFO  ExecutionManager:335 - startTime: 1626269160
+2021-07-14 15:30:59 INFO  ExecutionManager:336 - stopTime: 1626269460
+2021-07-14 15:30:59 INFO  ExecutionManager:343 - recTime: 131.23795656078318, avgLat: 573.0123671096334, predLat: 513.3790465538689, avgThr: 58723.85145966133
+2021-07-14 15:30:59 INFO  ExecutionManager:348 - weight: 0.9989595251640221
+2021-07-14 15:30:59 INFO  ExecutionManager:486 - No violation
+2021-07-14 15:35:59 INFO  ExecutionManager:327 - uptime: 4802, chkInt: 48000
+2021-07-14 15:35:59 INFO  ExecutionManager:335 - startTime: 1626269460
+2021-07-14 15:35:59 INFO  ExecutionManager:336 - stopTime: 1626269760
+2021-07-14 15:35:59 INFO  ExecutionManager:343 - recTime: 130.84342389080396, avgLat: 516.5171926910305, predLat: 512.9081051451612, avgThr: 58624.28291383914
+2021-07-14 15:35:59 INFO  ExecutionManager:348 - weight: 1.0040104711855262
+2021-07-14 15:35:59 INFO  ExecutionManager:486 - No violation
+2021-07-14 15:40:59 INFO  ExecutionManager:327 - uptime: 5102, chkInt: 48000
+2021-07-14 15:40:59 INFO  ExecutionManager:335 - startTime: 1626269760
+2021-07-14 15:40:59 INFO  ExecutionManager:336 - stopTime: 1626270060
+2021-07-14 15:40:59 INFO  ExecutionManager:343 - recTime: 129.31017197686683, avgLat: 520.7030730896996, predLat: 511.07790990102325, avgThr: 58237.3348229298
+2021-07-14 15:40:59 INFO  ExecutionManager:348 - weight: 1.004566916334159
+2021-07-14 15:40:59 INFO  ExecutionManager:486 - No violation
+2021-07-14 15:45:59 INFO  ExecutionManager:327 - uptime: 5403, chkInt: 48000
+2021-07-14 15:45:59 INFO  ExecutionManager:335 - startTime: 1626270060
+2021-07-14 15:45:59 INFO  ExecutionManager:336 - stopTime: 1626270360
+2021-07-14 15:45:59 INFO  ExecutionManager:343 - recTime: 129.50117018612343, avgLat: 570.7356976744178, predLat: 511.30589853814337, avgThr: 58285.53720361307
+2021-07-14 15:45:59 INFO  ExecutionManager:348 - weight: 1.0367728752765613
+2021-07-14 15:45:59 INFO  ExecutionManager:486 - No violation
+2021-07-14 15:51:00 INFO  ExecutionManager:327 - uptime: 5703, chkInt: 48000
+2021-07-14 15:51:00 INFO  ExecutionManager:335 - startTime: 1626270361
+2021-07-14 15:51:00 INFO  ExecutionManager:336 - stopTime: 1626270661
+2021-07-14 15:51:00 INFO  ExecutionManager:343 - recTime: 128.87150261502785, avgLat: 494.5539700996698, predLat: 510.55428389247976, avgThr: 58126.627462605604
+2021-07-14 15:51:00 INFO  ExecutionManager:348 - weight: 1.0472404080593538
+2021-07-14 15:51:00 INFO  ExecutionManager:486 - No violation
+2021-07-14 15:56:00 INFO  ExecutionManager:327 - uptime: 6003, chkInt: 48000
+2021-07-14 15:56:00 INFO  ExecutionManager:335 - startTime: 1626270661
+2021-07-14 15:56:00 INFO  ExecutionManager:336 - stopTime: 1626270961
+2021-07-14 15:56:00 INFO  ExecutionManager:343 - recTime: 127.8070490423099, avgLat: 465.50130398671104, predLat: 509.28367868489084, avgThr: 57857.990408198035
+2021-07-14 15:56:00 INFO  ExecutionManager:348 - weight: 1.023491966356654
+2021-07-14 15:56:00 INFO  ExecutionManager:486 - No violation
+2021-07-14 16:01:00 INFO  ExecutionManager:327 - uptime: 6303, chkInt: 48000
+2021-07-14 16:01:00 INFO  ExecutionManager:335 - startTime: 1626270961
+2021-07-14 16:01:00 INFO  ExecutionManager:336 - stopTime: 1626271261
+2021-07-14 16:01:00 INFO  ExecutionManager:343 - recTime: 127.1446639326775, avgLat: 492.15526578073076, predLat: 508.4930101284603, avgThr: 57690.823714134785
+2021-07-14 16:01:00 INFO  ExecutionManager:348 - weight: 0.9987772672607299
+2021-07-14 16:01:00 INFO  ExecutionManager:486 - No violation
+2021-07-14 16:06:00 INFO  ExecutionManager:327 - uptime: 6603, chkInt: 48000
+2021-07-14 16:06:00 INFO  ExecutionManager:335 - startTime: 1626271261
+2021-07-14 16:06:00 INFO  ExecutionManager:336 - stopTime: 1626271561
+2021-07-14 16:06:00 INFO  ExecutionManager:343 - recTime: 126.38565297574513, avgLat: 569.474642857143, predLat: 507.5870022956971, avgThr: 57499.271472722554
+2021-07-14 16:06:00 INFO  ExecutionManager:348 - weight: 1.017925378747787
+2021-07-14 16:06:00 INFO  ExecutionManager:486 - No violation
+2021-07-14 16:11:00 INFO  ExecutionManager:327 - uptime: 6903, chkInt: 48000
+2021-07-14 16:11:00 INFO  ExecutionManager:335 - startTime: 1626271561
+2021-07-14 16:11:00 INFO  ExecutionManager:336 - stopTime: 1626271861
+2021-07-14 16:11:00 INFO  ExecutionManager:343 - recTime: 125.52034342678905, avgLat: 448.8476411960124, predLat: 506.5541091312986, avgThr: 57280.89256514019
+2021-07-14 16:11:00 INFO  ExecutionManager:348 - weight: 0.9957999259808975
+2021-07-14 16:11:00 INFO  ExecutionManager:486 - No violation
+2021-07-14 16:16:00 INFO  ExecutionManager:327 - uptime: 7204, chkInt: 48000
+2021-07-14 16:16:00 INFO  ExecutionManager:335 - startTime: 1626271861
+2021-07-14 16:16:00 INFO  ExecutionManager:336 - stopTime: 1626272161
+2021-07-14 16:16:00 INFO  ExecutionManager:343 - recTime: 125.60991694416697, avgLat: 442.62792358804035, predLat: 506.6610302601852, avgThr: 57303.498309982475
+2021-07-14 16:16:00 INFO  ExecutionManager:348 - weight: 0.955364270142729
+2021-07-14 16:16:00 INFO  ExecutionManager:486 - No violation
+2021-07-14 16:21:01 INFO  ExecutionManager:327 - uptime: 7504, chkInt: 48000
+2021-07-14 16:21:01 INFO  ExecutionManager:335 - startTime: 1626272162
+2021-07-14 16:21:01 INFO  ExecutionManager:336 - stopTime: 1626272462
+2021-07-14 16:21:01 INFO  ExecutionManager:343 - recTime: 125.75241481833856, avgLat: 459.9957641196, predLat: 506.8311255519231, avgThr: 57339.46061980784
+2021-07-14 16:21:01 INFO  ExecutionManager:348 - weight: 0.9451860843771401
+2021-07-14 16:21:01 INFO  ExecutionManager:486 - No violation
+

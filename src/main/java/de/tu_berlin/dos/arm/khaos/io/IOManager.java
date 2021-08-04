@@ -125,7 +125,7 @@ public class IOManager {
     public static class JobMetrics {
 
         public final Integer experimentId;
-        public final String jobId;
+        public final String jobName;
         public final Double config;
         public final Long minDuration;
         public final Long avgDuration;
@@ -137,11 +137,11 @@ public class IOManager {
         public final Long stopTs;
 
         public JobMetrics(
-                Integer experimentId, String jobId, Double config, Long minDuration, Long avgDuration,
+                Integer experimentId, String jobName, Double config, Long minDuration, Long avgDuration,
                 Long maxDuration, Long minSize, Long avgSize, Long maxSize, Long startTs, Long stopTs) {
 
             this.experimentId = experimentId;
-            this.jobId = jobId;
+            this.jobName = jobName;
             this.config = config;
             this.minDuration = minDuration;
             this.avgDuration = avgDuration;
@@ -157,7 +157,7 @@ public class IOManager {
         public String toString() {
             return "JobMetrics{" +
                     "experimentId=" + experimentId +
-                    ", jobId='" + jobId + '\'' +
+                    ", jobName='" + jobName + '\'' +
                     ", config=" + config +
                     ", minDuration=" + minDuration +
                     ", avgDuration=" + avgDuration +
@@ -661,7 +661,29 @@ public class IOManager {
         IOManager.executeUpdate(insertValue);
     }
 
-    public List<FailureMetrics> fetchFailureMetricsList(int experimentId, String jobId) {
+    public List<FailureMetrics> fetchFailureMetricsList(int experimentId) {
+
+        List<FailureMetrics> failureMetricsList = new ArrayList<>();
+        String selectValues = String.format(
+                "SELECT experimentId, jobId, timestamp, avgThr, avgLat, recTime " +
+                "FROM metrics " +
+                "WHERE experimentId = %d " +
+                "ORDER BY jobId ASC, avgThr ASC;",
+            experimentId);
+        IOManager.executeQuery(selectValues, (rs) -> {
+            failureMetricsList.add(
+                new FailureMetrics(
+                    rs.getInt("experimentId"),
+                    rs.getString("jobId"),
+                    rs.getLong("timestamp"),
+                    rs.getDouble("avgThr"),
+                    rs.getDouble("avgLat"),
+                    rs.getDouble("recTime")));
+        });
+        return failureMetricsList;
+    }
+
+    public List<FailureMetrics> fetchFailureMetricsList(int experimentId, String jobName) {
 
         List<FailureMetrics> failureMetricsList = new ArrayList<>();
         String selectValues = String.format(
@@ -670,7 +692,7 @@ public class IOManager {
             "WHERE experimentId = %d " +
             "AND jobId = '%s' " +
             "ORDER BY avgThr ASC;",
-            experimentId, jobId);
+            experimentId, jobName);
         IOManager.executeQuery(selectValues, (rs) -> {
             failureMetricsList.add(
                 new FailureMetrics(

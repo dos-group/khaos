@@ -1,0 +1,44 @@
+2021-07-12 19:42:13 INFO  ExecutionManager:90 - FailureMetrics{experimentId=10, jobId='b8207c73af15b4463f41ce9ee711753b', timestamp=1625944077, avgThr=391.492889, avgLat=572.121163, recTime=83.0}
+recTime: 25, chkInt: 30000
+2021-07-12 19:42:13 INFO  ExecutionManager:90 - FailureMetrics{experimentId=10, jobId='b8207c73af15b4463f41ce9ee711753b', timestamp=1625960493, avgThr=2891.582633, avgLat=537.611105, recTime=83.0}
+recTime: 44, chkInt: 30000
+2021-07-12 19:42:13 INFO  ExecutionManager:90 - FailureMetrics{experimentId=10, jobId='c8776041d58800f38d57cc6acb444c23', timestamp=1625990201, avgThr=5322.307954, avgLat=455.358189, recTime=109.0}
+
+2021-07-12 19:42:13 INFO  ExecutionManager:90 - FailureMetrics{experimentId=10, jobId='c5f2316bf629c12bc7ab0a0119eb67d0', timestamp=1625972623, avgThr=7626.251349, avgLat=721.766321, recTime=127.0}
+recTime: 115, chkInt: 77000
+2021-07-12 19:42:13 INFO  ExecutionManager:90 - FailureMetrics{experimentId=10, jobId='b8207c73af15b4463f41ce9ee711753b', timestamp=1625964505, avgThr=12858.612336, avgLat=873.584169, recTime=115.0}
+recTime: 124, chkInt: 30000
+2021-07-12 19:42:13 INFO  ExecutionManager:90 - FailureMetrics{experimentId=10, jobId='c8776041d58800f38d57cc6acb444c23', timestamp=1625999135, avgThr=15176.137906, avgLat=691.776163, recTime=205.0}
+
+2021-07-12 19:42:13 INFO  ExecutionManager:90 - FailureMetrics{experimentId=10, jobId='b8207c73af15b4463f41ce9ee711753b', timestamp=1625966548, avgThr=17895.364107, avgLat=756.711561, recTime=147.0}
+recTime: 164, chkInt 30000
+2021-07-12 19:42:13 INFO  ExecutionManager:90 - FailureMetrics{experimentId=10, jobId='b8207c73af15b4463f41ce9ee711753b', timestamp=1625968390, avgThr=20547.870751, avgLat=691.489585, recTime=31607.0}
+recTime: 190, chkInt: 30000
+2021-07-12 19:42:13 INFO  ExecutionManager:90 - FailureMetrics{experimentId=11, jobId='57db215c83ee606af510b3f5e2baa1e5', timestamp=1626048786, avgThr=2764.111968, avgLat=551.408821, recTime=60.0}
+recTime: 63, chkInt: 55000
+2021-07-12 19:42:13 INFO  ExecutionManager:90 - FailureMetrics{experimentId=11, jobId='86b620ae9407ffb7408827195a221a61', timestamp=1626005732, avgThr=5125.885958, avgLat=415.458953, recTime=115.0}
+recTime: 121, chkInt: 119000
+2021-07-12 19:42:13 INFO  ExecutionManager:90 - FailureMetrics{experimentId=11, jobId='86b620ae9407ffb7408827195a221a61', timestamp=1626024540, avgThr=10470.503416, avgLat=548.36995, recTime=143.0}
+recTime: 165, chkInt 119000
+2021-07-12 19:42:13 INFO  ExecutionManager:90 - FailureMetrics{experimentId=11, jobId='86b620ae9407ffb7408827195a221a61', timestamp=1626026543, avgThr=15229.097798, avgLat=647.226071, recTime=206.0}
+recTime: 204, chkInt: 119000
+2021-07-12 19:42:13 INFO  ExecutionManager:90 - FailureMetrics{experimentId=11, jobId='57db215c83ee606af510b3f5e2baa1e5', timestamp=1626041101, avgThr=18206.525119, avgLat=615.323945, recTime=139.0}
+recTime: 188, chkInt: 55000
+2021-07-12 19:42:13 INFO  ExecutionManager:90 - FailureMetrics{experimentId=11, jobId='3b615579944e960db756ebd619dde82d', timestamp=1626029173, avgThr=20193.718032, avgLat=932.028306, recTime=1.0}
+recTime: 206, chkInt 62000
+2021-07-12 19:42:13 INFO  ExecutionManager:90 - FailureMetrics{experimentId=11, jobId='57db215c83ee606af510b3f5e2baa1e5', timestamp=1626039238, avgThr=23120.556665, avgLat=1262.083123, recTime=136.0}
+recTime: 218, chkInt 55000
+2021-07-12 19:42:13 INFO  ExecutionManager:90 - FailureMetrics{experimentId=11, jobId='a385426e809086f9acb2624e16b08a71', timestamp=1626033306, avgThr=25438.769842, avgLat=3500.470654, recTime=354.0}
+recTime: 236, chkInt: 12000
+2021-07-12 19:42:13 INFO  ExecutionManager:90 - FailureMetrics{experimentId=11, jobId='a385426e809086f9acb2624e16b08a71', timestamp=1626036106, avgThr=25503.766185, avgLat=1094.22314, recTime=276.0}
+recTime: 219, chkInt: 12000
+2021-07-12 19:42:13 INFO  ExecutionManager:90 - FailureMetrics{experimentId=12, jobId='70ca208b651bdd787442bb0c680cffb7', timestamp=1626103163, avgThr=2672.422977, avgLat=327.208239, recTime=95.0}
+recTime: 63, chkInt 57000
+2021-07-12 19:42:13 INFO  ExecutionManager:90 - FailureMetrics{experimentId=12, jobId='70ca208b651bdd787442bb0c680cffb7', timestamp=1626094584, avgThr=20513.90765, avgLat=619.9476, recTime=209.0}
+recTime: 191, chkInt 57000
+2021-07-12 19:42:13 INFO  ExecutionManager:90 - FailureMetrics{experimentId=12, jobId='7f9e32eac29f86615311460148a7100c', timestamp=1626090278, avgThr=25648.258655, avgLat=1161.606769, recTime=197.0}
+recTime: 218, chkInt 20000
+
+changes: 10
+
+Models: performance 0.6685, availability: 0.7647

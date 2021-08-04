@@ -29,9 +29,15 @@ public interface FlinkRest {
     );
 
     @POST("v1/jobs/{jobId}/savepoints")
-    Call<Trigger> saveAndStopJob(
+    Call<Trigger> saveJob(
         @Path("jobId") String jobId,
         @Body Map<String, Object> body
+    );
+
+    @GET("v1/jobs/{jobId}/savepoints/{requestId}")
+    Call<SaveStatus> checkStatus(
+        @Path("jobId") String jobId,
+        @Path("requestId") String requestId
     );
 
     @GET("v1/jobs/{jobId}/vertices/{vertexId}/taskmanagers")

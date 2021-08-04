@@ -1,15 +1,12 @@
 package de.tu_berlin.dos.arm.khaos.clients;
 
 import de.tu_berlin.dos.arm.khaos.clients.flink.FlinkClient;
-import de.tu_berlin.dos.arm.khaos.clients.flink.responses.Job;
-import de.tu_berlin.dos.arm.khaos.clients.flink.responses.Vertices;
 import de.tu_berlin.dos.arm.khaos.clients.flink.responses.Vertices.Node;
 import de.tu_berlin.dos.arm.khaos.clients.kubernetes.KubernetesClient;
 import de.tu_berlin.dos.arm.khaos.clients.prometheus.PrometheusClient;
 import de.tu_berlin.dos.arm.khaos.io.TimeSeries;
 import org.apache.log4j.Logger;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -61,9 +58,9 @@ public class ClientsManager {
         return this.flink.startJob(this.jarId, programArgs, this.parallelism).jobId;
     }
 
-    public String restartJob(String savePointPath, String programArgs) throws Exception {
+    public String restartJob(String targetDirectory, String programArgs) throws Exception {
 
-        return this.flink.restartJob(this.jarId, savePointPath, programArgs, this.parallelism).jobId;
+        return this.flink.restartJob(this.jarId, targetDirectory, programArgs, this.parallelism).jobId;
     }
 
     public List<String> getOperatorIds(String jobId) throws Exception {
@@ -71,7 +68,7 @@ public class ClientsManager {
         // store list of operator ids
         List<Node> vertices = this.flink.getVertices(jobId).plan.nodes;
         List<String> operatorIds = new ArrayList<>();
-        for (Vertices.Node vertex: vertices) {
+        for (Node vertex: vertices) {
 
             operatorIds.add(vertex.id);
         }
@@ -81,7 +78,7 @@ public class ClientsManager {
     public String getSinkOperatorId(String jobId, String sinkRegex) throws Exception {
 
         List<Node> vertices = this.flink.getVertices(jobId).plan.nodes;
-        for (Vertices.Node vertex: vertices) {
+        for (Node vertex: vertices) {
 
             if (vertex.description.startsWith(sinkRegex)) {
 
@@ -123,27 +120,27 @@ public class ClientsManager {
         return this.prom.queryRange(query, startTs, stopTs);
     }
 
-    public TimeSeries getLatency(String jobId, String sinkId, long startTs, long stopTs) throws Exception {
+    public TimeSeries getLatency(String jobName, String sinkId, long startTs, long stopTs) throws Exception {
 
         String query =
             String.format(
-                "sum(%s{job_id=\"%s\",quantile=\"0.99\",operator_id=\"%s\"})" +
-                "/count(%s{job_id=\"%s\",quantile=\"0.99\",operator_id=\"%s\"})",
-                LATENCY, jobId, sinkId, LATENCY, jobId, sinkId);
+                "sum(%s{job_name=\"%s\",quantile=\"0.99\",operator_id=\"%s\"})" +
+                "/count(%s{job_name=\"%s\",quantile=\"0.99\",operator_id=\"%s\"})",
+                LATENCY, jobName, sinkId, LATENCY, jobName, sinkId);
         return this.prom.queryRange(query, startTs, stopTs);
     }
 
-    public TimeSeries getThroughput(String jobId, long startTs, long stopTs) throws Exception {
+    public TimeSeries getThroughput(String jobName, long startTs, long stopTs) throws Exception {
 
-        String queryThr = String.format("sum(%s{job_id=\"%s\"})", THROUGHPUT, jobId);
+        String queryThr = String.format("sum(%s{job_name=\"%s\"})", THROUGHPUT, jobName);
         return this.prom.queryRange(queryThr, startTs, stopTs);
     }
 
-    public TimeSeries getConsumerLag(String jobId, long startTs, long stopTs) throws Exception {
+    public TimeSeries getConsumerLag(String jobName, long startTs, long stopTs) throws Exception {
 
         String queryLag = String.format(
-            "sum(%s{job_id=\"%s\"})/count(%s{job_id=\"%s\"})",
-            CONSUMER_LAG, jobId, CONSUMER_LAG, jobId);
+            "sum(%s{job_name=\"%s\"})/count(%s{job_name=\"%s\"})",
+            CONSUMER_LAG, jobName, CONSUMER_LAG, jobName);
         return this.prom.queryRange(queryLag, startTs, stopTs);
     }
 }
