@@ -127,9 +127,7 @@ public enum Context implements AutoCloseable { get;
                 Job current = new Job(this, "profile-" + config, config);
                 this.jobs.add(current);
             });*/
-            // TODO remove!
-            //for (int config : Arrays.asList(10000, 30000, 60000, 90000, 120000)) {
-            for (int config : Arrays.asList(10000, 30000)) {
+            for (int config : Arrays.asList(10000, 30000, 60000, 90000, 120000)) {
 
                 Job job = new Job(this, "iot_profile_" + config);
                 job.setConfig(config);

@@ -11,7 +11,6 @@ import de.tu_berlin.dos.arm.khaos.modeling.AnomalyDetector;
 import de.tu_berlin.dos.arm.khaos.modeling.Optimization;
 import de.tu_berlin.dos.arm.khaos.utils.LimitedQueue;
 import de.tu_berlin.dos.arm.khaos.utils.SequenceFSM;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.log4j.Logger;
 import scala.*;
@@ -20,11 +19,9 @@ import java.lang.Double;
 import java.lang.Long;
 import java.time.Instant;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
@@ -32,69 +29,7 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
         public ExecutionManager runStage(Context context) throws Exception {
 
-            int experimentId = 60;
-            int startTs = 1627941240;
-            int stopTs = 1628026800;
-            String sinkIdIot = "b2bc5a6680a755404d35a7edb8fc77f4";
-            String sinkIdAd = "3e7208d04a005e77687e0b389f9e3814";
-
-            List<String> jobNames = Arrays.asList("iot_profile_10000", "iot_profile_30000");
-            //List<String> jobNames = Arrays.asList("advertising", "profile_10000", "profile_30000", "profile_60000", "profile_90000", "profile_120000");
-            /*for (String jobName : jobNames) {
-
-                TimeSeries conTs = context.clientsManager.getConsumerLag(jobName, startTs, stopTs);
-                TimeSeries.toCSV(String.format("iot_con_%d_%d_%d_%s.csv", experimentId, startTs, stopTs, jobName), conTs, "timestamp|value", "|");
-                TimeSeries latTs = context.clientsManager.getLatency(jobName, sinkIdIot, startTs, stopTs);
-                TimeSeries.toCSV(String.format("iot_lat_%d_%d_%d_%s.csv", experimentId, startTs, stopTs, jobName), latTs, "timestamp|value", "|");
-                TimeSeries thrTs = context.clientsManager.getThroughput(jobName, startTs, stopTs);
-                TimeSeries.toCSV(String.format("iot_thr_%d_%d_%d_%s.csv", experimentId, startTs, stopTs, jobName), thrTs, "timestamp|value", "|");
-            }*/
-
-            for (FailureMetrics failureMetrics : context.IOManager.fetchFailureMetricsList(experimentId)) {
-
-                LOG.info(failureMetrics);
-            }
-
-            /*int numOfCores = Runtime.getRuntime().availableProcessors();
-            final ExecutorService executor = Executors.newFixedThreadPool(numOfCores);
-            int total = 6 * 12;
-            AtomicInteger counter = new AtomicInteger(0);
-            final CountDownLatch latch = new CountDownLatch(total);
-
-            LOG.info("Starting measure recovery times");
-            Map<String, Tuple2<TimeSeries, TimeSeries>> data = new HashMap<>();
-            for (String jobName : jobNames) {
-
-                TimeSeries thrTs = context.clientsManager.getThroughput(jobName, startTs, stopTs);
-                TimeSeries lagTs = context.clientsManager.getConsumerLag(jobName, startTs, stopTs);
-                data.put(jobName, new Tuple2<>(thrTs, lagTs));
-
-                for (FailureMetrics failureMetrics : context.IOManager.fetchFailureMetricsList(experimentId, jobName)) {
-
-                    LOG.info(failureMetrics);
-                    executor.submit(() -> {
-
-                        AnomalyDetector detector = new AnomalyDetector(Arrays.asList(data.get(jobName)._1, data.get(jobName)._2));
-                        detector.fit(failureMetrics.timestamp, 1000);
-                        double recTime = detector.measure(failureMetrics.timestamp);
-
-                        LOG.info(failureMetrics.jobId + " " + failureMetrics.timestamp + " " + recTime);
-                        context.IOManager.updateRecTime(failureMetrics.jobId, failureMetrics.timestamp, recTime);
-                        LOG.info(counter.incrementAndGet() + "/" + total + " completed");
-                        latch.countDown();
-                    });
-
-                }
-            }
-            latch.await();
-            executor.shutdown();
-
-            for (FailureMetrics failureMetrics : context.IOManager.fetchFailureMetricsList(experimentId)) {
-
-                LOG.info(failureMetrics);
-            }*/
-
-            return STOP;
+            return RECORD;
         }
     },
     RECORD {
@@ -120,8 +55,8 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
         public ExecutionManager runStage(Context context) throws Exception {
 
             // fetch target job infos
-            //context.targetJob.setOperatorIds(context.clientsManager.getOperatorIds(context.targetJob.getJobId()));
-            //context.targetJob.setSinkId(context.clientsManager.getSinkOperatorId(context.targetJob.getJobId(), context.sinkRegex));
+            context.targetJob.setOperatorIds(context.clientsManager.getOperatorIds(context.targetJob.getJobId()));
+            context.targetJob.setSinkId(context.clientsManager.getSinkOperatorId(context.targetJob.getJobId(), context.sinkRegex));
 
             // deploy baseline jobs
             for (Job job : context.experiment.jobs) {
@@ -198,90 +133,12 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
         public ExecutionManager runStage(Context context) {
 
-            // IOT
-            Map<Double, List<List<Double>>> perfMap = new TreeMap<>();
-            Map<Double, List<List<Double>>> availMap= new TreeMap<>();
-            for (int i = 1; i <= 5; i++) {
-
-                for (JobMetrics jobMetrics : context.IOManager.fetchJobMetricsList(i)) {
-
-                    perfMap.putIfAbsent(jobMetrics.config, new ArrayList<>());
-                    availMap.putIfAbsent(jobMetrics.config, new ArrayList<>());
-
-                    for (FailureMetrics failureMetrics : context.IOManager.fetchFailureMetricsList(i, jobMetrics.jobName)) {
-
-                        perfMap.get(jobMetrics.config).add(Arrays.asList(failureMetrics.avgThr, jobMetrics.config, failureMetrics.avgLat));
-                        availMap.get(jobMetrics.config).add(Arrays.asList(failureMetrics.avgThr, jobMetrics.config, failureMetrics.recTime));
-                    }
-                }
-            }
-
-            int counter1 = 0, counter2 = 0;
-            double [][] perfArr = new double[8 * 10][];
-            double [][] availArr = new double[(8 * 10) - 7][];
-            for (Map.Entry<Double, List<List<Double>>> entry : perfMap.entrySet()) {
-
-                double key = entry.getKey();
-                LOG.info(key);
-                final int chunkSize = 5;
-
-                final AtomicInteger count = new AtomicInteger(0);
-                List<List<Double>> perfs = entry.getValue();
-                perfs.sort(Comparator.comparing(o -> o.get(0)));
-                final Collection<List<List<Double>>> perfRes =
-                    perfs.stream()
-                        .collect(Collectors.groupingBy(it -> count.getAndIncrement() / chunkSize))
-                        .values();
-
-                count.set(0);
-                List<List<Double>> avails = availMap.get(key);
-                avails.sort(Comparator.comparing(o -> o.get(0)));
-                final Collection<List<List<Double>>> availRes =
-                    avails.stream()
-                        .collect(Collectors.groupingBy(it -> count.getAndIncrement() / chunkSize))
-                        .values();
-
-                Iterator<List<List<Double>>> it1 = perfRes.iterator();
-                Iterator<List<List<Double>>> it2 = availRes.iterator();
-                while (it1.hasNext()) {
-
-                    List<List<Double>> currPerf = it1.next();
-                    perfArr[counter1] = ArrayUtils.toPrimitive(currPerf.get(2).toArray(new Double[0]));
-                    counter1++;
-                    List<List<Double>> currAvail = it2.next();
-                    double[] temp = ArrayUtils.toPrimitive(currAvail.get(2).toArray(new Double[0]));
-                    if (temp[2] > 55) {
-
-                        availArr[counter2] = temp;
-                        counter2++;
-                    }
-                }
-            }
-
-            for (int i = 0; i < perfArr.length; i++) {
-
-                System.out.println(Arrays.toString(perfArr[i]));
-            }
-            for (int i = 0; i < availArr.length; i++) {
-
-                System.out.println(Arrays.toString(availArr[i]));
-            }
-
-            LOG.info("-PERFORMANCE -----------------------------------------------------------------------");
-            context.performance.fit(Tuple3.apply("thr", "conf", "lat"), perfArr, "lat");
-            LOG.info(Arrays.toString(context.performance.predict("thr", 15000D, "conf", 30000D)));
-
-            LOG.info("-AVAILABILITY -----------------------------------------------------------------------");
-            context.availability.fit(Tuple3.apply("thr", "conf", "recTime"), availArr, "recTime");
-            LOG.info(Arrays.toString(context.availability.predict("thr", 15000D, "conf", 30000D)));
-
-            // ADVERTISING
-            /*List<Tuple3<Double, Double, Double>> perfList = new ArrayList<>();
+            List<Tuple3<Double, Double, Double>> perfList = new ArrayList<>();
             List<Tuple3<Double, Double, Double>> availList = new ArrayList<>();
 
-            for (JobMetrics jobMetrics : context.IOManager.fetchJobMetricsList(1)) {
+            for (JobMetrics jobMetrics : context.IOManager.fetchJobMetricsList(context.experimentId)) {
 
-                for (FailureMetrics failureMetrics : context.IOManager.fetchFailureMetricsList(1, jobMetrics.jobName)) {
+                for (FailureMetrics failureMetrics : context.IOManager.fetchFailureMetricsList(context.experimentId, jobMetrics.jobName)) {
 
                     perfList.add(new Tuple3<>(failureMetrics.avgThr, jobMetrics.config, failureMetrics.avgLat));
                     if (failureMetrics.recTime > 55) {
@@ -291,26 +148,21 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                 }
             }
 
-            LOG.info(perfList.size() + " " + availList.size());
-
             double [][] perfArr = new double[perfList.size()][];
             for (int j = 0; j < perfList.size(); j++) {
+
                 perfArr[j] = new double[]{perfList.get(j)._1(), perfList.get(j)._2(), perfList.get(j)._3()};
             }
-            LOG.info(Arrays.toString(perfArr));
             double [][] availArr = new double[availList.size()][];
             for (int j = 0; j < availList.size(); j++) {
+
                 availArr[j] = new double[]{availList.get(j)._1(), availList.get(j)._2(), availList.get(j)._3()};
             }
-            LOG.info(Arrays.toString(availArr));
-
             LOG.info("-PERFORMANCE -----------------------------------------------------------------------");
             context.performance.fit(Tuple3.apply("thr", "conf", "lat"), perfArr, "lat");
-            LOG.info(Arrays.toString(context.performance.predict("thr", 80000D, "conf", 30000D)));
 
             LOG.info("-AVAILABILITY -----------------------------------------------------------------------");
             context.availability.fit(Tuple3.apply("thr", "conf", "recTime"), availArr, "recTime");
-            LOG.info(Arrays.toString(context.availability.predict("thr", 80000D, "conf", 30000D)));*/
 
             return REPLAY;
         }
