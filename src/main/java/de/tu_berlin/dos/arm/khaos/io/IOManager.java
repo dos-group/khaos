@@ -1,3 +1,4 @@
+
 package de.tu_berlin.dos.arm.khaos.io;
 
 import de.tu_berlin.dos.arm.khaos.io.ReplayCounter.Listener;
@@ -125,7 +126,7 @@ public class IOManager {
     public static class JobMetrics {
 
         public final Integer experimentId;
-        public final String jobId;
+        public final String jobName;
         public final Double config;
         public final Long minDuration;
         public final Long avgDuration;
@@ -137,11 +138,11 @@ public class IOManager {
         public final Long stopTs;
 
         public JobMetrics(
-                Integer experimentId, String jobId, Double config, Long minDuration, Long avgDuration,
+                Integer experimentId, String jobName, Double config, Long minDuration, Long avgDuration,
                 Long maxDuration, Long minSize, Long avgSize, Long maxSize, Long startTs, Long stopTs) {
 
             this.experimentId = experimentId;
-            this.jobId = jobId;
+            this.jobName = jobName;
             this.config = config;
             this.minDuration = minDuration;
             this.avgDuration = avgDuration;
@@ -157,7 +158,7 @@ public class IOManager {
         public String toString() {
             return "JobMetrics{" +
                     "experimentId=" + experimentId +
-                    ", jobId='" + jobId + '\'' +
+                    ", jobName='" + jobName + '\'' +
                     ", config=" + config +
                     ", minDuration=" + minDuration +
                     ", avgDuration=" + avgDuration +
@@ -310,9 +311,9 @@ public class IOManager {
 
         LOG.info("Starting create events table");
         String createTable =
-            "CREATE TABLE IF NOT EXISTS events " +
-            "(timestamp INTEGER NOT NULL, " +
-            "body TEXT NOT NULL);";
+                "CREATE TABLE IF NOT EXISTS events " +
+                        "(timestamp INTEGER NOT NULL, " +
+                        "body TEXT NOT NULL);";
         IOManager.executeUpdate(createTable);
         LOG.info("Finished create events table");
 
@@ -355,8 +356,8 @@ public class IOManager {
 
         LOG.info("Starting create index");
         String createIndex =
-            "CREATE INDEX IF NOT EXISTS timestamp_index " +
-            "ON events (timestamp);";
+                "CREATE INDEX IF NOT EXISTS timestamp_index " +
+                        "ON events (timestamp);";
         IOManager.executeUpdate(createIndex);
         LOG.info("Finished create index");
 
@@ -369,23 +370,23 @@ public class IOManager {
         //IOManager.executeUpdate("DROP TABLE IF EXISTS workload;");
         LOG.info("Starting create full workload table");
         String createTable =
-            "CREATE TABLE IF NOT EXISTS workload " +
-            "(second INTEGER NOT NULL, " +
-            "timestamp INTEGER NOT NULL, " +
-            "count INTEGER NOT NULL);";
+                "CREATE TABLE IF NOT EXISTS workload " +
+                        "(second INTEGER NOT NULL, " +
+                        "timestamp INTEGER NOT NULL, " +
+                        "count INTEGER NOT NULL);";
         IOManager.executeUpdate(createTable);
         IOManager.executeUpdate("DELETE FROM workload;");
         LOG.info("Finished create full workload table");
 
         LOG.info("Starting extract full workload");
         String selectEvents =
-            "SELECT timestamp, COUNT(*) AS count " +
-            "FROM events GROUP BY timestamp";
+                "SELECT timestamp, COUNT(*) AS count " +
+                        "FROM events GROUP BY timestamp";
         AtomicInteger second = new AtomicInteger(1);
         IOManager.executeQuery(selectEvents, (rs) -> {
             String insertValue = String.format(
-                "INSERT INTO workload (second, timestamp, count) VALUES (%d,%d,%d);",
-                second.getAndAdd(1), rs.getLong("timestamp"), rs.getInt("count"));
+                    "INSERT INTO workload (second, timestamp, count) VALUES (%d,%d,%d);",
+                    second.getAndAdd(1), rs.getLong("timestamp"), rs.getInt("count"));
             IOManager.executeUpdate(insertValue);
         });
         LOG.info("Finished extract full workload");
@@ -411,8 +412,8 @@ public class IOManager {
 
         LOG.info("Starting get workload");
         String selectValues =
-            "SELECT second, timestamp, count " +
-            "FROM workload ORDER BY timestamp ASC";
+                "SELECT second, timestamp, count " +
+                        "FROM workload ORDER BY timestamp ASC";
         IOManager.executeQuery(selectValues, (rs) -> {
             fullWorkload.add(new Tuple3<>(rs.getInt("second"), rs.getLong("timestamp"), rs.getInt("count")));
         });
@@ -485,10 +486,10 @@ public class IOManager {
             int average = sum / this.averagingWindow;
             // find range of values which is within user defined tolerance of average
             List<Integer> targetRange =
-                IntStream
-                    .rangeClosed(average - withTolerance , average + withTolerance)
-                    .boxed()
-                    .collect(Collectors.toList());
+                    IntStream
+                            .rangeClosed(average - withTolerance , average + withTolerance)
+                            .boxed()
+                            .collect(Collectors.toList());
             // find all intersects that are in 1% range of target
             for (int valueInRange : targetRange) {
 
@@ -525,10 +526,10 @@ public class IOManager {
             if (valid) {
 
                 String createTable =
-                    "CREATE TABLE IF NOT EXISTS scenario " +
-                    "(second INTEGER NOT NULL, " +
-                    "timestamp INTEGER NOT NULL, " +
-                    "count INTEGER NOT NULL);";
+                        "CREATE TABLE IF NOT EXISTS scenario " +
+                                "(second INTEGER NOT NULL, " +
+                                "timestamp INTEGER NOT NULL, " +
+                                "count INTEGER NOT NULL);";
                 IOManager.executeUpdate(createTable);
                 IOManager.executeUpdate("DELETE FROM scenario;");
 
@@ -556,8 +557,8 @@ public class IOManager {
 
         LOG.info("Starting get scenario");
         String selectValues =
-            "SELECT second, timestamp, count " +
-            "FROM scenario ORDER BY second ASC";
+                "SELECT second, timestamp, count " +
+                        "FROM scenario ORDER BY second ASC";
         IOManager.executeQuery(selectValues, (rs) -> {
             scenario.add(new Tuple3<>(rs.getInt("second"), rs.getLong("timestamp"), rs.getInt("count")));
         });
@@ -570,18 +571,18 @@ public class IOManager {
         // TODO remove
         //IOManager.executeUpdate("DROP TABLE IF EXISTS jobs;");
         String createTable =
-            "CREATE TABLE IF NOT EXISTS jobs " +
-            "(experimentId INTEGER NOT NULL, " +
-            "jobId TEXT NOT NULL, " +
-            "config REAL NOT NULL, " +
-            "minDuration INTEGER NOT NULL, " +
-            "avgDuration INTEGER NOT NULL, " +
-            "maxDuration INTEGER NOT NULL, " +
-            "minSize INTEGER NOT NULL, " +
-            "avgSize INTEGER NOT NULL, " +
-            "maxSize INTEGER NOT NULL, " +
-            "startTs INTEGER NOT NULL, " +
-            "stopTs INTEGER NOT NULL);";
+                "CREATE TABLE IF NOT EXISTS jobs " +
+                        "(experimentId INTEGER NOT NULL, " +
+                        "jobId TEXT NOT NULL, " +
+                        "config REAL NOT NULL, " +
+                        "minDuration INTEGER NOT NULL, " +
+                        "avgDuration INTEGER NOT NULL, " +
+                        "maxDuration INTEGER NOT NULL, " +
+                        "minSize INTEGER NOT NULL, " +
+                        "avgSize INTEGER NOT NULL, " +
+                        "maxSize INTEGER NOT NULL, " +
+                        "startTs INTEGER NOT NULL, " +
+                        "stopTs INTEGER NOT NULL);";
         IOManager.executeUpdate(createTable);
         if (removePrevious) {
 
@@ -594,11 +595,11 @@ public class IOManager {
             long maxDuration, long minSize, long avgSize, long maxSize, long startTs, long stopTs) {
 
         String insertValue = String.format(
-            "INSERT INTO jobs " +
-                "(experimentId, jobId, config, minDuration, avgDuration, maxDuration, minSize, avgSize, maxSize, startTs, stopTs) " +
-                "VALUES " +
-                "(%d, '%s', %f, %d, %d, %d, %d, %d, %d, %d, %d);",
-            experimentId, jobId, config, minDuration, avgDuration, maxDuration, minSize, avgSize, maxSize, startTs, stopTs);
+                "INSERT INTO jobs " +
+                        "(experimentId, jobId, config, minDuration, avgDuration, maxDuration, minSize, avgSize, maxSize, startTs, stopTs) " +
+                        "VALUES " +
+                        "(%d, '%s', %f, %d, %d, %d, %d, %d, %d, %d, %d);",
+                experimentId, jobId, config, minDuration, avgDuration, maxDuration, minSize, avgSize, maxSize, startTs, stopTs);
         IOManager.executeUpdate(insertValue);
     }
 
@@ -608,24 +609,24 @@ public class IOManager {
         List<Tuple11<Integer, String, Double, Long, Long, Long, Long, Long, Long, Long, Long>> jobs = new ArrayList<>();
         String selectValues = String.format(
                 "SELECT experimentId, jobId, config, minDuration, avgDuration, maxDuration, minSize, avgSize, maxSize, startTs, stopTs " +
-                "FROM jobs " +
-                "WHERE experimentId = %d " +
-                "ORDER BY config ASC;",
-            experimentId);
+                        "FROM jobs " +
+                        "WHERE experimentId = %d " +
+                        "ORDER BY config ASC;",
+                experimentId);
         IOManager.executeQuery(selectValues, (rs) -> {
             jobMetricsList.add(
-                new JobMetrics(
-                    rs.getInt("experimentId"),
-                    rs.getString("jobId"),
-                    rs.getDouble("config"),
-                    rs.getLong("minDuration"),
-                    rs.getLong("avgDuration"),
-                    rs.getLong("maxDuration"),
-                    rs.getLong("minSize"),
-                    rs.getLong("avgSize"),
-                    rs.getLong("maxSize"),
-                    rs.getLong("startTs"),
-                    rs.getLong("stopTs")));
+                    new JobMetrics(
+                            rs.getInt("experimentId"),
+                            rs.getString("jobId"),
+                            rs.getDouble("config"),
+                            rs.getLong("minDuration"),
+                            rs.getLong("avgDuration"),
+                            rs.getLong("maxDuration"),
+                            rs.getLong("minSize"),
+                            rs.getLong("avgSize"),
+                            rs.getLong("maxSize"),
+                            rs.getLong("startTs"),
+                            rs.getLong("stopTs")));
         });
         return jobMetricsList;
     }
@@ -636,13 +637,13 @@ public class IOManager {
         //IOManager.executeUpdate("DROP TABLE IF EXISTS metrics;");
 
         String createTable =
-            "CREATE TABLE IF NOT EXISTS metrics " +
-            "(experimentId INTEGER NOT NULL, " +
-            "jobId TEXT NOT NULL, " +
-            "timestamp INTEGER NOT NULL, " +
-            "avgThr REAL NOT NULL, " +
-            "avgLat REAL NOT NULL, " +
-            "recTime REAL);";
+                "CREATE TABLE IF NOT EXISTS metrics " +
+                        "(experimentId INTEGER NOT NULL, " +
+                        "jobId TEXT NOT NULL, " +
+                        "timestamp INTEGER NOT NULL, " +
+                        "avgThr REAL NOT NULL, " +
+                        "avgLat REAL NOT NULL, " +
+                        "recTime REAL);";
         IOManager.executeUpdate(createTable);
         if (removePrevious) {
 
@@ -653,33 +654,55 @@ public class IOManager {
     public void addFailureMetrics(int experimentId, String jobId, long timestamp, double avgThr, double avgLat) {
 
         String insertValue = String.format(
-            "INSERT INTO metrics " +
-            "(experimentId, jobId, timestamp, avgThr, avgLat) " +
-            "VALUES " +
-            "(%d, '%s', %d, %f, %f);",
-            experimentId, jobId, timestamp, avgThr, avgLat);
+                "INSERT INTO metrics " +
+                        "(experimentId, jobId, timestamp, avgThr, avgLat) " +
+                        "VALUES " +
+                        "(%d, '%s', %d, %f, %f);",
+                experimentId, jobId, timestamp, avgThr, avgLat);
         IOManager.executeUpdate(insertValue);
     }
 
-    public List<FailureMetrics> fetchFailureMetricsList(int experimentId, String jobId) {
+    public List<FailureMetrics> fetchFailureMetricsList(int experimentId) {
 
         List<FailureMetrics> failureMetricsList = new ArrayList<>();
         String selectValues = String.format(
-            "SELECT experimentId, jobId, timestamp, avgThr, avgLat, recTime " +
-            "FROM metrics " +
-            "WHERE experimentId = %d " +
-            "AND jobId = '%s' " +
-            "ORDER BY avgThr ASC;",
-            experimentId, jobId);
+                "SELECT experimentId, jobId, timestamp, avgThr, avgLat, recTime " +
+                        "FROM metrics " +
+                        "WHERE experimentId = %d " +
+                        "ORDER BY jobId ASC, avgThr ASC;",
+                experimentId);
         IOManager.executeQuery(selectValues, (rs) -> {
             failureMetricsList.add(
-                new FailureMetrics(
-                    rs.getInt("experimentId"),
-                    rs.getString("jobId"),
-                    rs.getLong("timestamp"),
-                    rs.getDouble("avgThr"),
-                    rs.getDouble("avgLat"),
-                    rs.getDouble("recTime")));
+                    new FailureMetrics(
+                            rs.getInt("experimentId"),
+                            rs.getString("jobId"),
+                            rs.getLong("timestamp"),
+                            rs.getDouble("avgThr"),
+                            rs.getDouble("avgLat"),
+                            rs.getDouble("recTime")));
+        });
+        return failureMetricsList;
+    }
+
+    public List<FailureMetrics> fetchFailureMetricsList(int experimentId, String jobName) {
+
+        List<FailureMetrics> failureMetricsList = new ArrayList<>();
+        String selectValues = String.format(
+                "SELECT experimentId, jobId, timestamp, avgThr, avgLat, recTime " +
+                        "FROM metrics " +
+                        "WHERE experimentId = %d " +
+                        "AND jobId = '%s' " +
+                        "ORDER BY avgThr ASC;",
+                experimentId, jobName);
+        IOManager.executeQuery(selectValues, (rs) -> {
+            failureMetricsList.add(
+                    new FailureMetrics(
+                            rs.getInt("experimentId"),
+                            rs.getString("jobId"),
+                            rs.getLong("timestamp"),
+                            rs.getDouble("avgThr"),
+                            rs.getDouble("avgLat"),
+                            rs.getDouble("recTime")));
         });
         return failureMetricsList;
     }
@@ -687,11 +710,11 @@ public class IOManager {
     public void updateRecTime(String jobId, long timestamp, double recTime) {
 
         String updateValue = String.format(
-            "UPDATE metrics " +
-            "SET recTime = %f " +
-            "WHERE jobId = '%s' " +
-            "AND timestamp = %d;",
-            recTime, jobId, timestamp);
+                "UPDATE metrics " +
+                        "SET recTime = %f " +
+                        "WHERE jobId = '%s' " +
+                        "AND timestamp = %d;",
+                recTime, jobId, timestamp);
         IOManager.executeUpdate(updateValue);
     }
 

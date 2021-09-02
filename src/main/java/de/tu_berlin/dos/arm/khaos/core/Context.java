@@ -25,17 +25,16 @@ public enum Context implements AutoCloseable { get;
 
         public final Experiment experiment;
         public final String jobName;
-        public final int config;
 
         private String jobId;
+        private int config;
         private List<String> operatorIds;
         private String sinkId;
 
-        public Job(Experiment experiment, String jobName, int config) {
+        public Job(Experiment experiment, String jobName) {
 
             this.experiment = experiment;
             this.jobName = jobName;
-            this.config = config;
         }
 
         public String getJobId() {
@@ -46,6 +45,16 @@ public enum Context implements AutoCloseable { get;
         public void setJobId(String jobId) {
 
             this.jobId = jobId;
+        }
+
+        public int getConfig() {
+
+            return config;
+        }
+
+        public void setConfig(int config) {
+
+            this.config = config;
         }
 
         public void setOperatorIds(List<String> operatorIds) {
@@ -66,12 +75,12 @@ public enum Context implements AutoCloseable { get;
         public String getProgramArgs() {
 
             return String.join(",",
-                this.jobName,
-                experiment.brokerList,
-                experiment.consumerTopic,
-                experiment.producerTopic,
-                experiment.partitions + "",
-                this.config + "");
+                    this.jobName,
+                    experiment.brokerList,
+                    experiment.consumerTopic,
+                    experiment.producerTopic,
+                    experiment.partitions + "",
+                    this.config + "");
         }
 
         @Override
@@ -111,17 +120,12 @@ public enum Context implements AutoCloseable { get;
             this.partitions = partitions;
 
             this.jobs = new ArrayList<>();
-            /*int step = (int) (((maxConfigVal - minConfigVal) * 1.0 / (numOfConfigs - 1)) + 0.5);
+            int step = (int) (((maxConfigVal - minConfigVal) * 1.0 / (numOfConfigs - 1)) + 0.5);
             Stream.iterate(minConfigVal, i -> i + step).limit(numOfConfigs).forEach(config -> {
-                Job current = new Job(this, "profile-" + config, config);
+                Job current = new Job(this, "profile-" + config);
+                current.setConfig(config);
                 this.jobs.add(current);
-            });*/
-            // TODO remove!
-            this.jobs.add(new Job(this, "profile-" + 10000, 10000));
-            this.jobs.add(new Job(this, "profile-" + 30000, 30000));
-            this.jobs.add(new Job(this, "profile-" + 60000, 60000));
-            this.jobs.add(new Job(this, "profile-" + 90000, 90000));
-            this.jobs.add(new Job(this, "profile-" + 120000, 120000));
+            });
         }
 
         public long getStartTs() {
@@ -186,8 +190,10 @@ public enum Context implements AutoCloseable { get;
     public final String jarId;
     public final String jobName;
     public final String jobId;
+    public final int jobConfig;
     public final int parallelism;
     public final String sinkRegex;
+    public final String savepoints;
     public final String promUrl;
 
     public final Experiment experiment;
@@ -241,8 +247,10 @@ public enum Context implements AutoCloseable { get;
             this.jarId = props.getProperty("flink.jarid");
             this.jobName = props.getProperty("flink.jobName");
             this.jobId = props.getProperty("flink.jobId");
+            this.jobConfig = Integer.parseInt(props.getProperty("flink.jobConfig"));
             this.parallelism = Integer.parseInt(props.getProperty("flink.parallelism"));
             this.sinkRegex = props.getProperty("flink.sinkRegex");
+            this.savepoints = props.getProperty("flink.savepoints");
             this.promUrl = props.getProperty("prometheus.url");
 
             // set experiment variables
@@ -259,7 +267,8 @@ public enum Context implements AutoCloseable { get;
             );
 
             // create object for target job and store list of operator ids
-            this.targetJob = new Job(experiment, this.jobName, 30000);
+            this.targetJob = new Job(experiment, this.jobName);
+            this.targetJob.setConfig(this.jobConfig);
             this.targetJob.setJobId(this.jobId);
 
             // create global context objects

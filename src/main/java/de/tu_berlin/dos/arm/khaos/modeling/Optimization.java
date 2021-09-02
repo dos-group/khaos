@@ -1,41 +1,54 @@
 package de.tu_berlin.dos.arm.khaos.modeling;
 
 import de.tu_berlin.dos.arm.khaos.core.Context;
+import org.apache.log4j.Logger;
 
 import java.util.Arrays;
 
 public class Optimization {
 
+    private static final Logger LOG = Logger.getLogger(Optimization.class);
+
     private Optimization() {}
 
-    public static double getOptimalCheckpointInterval(Context context, double currentThr, double[] checkpointIntervals){
+    public static double optimize(String type, Context context, double currThr, double[] chkIntArr, double weight) {
 
-        // TODO FIX THIS
-        double[] predLatencies = Arrays.stream(checkpointIntervals)
-                //.map(i -> context.performance.predict(Arrays.asList(i, currentThr)))
+        double[] predLatArr = Arrays.stream(chkIntArr)
+                .map(i -> context.performance.predict("thr", currThr, "conf", i)[0])
                 .toArray();
 
-        double[] predRecoveryTimes = Arrays.stream(checkpointIntervals)
-                //.map(i -> context.availability.predict(Arrays.asList(i, currentThr)))
+        double[] predRecArr = Arrays.stream(chkIntArr)
+                .map(i -> context.availability.predict("thr", currThr, "conf", i)[0])
                 .toArray();
 
-        double bestCheckpointInterval = -1;
-        double bestRatioSum = -1;
+        double bestChkInt = -1;
+        double bestOptValue = -1;
 
-        for (int i = 0; i < checkpointIntervals.length; i++) {
-            double predLatency = predLatencies[i];
-            double predRecoveryTime = predRecoveryTimes[i];
+        for (int i = 0; i < chkIntArr.length; i++) {
 
-            double ratioSum = (predLatency / context.avgLatConst) + (predRecoveryTime / context.recTimeConst);
-            if(predLatency < context.avgLatConst &&
-                    predRecoveryTime < context.recTimeConst &&
-                    predLatency > 0 &&
-                    predRecoveryTime > 0 && (bestRatioSum == -1 || ratioSum < bestRatioSum)){
-                bestCheckpointInterval = checkpointIntervals[i];
-                bestRatioSum = ratioSum;
+            double predLat = predLatArr[i];
+            double predRec = predRecArr[i];
+
+            double latRatio = (predLat * weight) / context.avgLatConst;
+            double recRatio = predRec / context.recTimeConst;
+            double optValue = latRatio + recRatio + Math.abs(latRatio - recRatio);
+            if (0 < predLat && latRatio < 1 && 0 < predRec && recRatio < 1 && (optValue < bestOptValue || bestOptValue == -1)) {
+
+                if (type.equalsIgnoreCase("LATENCY") && context.targetJob.getConfig() < chkIntArr[i]) {
+
+                    LOG.info("chkInt: " + chkIntArr[i] + ", predLat: " + predLat + "(" + predLat * weight + "), predRec:" + predRec + ", optValue: " + optValue + " (" + latRatio + ", " + recRatio + ", " + Math.abs(latRatio - recRatio) + ")");
+                    bestChkInt = chkIntArr[i];
+                    bestOptValue = optValue;
+                }
+                else if (type.equalsIgnoreCase("RECTIME") && chkIntArr[i] < context.targetJob.getConfig()) {
+
+                    LOG.info("chkInt: " + chkIntArr[i] + ", predLat: " + predLat + "(" + predLat * weight + "), predRec:" + predRec + ", optValue: " + optValue + " (" + latRatio + ", " + recRatio + ", " + Math.abs(latRatio - recRatio) + ")");
+                    bestChkInt = chkIntArr[i];
+                    bestOptValue = optValue;
+                }
             }
         }
-
-        return bestCheckpointInterval;
+        LOG.info("Chosen best checkpoint interval: " + bestChkInt);
+        return bestChkInt;
     }
 }

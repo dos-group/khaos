@@ -2,13 +2,10 @@ package de.tu_berlin.dos.arm.khaos.clients.flink;
 
 import de.tu_berlin.dos.arm.khaos.clients.flink.responses.*;
 import okhttp3.OkHttpClient;
-import retrofit2.Call;
-import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -22,16 +19,16 @@ public class FlinkClient {
 
         this.baseUrl = "http://" + baseUrl + "/";
         OkHttpClient okHttpClient = new OkHttpClient.Builder()
-            .connectTimeout(1, TimeUnit.MINUTES)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(15, TimeUnit.SECONDS)
-            .build();
-        Retrofit retrofit =
-            new Retrofit.Builder()
-                .baseUrl(this.baseUrl)
-                .client(okHttpClient)
-                .addConverterFactory(GsonConverterFactory.create())
+                .connectTimeout(1, TimeUnit.MINUTES)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .writeTimeout(15, TimeUnit.SECONDS)
                 .build();
+        Retrofit retrofit =
+                new Retrofit.Builder()
+                        .baseUrl(this.baseUrl)
+                        .client(okHttpClient)
+                        .addConverterFactory(GsonConverterFactory.create())
+                        .build();
 
         this.service = retrofit.create(FlinkRest.class);
     }
@@ -41,9 +38,9 @@ public class FlinkClient {
         return this.service.startJob(jarId, programArg, parallelism).execute().body();
     }
 
-    public Job restartJob(String jarId, String savePointPath, String programArg, int parallelism) throws IOException {
+    public Job restartJob(String jarId, String targetDirectory, String programArg, int parallelism) throws IOException {
 
-        return this.service.restartJob(jarId, savePointPath, programArg, parallelism).execute().body();
+        return this.service.restartJob(jarId, targetDirectory, programArg, parallelism).execute().body();
     }
 
     public boolean stopJob(String jobId) throws IOException {
@@ -51,13 +48,18 @@ public class FlinkClient {
         return this.service.stopJob(jobId).execute().isSuccessful();
     }
 
-    public Trigger saveAndStopJob(String jobId, boolean cancel, String targetDirectory) throws IOException {
+    public Trigger saveJob(String jobId, boolean cancelJob, String targetDirectory) throws IOException {
 
         Map<String, Object> body = Map.ofEntries(
-            Map.entry("cancel-type", cancel),
-            Map.entry("target-directory", "savepoints" )
+                Map.entry("cancel-job", cancelJob),
+                Map.entry("target-directory", targetDirectory )
         );
-        return this.service.saveAndStopJob(jobId, body).execute().body();
+        return this.service.saveJob(jobId, body).execute().body();
+    }
+
+    public SaveStatus checkStatus(String jobId, String requestId) throws IOException {
+
+        return this.service.checkStatus(jobId, requestId).execute().body();
     }
 
     public TaskManagers getTaskManagers(String jobId, String vertexId) throws IOException {

@@ -1,6 +1,7 @@
 package de.tu_berlin.dos.arm.khaos.core;
 
 import de.tu_berlin.dos.arm.khaos.clients.flink.responses.Checkpoints;
+import de.tu_berlin.dos.arm.khaos.clients.flink.responses.SaveStatus;
 import de.tu_berlin.dos.arm.khaos.core.Context.Job;
 import de.tu_berlin.dos.arm.khaos.io.IOManager.FailureMetrics;
 import de.tu_berlin.dos.arm.khaos.io.IOManager.JobMetrics;
@@ -10,6 +11,7 @@ import de.tu_berlin.dos.arm.khaos.io.TimeSeries;
 import de.tu_berlin.dos.arm.khaos.modeling.AnomalyDetector;
 import de.tu_berlin.dos.arm.khaos.modeling.ForecastModel;
 import de.tu_berlin.dos.arm.khaos.modeling.Optimization;
+import de.tu_berlin.dos.arm.khaos.utils.LimitedQueue;
 import de.tu_berlin.dos.arm.khaos.utils.SequenceFSM;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -95,7 +97,7 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                                 long currTs = context.clientsManager.getLatestTs(job.getJobId());
                                 long chkLast = context.clientsManager.getLastCheckpoint(job.getJobId());
                                 // find time to point which is 3 seconds from when next checkpoint starts
-                                long target = (job.config / 1000) - (currTs - chkLast) - context.chkTolerance;
+                                long target = (job.getConfig() / 1000) - (currTs - chkLast) - context.chkTolerance;
                                 if (target > 0) {
                                     context.executor.schedule(() -> {
                                         try {
@@ -173,7 +175,7 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                 context.IOManager.addJobMetrics(
                     context.experimentId,
                     job.getJobId(),
-                    job.config,
+                    job.getConfig(),
                     checkpoints.summary.endToEndDuration.min,
                     checkpoints.summary.endToEndDuration.avg,
                     checkpoints.summary.endToEndDuration.max,
@@ -202,10 +204,10 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
             LOG.info("Starting measure recovery times");
             for (JobMetrics jobMetrics : context.IOManager.fetchJobMetricsList(context.experimentId)) {
 
-                TimeSeries thrTs = context.clientsManager.getThroughput(jobMetrics.jobId, jobMetrics.startTs, jobMetrics.stopTs);
-                TimeSeries lagTs = context.clientsManager.getConsumerLag(jobMetrics.jobId, jobMetrics.startTs, jobMetrics.stopTs);
+                TimeSeries thrTs = context.clientsManager.getThroughput(jobMetrics.jobName, jobMetrics.startTs, jobMetrics.stopTs);
+                TimeSeries lagTs = context.clientsManager.getConsumerLag(jobMetrics.jobName, jobMetrics.startTs, jobMetrics.stopTs);
 
-                for (FailureMetrics failureMetrics : context.IOManager.fetchFailureMetricsList(context.experimentId, jobMetrics.jobId)) {
+                for (FailureMetrics failureMetrics : context.IOManager.fetchFailureMetricsList(context.experimentId, jobMetrics.jobName)) {
 
                     executor.submit(() -> {
 
@@ -231,174 +233,36 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
         public ExecutionManager runStage(Context context) {
 
-            Map<Double, List<Tuple3<Double, Double, Double>>> perfMap = new TreeMap<>();
-            Map<Double, List<Tuple3<Double, Double, Double>>> availMap= new TreeMap<>();
-            for (int i = 1; i <= 5; i++) {
+            List<Tuple3<Double, Double, Double>> perfList = new ArrayList<>();
+            List<Tuple3<Double, Double, Double>> availList = new ArrayList<>();
 
-                for (JobMetrics jobMetrics : context.IOManager.fetchJobMetricsList(i)) {
+            for (JobMetrics jobMetrics : context.IOManager.fetchJobMetricsList(context.experimentId)) {
 
-                    perfMap.putIfAbsent(jobMetrics.config, new ArrayList<>());
-                    availMap.putIfAbsent(jobMetrics.config, new ArrayList<>());
+                for (FailureMetrics failureMetrics : context.IOManager.fetchFailureMetricsList(context.experimentId, jobMetrics.jobName)) {
 
-                    for (FailureMetrics failureMetrics : context.IOManager.fetchFailureMetricsList(i, jobMetrics.jobId)) {
+                    perfList.add(new Tuple3<>(failureMetrics.avgThr, jobMetrics.config, failureMetrics.avgLat));
+                    if (failureMetrics.recTime > 55) {
 
-                        perfMap.get(jobMetrics.config).add(Tuple3.apply(failureMetrics.avgThr, jobMetrics.config, failureMetrics.avgLat));
-                        availMap.get(jobMetrics.config).add(Tuple3.apply(failureMetrics.avgThr, jobMetrics.config, failureMetrics.recTime));
-                    }
-                }
-            }
-            LOG.info(perfMap);
-            LOG.info(availMap);
-
-            List<Tuple3<Double, Double, Double>> perfAvgList = new ArrayList<>();
-            for (Map.Entry<Double, List<Tuple3<Double, Double, Double>>> entry : perfMap.entrySet()) {
-
-                int countThr = 0;
-                double totalThr = 0;
-                int countLat = 0;
-                double totalLat = 0;
-                for (int i = 0; i < entry.getValue().size(); i++) {
-
-                    totalThr += entry.getValue().get(i)._1();
-                    countThr++;
-                    totalLat += entry.getValue().get(i)._3();
-                    countLat++;
-                }
-                perfAvgList.add(new Tuple3<>(totalThr/countThr, entry.getKey(), totalLat/countLat));
-            }
-            LOG.info(Arrays.toString(perfAvgList.toArray()));
-
-            List<Tuple3<Double, Double, Double>> availAvgList = new ArrayList<>();
-            for (Map.Entry<Double, List<Tuple3<Double, Double, Double>>> entry : availMap.entrySet()) {
-
-                int countThr = 0;
-                double totalThr = 0;
-                int countRecTime = 0;
-                double totalRecTime = 0;
-                for (int i = 0; i < entry.getValue().size(); i++) {
-
-                    if (entry.getValue().get(i)._3() > 55) {
-
-                        totalThr += entry.getValue().get(i)._1();
-                        countThr++;
-                        countRecTime += entry.getValue().get(i)._3();
-                        totalRecTime++;
-                    }
-
-                }
-                availAvgList.add(new Tuple3<>(totalThr/countThr, entry.getKey(), totalRecTime/countRecTime));
-            }
-            LOG.info(Arrays.toString(availAvgList.toArray()));
-
-            LOG.info("-PERFORMANCE -----------------------------------------------------------------------");
-            context.performance.fit(Tuple3.apply("thr", "conf", "lat"), perfAvgList, "lat");
-            //LOG.info(context.performance.getModel());
-            LOG.info(context.performance.predict("thr", 15000D, "conf", 30000D));
-
-            LOG.info("-AVAILABILITY -----------------------------------------------------------------------");
-            context.availability.fit(Tuple3.apply("thr", "conf", "recTime"), availAvgList, "recTime");
-            //LOG.info(context.availability.getModel());
-            LOG.info(context.availability.predict("thr", 15000D, "conf", 30000D));*/
-
-
-            for (int i = 1; i <= 5; i++) {
-
-                List<Tuple3<Double, Double, Double>> perfList = new ArrayList<>();
-                List<Tuple3<Double, Double, Double>> availList = new ArrayList<>();
-                for (JobMetrics jobMetrics : context.IOManager.fetchJobMetricsList(i)) {
-
-                    for (FailureMetrics failureMetrics : context.IOManager.fetchFailureMetricsList(jobMetrics.experimentId, jobMetrics.jobId)) {
-
-                        perfList.add(new Tuple3<>(failureMetrics.avgThr, jobMetrics.config, failureMetrics.avgLat));
-                        if (failureMetrics.recTime > 55) availList.add(new Tuple3<>(failureMetrics.avgThr, jobMetrics.config, failureMetrics.recTime));
-                    }
-                }
-                LOG.info("-PERFORMANCE " + i + " -----------------------------------------------------------------------");
-                context.performance.fit(Tuple3.apply("thr", "conf", "lat"), perfList, "lat");
-                LOG.info(Arrays.toString(context.performance.predict("thr", 15000D, "conf", 30000D)));
-
-                LOG.info("-AVAILABILITY " + i + " -----------------------------------------------------------------------");
-                context.availability.fit(Tuple3.apply("thr", "conf", "recTime"), availList, "recTime");
-                LOG.info(Arrays.toString(context.availability.predict("thr", 15000D, "conf", 30000D)));
-            }
-
-            //-----------------------------------------------------------------------------------------
-
-            Map<Double, List<List<Double>>> perfMap = new TreeMap<>();
-            Map<Double, List<List<Double>>> availMap= new TreeMap<>();
-            for (int i = 1; i <= 5; i++) {
-
-                for (JobMetrics jobMetrics : context.IOManager.fetchJobMetricsList(i)) {
-
-                    perfMap.putIfAbsent(jobMetrics.config, new ArrayList<>());
-                    availMap.putIfAbsent(jobMetrics.config, new ArrayList<>());
-
-                    for (FailureMetrics failureMetrics : context.IOManager.fetchFailureMetricsList(i, jobMetrics.jobId)) {
-
-                        perfMap.get(jobMetrics.config).add(Arrays.asList(failureMetrics.avgThr, jobMetrics.config, failureMetrics.avgLat));
-                        availMap.get(jobMetrics.config).add(Arrays.asList(failureMetrics.avgThr, jobMetrics.config, failureMetrics.recTime));
+                        availList.add(new Tuple3<>(failureMetrics.avgThr, jobMetrics.config, failureMetrics.recTime));
                     }
                 }
             }
 
-            int counter1 = 0, counter2 = 0;
-            double [][] perfArr = new double[context.numOfConfigs * context.numFailures][];
-            double [][] availArr = new double[context.numOfConfigs * context.numFailures - 7][];
-            for (Map.Entry<Double, List<List<Double>>> entry : perfMap.entrySet()) {
+            double [][] perfArr = new double[perfList.size()][];
+            for (int j = 0; j < perfList.size(); j++) {
 
-                double key = entry.getKey();
-                final int chunkSize = 5;
-
-                final AtomicInteger count = new AtomicInteger(0);
-                List<List<Double>> perfs = entry.getValue();
-                perfs.sort(Comparator.comparing(o -> o.get(0)));
-                final Collection<List<List<Double>>> perfRes =
-                    perfs.stream()
-                        .collect(Collectors.groupingBy(it -> count.getAndIncrement() / chunkSize))
-                        .values();
-
-                count.set(0);
-                List<List<Double>> avails = availMap.get(key);
-                avails.sort(Comparator.comparing(o -> o.get(0)));
-                final Collection<List<List<Double>>> availRes =
-                    avails.stream()
-                        .collect(Collectors.groupingBy(it -> count.getAndIncrement() / chunkSize))
-                        .values();
-
-                Iterator<List<List<Double>>> it1 = perfRes.iterator();
-                Iterator<List<List<Double>>> it2 = availRes.iterator();
-                while (it1.hasNext()) {
-
-                    List<List<Double>> currPerf = it1.next();
-                    perfArr[counter1] = ArrayUtils.toPrimitive(currPerf.get(2).toArray(new Double[0]));
-                    counter1++;
-                    List<List<Double>> currAvail = it2.next();
-                    double[] temp = ArrayUtils.toPrimitive(currAvail.get(2).toArray(new Double[0]));
-                    if (temp[2] > 55) {
-
-                        availArr[counter2] = temp;
-                        counter2++;
-                    }
-                }
+                perfArr[j] = new double[]{perfList.get(j)._1(), perfList.get(j)._2(), perfList.get(j)._3()};
             }
-            for (int i = 0; i < perfArr.length; i++) {
+            double [][] availArr = new double[availList.size()][];
+            for (int j = 0; j < availList.size(); j++) {
 
-                System.out.println(Arrays.toString(perfArr[i]));
+                availArr[j] = new double[]{availList.get(j)._1(), availList.get(j)._2(), availList.get(j)._3()};
             }
-            for (int i = 0; i < availArr.length; i++) {
-
-                System.out.println(Arrays.toString(availArr[i]));
-            }
-
             LOG.info("-PERFORMANCE -----------------------------------------------------------------------");
             context.performance.fit(Tuple3.apply("thr", "conf", "lat"), perfArr, "lat");
-            //LOG.info(context.performance.getModel());
-            LOG.info(Arrays.toString(context.performance.predict("thr", 15000D, "conf", 30000D)));
 
             LOG.info("-AVAILABILITY -----------------------------------------------------------------------");
             context.availability.fit(Tuple3.apply("thr", "conf", "recTime"), availArr, "recTime");
-            //LOG.info(context.availability.getModel());
-            LOG.info(Arrays.toString(context.availability.predict("thr", 15000D, "conf", 30000D)));
 
             return OPTIMIZE;
         }
@@ -410,32 +274,69 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
             context.targetJob.setSinkId(context.clientsManager.getSinkOperatorId(context.jobId, context.sinkRegex));
 
             final StopWatch stopWatch = new StopWatch();
+            int optMultiplier;
+            Queue<Tuple2<Double, Double>> values = new LimitedQueue<>(6);
             while (true) {
 
                 try {
                     // default
-                    int optMultiplier = 1;
-                    // ensure 
-                    long uptime = context.clientsManager.getUptime(context.jobId);
+                    optMultiplier = 1;
+                    // ensure
+                    long uptime = context.clientsManager.getUptime(context.targetJob.getJobId());
+                    LOG.info("uptime: " + uptime + ", chkInt: " + context.targetJob.getConfig());
                     if (uptime < context.minUpTime) {
 
                         new CountDownLatch(1).await((context.minUpTime - uptime), TimeUnit.SECONDS);
-                        continue;
                     }
 
                     long stopTs = context.clientsManager.getLatestTs(context.targetJob.getJobId());
                     long startTs = stopTs - context.averagingWindow;
+                    LOG.info("startTime: " + startTs);
+                    LOG.info("stopTime: " + stopTs);
 
                     // fetch metrics and predict recovery time based on current throughput and checkpoint interval
-                    double avgLat = context.clientsManager.getLatency(context.jobId, context.targetJob.getSinkId(), startTs, stopTs).average();
-                    double avgThr = context.clientsManager.getThroughput(context.jobId, startTs, stopTs).average();
-                    double recTime = context.availability.predict("thr", avgThr, "conf", context.targetJob.config)[1];
+                    double avgLat = context.clientsManager.getLatency(context.targetJob.jobName, context.targetJob.getSinkId(), startTs, stopTs).average();
+                    double avgThr = context.clientsManager.getThroughput(context.targetJob.jobName, startTs, stopTs).average();
+                    double recTime = context.availability.predict("thr", avgThr, "conf", context.targetJob.getConfig())[0];
+                    double latency = context.performance.predict("thr", avgThr, "conf", context.targetJob.getConfig())[0];
+                    LOG.info("recTime: " + recTime + ", avgLat: " + avgLat + ", predLat: " + latency + ", avgThr: " + avgThr);
 
-                    int windowMultiplier = 5;
+                    // calculate rolling average of how far our model is out form the actual
+                    values.add(new Tuple2<>(avgLat, latency));
+                    double weight = values.stream().mapToDouble(i -> i._1 / i._2).sum() / (double) values.size();
+                    LOG.info("weight: " + weight);
 
-                    // evaluate metrics based on constraints
-                    if ((context.avgLatConst < avgLat  && context.recTimeConst >= recTime) ||
-                        (context.avgLatConst >= avgLat && context.recTimeConst < recTime)) {
+                    // Use time series forecasting to determine if change is urgently needed
+                    TimeSeries ts = context.clientsManager.getMsgInSec(context.consumerTopic, 60, stopTs - 3600, stopTs);
+                    List<Double> filteredList = Arrays.stream(ts.values()).filter(c -> !Double.isNaN(c)).boxed().collect(Collectors.toList());
+                    List<Double> filteredSubList = filteredList.subList(filteredList.size() % 60, filteredList.size());
+                    int count = 0;
+                    double total = 0;
+                    double[] dataPoints = new double[filteredList.size() / 60];
+                    for (int i = 0; i < filteredSubList.size(); i++) {
+
+                        total += filteredSubList.get(i);
+                        count++;
+
+                        if (count == 60) {
+
+                            dataPoints[i / 60] = total / count;
+                            total = 0;
+                            count = 0;
+                        }
+                    }
+                    double lastDataPoint = dataPoints[dataPoints.length - 1];
+
+                    // simple estimate of how throughput will evolve
+                    double[] predThrs = context.forecast.fit(dataPoints).predict((int) Math.ceil(context.optInterval / 60));
+                    // derive recommendation: is throughput evolving rapidly?
+                    double sumOffPointWiseDifferences = ForecastModel.computeDifferences(lastDataPoint, predThrs);
+                    boolean isUrgent = sumOffPointWiseDifferences < -0.1 * lastDataPoint;
+
+                    if ((context.avgLatConst > avgLat && context.recTimeConst < recTime && isUrgent) ||
+                            (context.avgLatConst < avgLat  && context.recTimeConst > recTime && isUrgent)) {
+
+                        LOG.info("Violation Detected");
 
                         // Find range of valid checkpoint intervals
                         int size = (context.maxConfigVal - context.minConfigVal) / 1000;
@@ -444,49 +345,54 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
                             chkIntArr[i] = context.minConfigVal + (i * 1000);
                         }
+                        double chkInt = -1;
+                        // Process recovery time violation
+                        if (context.avgLatConst > avgLat && context.recTimeConst < recTime) {
 
-                        // fetch average of workload per minute for the last hour
-                        TimeSeries ts = context.clientsManager.getMsgInSec(context.consumerTopic, 60, stopTs - 3600, stopTs);
-                        List<Double> filteredList = Arrays.stream(ts.values()).filter(c -> !Double.isNaN(c)).boxed().collect(Collectors.toList());
-                        List<Double> filteredSubList = filteredList.subList(filteredList.size() % 60, filteredList.size());
-                        int count = 0;
-                        double total = 0;
-                        double[] dataPoints = new double[filteredList.size() / 60];
-                        for (int i = 0; i < filteredSubList.size(); i++) {
-
-                            total += filteredSubList.get(i);
-                            count++;
-
-                            if (count == 60) {
-
-                                dataPoints[i / 60] = total / count;
-                                total = 0;
-                                count = 0;
-
-                            }
+                            //chkInt = Optimization.optimize(OptType.RECTIME, context, avgThr, chkIntArr);
+                            chkInt = Optimization.optimize("RECTIME", context, avgThr, chkIntArr, weight);
                         }
-                        double lastDataPoint = dataPoints[dataPoints.length - 1];
-                        // simple estimate of how throughput will evolve
-                        double[] predThrs = context.forecast.fit(dataPoints).predict((int) Math.ceil(context.optInterval / 60));
-                        // derive recommendation: is throughput evolving rapidly?
-                        double sumOffPointWiseDifferences = ForecastModel.computeDifferences(lastDataPoint, predThrs);
-                        boolean isUrgent = sumOffPointWiseDifferences < -0.1 * lastDataPoint;
+                        // process latency violation
+                        else if (context.avgLatConst < avgLat && context.recTimeConst > recTime) {
 
-                        if ((context.avgLatConst * context.maxViolation) < avgLat ||
-                            (context.recTimeConst * context.maxViolation) < recTime || isUrgent){
-                            // perform optimization, get best new checkpoint interval
-                            double checkpointInterval = Optimization.getOptimalCheckpointInterval(context, avgThr, chkIntArr);
-                            // TODO do something with the calculated new checkpoint interval
+                            //chkInt = Optimization.optimize(OptType.LATENCY, context, avgThr, chkIntArr);
+                            chkInt = Optimization.optimize("LATENCY", context, avgThr, chkIntArr, weight);
+                        }
+                        LOG.info("difference: " + Math.abs(chkInt - context.targetJob.getConfig()));
+                        // ensure valid checkpoint interval was found
+                        if (chkInt != -1 && Math.abs((int) chkInt - context.targetJob.getConfig()) >= 5000) {
+
+                            context.targetJob.setConfig((int) chkInt);
+                            String requestId =
+                                context.clientsManager.flink
+                                    .saveJob(context.targetJob.getJobId(), true, context.savepoints)
+                                    .requestId;
+                            String savepointDir;
+                            while (true) {
+
+                                SaveStatus res = context.clientsManager.flink.checkStatus(context.targetJob.getJobId(), requestId);
+                                LOG.info(res);
+                                if (res.status != null && res.status.id.equalsIgnoreCase("COMPLETED")) {
+
+                                    savepointDir = res.operation.location;
+                                    LOG.info(res.operation.location);
+                                    break;
+                                }
+                                new CountDownLatch(1).await(100, TimeUnit.MILLISECONDS);
+                            }
+                            context.targetJob.setJobId(context.clientsManager.restartJob(savepointDir, context.targetJob.getProgramArgs()));
                             // we need to increase the multiplier, as we will have to wait longer
                             optMultiplier = 2;
                         }
-
+                        else {
+                            LOG.info("no better configuration was found");
+                        }
                     }
                     else if (context.recTimeConst < recTime && context.avgLatConst < avgLat) {
 
                         LOG.warn(String.format(
-                            "Unable to optimize, %s < %f and %d < %f",
-                            context.avgLatConst, avgLat, context.recTimeConst, recTime));
+                                "Unable to optimize, %s < %f and %d < %f",
+                                context.avgLatConst, avgLat, context.recTimeConst, recTime));
                     }
                     else {
 
@@ -502,6 +408,7 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                         new CountDownLatch(1).await(100, TimeUnit.MILLISECONDS);
                     }
                     stopWatch.reset();
+
                 }
                 catch (Exception e) {
 
