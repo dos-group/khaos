@@ -8,6 +8,7 @@ import de.tu_berlin.dos.arm.khaos.io.IOManager.JobMetrics;
 import de.tu_berlin.dos.arm.khaos.io.ReplayCounter.Listener;
 import de.tu_berlin.dos.arm.khaos.io.TimeSeries;
 import de.tu_berlin.dos.arm.khaos.modeling.AnomalyDetector;
+import de.tu_berlin.dos.arm.khaos.modeling.ForecastModel;
 import de.tu_berlin.dos.arm.khaos.modeling.Optimization;
 import de.tu_berlin.dos.arm.khaos.utils.LimitedQueue;
 import de.tu_berlin.dos.arm.khaos.utils.SequenceFSM;
@@ -22,6 +23,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
 
@@ -164,12 +166,12 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
             LOG.info("-AVAILABILITY -----------------------------------------------------------------------");
             context.availability.fit(Tuple3.apply("thr", "conf", "recTime"), availArr, "recTime");
 
-            return REPLAY;
+            return OPTIMIZE;
         }
     },
     OPTIMIZE {
 
-        public ExecutionManager runStage(Context context) {
+        public ExecutionManager runStage(Context context) throws Exception {
 
             Thread opt = new Thread(() -> {
 
@@ -206,8 +208,35 @@ public enum ExecutionManager implements SequenceFSM<Context, ExecutionManager> {
                         double weight = values.stream().mapToDouble(i -> i._1 / i._2).sum() / (double) values.size();
                         LOG.info("weight: " + weight);
 
-                        if ((context.avgLatConst > avgLat && context.recTimeConst < recTime) ||
-                            (context.avgLatConst < avgLat  && context.recTimeConst > recTime)) {
+                        // Use time series forecasting to determine if change is urgently needed
+                        TimeSeries ts = context.clientsManager.getMsgInSec(context.consumerTopic, 60, stopTs - 3600, stopTs);
+                        List<Double> filteredList = Arrays.stream(ts.values()).filter(c -> !Double.isNaN(c)).boxed().collect(Collectors.toList());
+                        List<Double> filteredSubList = filteredList.subList(filteredList.size() % 60, filteredList.size());
+                        int count = 0;
+                        double total = 0;
+                        double[] dataPoints = new double[filteredList.size() / 60];
+                        for (int i = 0; i < filteredSubList.size(); i++) {
+
+                            total += filteredSubList.get(i);
+                            count++;
+
+                            if (count == 60) {
+
+                                dataPoints[i / 60] = total / count;
+                                total = 0;
+                                count = 0;
+                            }
+                        }
+                        double lastDataPoint = dataPoints[dataPoints.length - 1];
+
+                        // simple estimate of how throughput will evolve
+                        double[] predThrs = context.forecast.fit(dataPoints).predict((int) Math.ceil(context.optInterval / 60));
+                        // derive recommendation: is throughput evolving rapidly?
+                        double sumOffPointWiseDifferences = ForecastModel.computeDifferences(lastDataPoint, predThrs);
+                        boolean isUrgent = sumOffPointWiseDifferences < -0.1 * lastDataPoint;
+
+                        if ((context.avgLatConst > avgLat && context.recTimeConst < recTime && isUrgent) ||
+                            (context.avgLatConst < avgLat  && context.recTimeConst > recTime && isUrgent)) {
 
                             LOG.info("Violation Detected");
 
