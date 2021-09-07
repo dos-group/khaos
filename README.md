@@ -1,6 +1,7 @@
 # Khaos: Dynamically Optimizing Checkpointing for Dependable Distributed Stream Processing
 
 This repository is associated with the following publication: 
+https://arxiv.org/abs/2109.02340
 
 Structure is as follows:
 - data: experimental results
